@@ -1,0 +1,31 @@
+name: news_matching
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.9
+  - python-dotenv
+  - jupyterlab>=3.0
+  - ipywidgets
+  - matplotlib
+  - seaborn
+  - plotly
+  - jupyter-dash
+  - numpy
+  - pandas
+  - pyarrow
+  - openpyxl
+  - scikit-learn
+  - pytorch
+  - transformers
+  - spacy
+  - gensim
+  - pre-commit
+  - jupyterlab-git
+  - nbqa
+  - black
+  - flake8
+  - isort
+  - pip
+  - pip:
+      - -r requirements.txt

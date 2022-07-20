@@ -1,0 +1,5 @@
+# spacy tok2vec language model, in place of "python -m spacy download en_core_web_sm" for env consistency, https://github.com/explosion/spacy-models/releases/tag/en_core_web_sm-3.4.0
+https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.4.0/en_core_web_sm-3.4.0-py3-none-any.whl
+
+# # Alternative transformer model
+# https://github.com/explosion/spacy-models/releases/download/en_core_web_trf-3.4.0/en_core_web_trf-3.4.0-py3-none-any.whl
