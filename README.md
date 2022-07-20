@@ -4,13 +4,13 @@
 ```bash
 .
 ├──data
-    ├── raw
-    └── processed
+│   ├── raw
+│   └── processed
 ├── figures
 ├── reports
 ├── results
 ├── scripts
-    └──deprecated
+│   └──deprecated
 ├── .gitignore
 ├── environment.yml
 ├── README.md
