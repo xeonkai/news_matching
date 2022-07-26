@@ -18,6 +18,8 @@ dependencies:
   - scikit-learn
   - pytorch
   - transformers
+  - sentence-transformers
+  - bertopic
   - spacy=3.4.0
   - gensim
   - nltk
