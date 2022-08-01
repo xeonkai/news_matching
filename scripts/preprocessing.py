@@ -264,7 +264,7 @@ def preprocessing(data, col):
  
     """
     filtered = filtering_news(data)
-    filtered['removed_punc'] = remove_punctuation_df(filtered, 'content')
+    filtered['removed_punc'] = remove_punctuation_df(filtered, col)
     filtered['lowercased'] = lowercase_df(filtered, 'removed_punc')
     filtered['clean_content'] = full_lemmatization_df(filtered, 'lowercased')
     return filtered.drop(['removed_punc', 'lowercased'], axis = 1)
@@ -285,7 +285,7 @@ def full_preprocessing(data, col):
  
     """
     filtered = filtering_news(data)
-    filtered['removed_punc'] = remove_punctuation_df(filtered, 'content')
+    filtered['removed_punc'] = remove_punctuation_df(filtered, col)
     filtered['lowercased'] = lowercase_df(filtered, 'removed_punc')
     filtered['lemmatized'] = full_lemmatization_df(filtered, 'lowercased')
     filtered['clean_content'] = remove_stopwords_df(filtered, 'lemmatized')
