@@ -9,6 +9,8 @@ dependencies:
   - ipywidgets
   - matplotlib
   - seaborn
+  - hvplot
+  - datashader
   - plotly
   - jupyter-dash
   - numpy
@@ -20,6 +22,8 @@ dependencies:
   - transformers
   - sentence-transformers
   - bertopic
+  - faiss-cpu
+  - pynndescent
   - spacy=3.4.0
   - gensim
   - nltk
