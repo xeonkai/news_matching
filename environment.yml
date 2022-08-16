@@ -13,6 +13,7 @@ dependencies:
   - datashader
   - plotly
   - jupyter-dash
+  - streamlit
   - numpy
   - pandas
   - pyarrow
