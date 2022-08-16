@@ -9,8 +9,11 @@ dependencies:
   - ipywidgets
   - matplotlib
   - seaborn
+  - hvplot
+  - datashader
   - plotly
   - jupyter-dash
+  - streamlit
   - numpy
   - pandas
   - pyarrow
@@ -18,6 +21,10 @@ dependencies:
   - scikit-learn
   - pytorch
   - transformers
+  - sentence-transformers
+  - bertopic
+  - faiss-cpu
+  - pynndescent
   - spacy=3.4.0
   - gensim
   - nltk
