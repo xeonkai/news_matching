@@ -3,6 +3,7 @@
 *.csv
 *.parquet
 *.parq
+*.npy
 
 # Dev environments
 .idea/

@@ -154,84 +154,47 @@ class SearchPyNN:
         return D[0], I[0]
 
 
-raw_data_path = Path("data", "raw", "SG sanctions on Russia.xlsx")
-
-
 @st.cache()
-def load_news_data():
-    df = (
-        pd.read_excel(
-            raw_data_path,
-            sheet_name="Contents",
-            parse_dates=["date"],
-            usecols=[
-                "id",
-                "source",
-                "title",
-                "content",
-                "date",
-                "url",
-                "domain",
-            ],
-        ).set_index("id")
-    )[lambda df: df["source"] == "Online News"]
+def load_news_data(data_path):
+    df = pd.read_parquet(data_path)[lambda df: df["source"] == "Online News"]
     return df.copy(), df["title"].to_list(), df["content"].to_list()
 
 
-# TODO: Update to only load one embedding at a time
-# TODO: Map corresponding embeddings to each model type
 @st.cache()
-def load_embeddings():
-    if "data/embeddings/content_embeddings.npy" in set(
-        map(str, Path("data/embeddings/").glob("*.npy"))
-    ):
-        content_embeddings = np.load("data/embeddings/content_embeddings.npy")
-    # else:
-    #     content_embeddings = model.encode(content, batch_size=32, show_progress_bar=True)
-    #     np.save("data/embeddings/content_embeddings.npy", content_embeddings)
+def load_title_embeddings(checkpoint):
+    title_embeddings_path = Path(
+        "data", "embeddings", f"{checkpoint}_title_embeddings.npy"
+    )
+    title_embeddings = np.load(title_embeddings_path)
+    return title_embeddings
 
-    if "data/embeddings/title_embeddings.npy" in set(
-        map(str, Path("data/embeddings/").glob("*.npy"))
-    ):
-        title_embeddings = np.load("data/embeddings/title_embeddings.npy")
-    # else:
-    #     title_embeddings = model.encode(titles, batch_size=32, show_progress_bar=True)
-    #     np.save("data/embeddings/title_embeddings.npy", title_embeddings)
-    return content_embeddings, title_embeddings
+
+@st.cache()
+def load_content_embeddings(checkpoint):
+    content_embeddings_path = Path(
+        "data", "embeddings", f"{checkpoint}_content_embeddings.npy"
+    )
+    content_embeddings = np.load(content_embeddings_path)
+    return content_embeddings
 
 
 # TODO: Update to load only one model at a time
-@st.cache()
-def load_model(model_name):
-    return {
-        "MiniLM": SentenceTransformer("multi-qa-MiniLM-L6-cos-v1"),
-        "Doc2vec": "",
-        "MPNet": "",
-    }[model_name]
-
-
 @st.cache(allow_output_mutation=True)
-def load_minilm():
-    return SentenceTransformer("multi-qa-MiniLM-L6-cos-v1")
+def load_model(checkpoint):
+    if checkpoint == "doc2vec":
+        return NotImplementedError
+    return SentenceTransformer(checkpoint)
 
 
-@st.cache()
-def load_doc2vec():
-    raise NotImplementedError
+data_path = Path("data", "processed", "sg_sanctions_on_russia.parquet")
+df, titles, content = load_news_data(data_path)
 
-
-@st.cache()
-def load_mpnet():
-    raise NotImplementedError
-
-
-df, titles, content = load_news_data()
-
-model_types = {
-    "MiniLM": load_minilm,
-    "Doc2vec": load_doc2vec,
-    "MPNet": load_mpnet,
+model_checkpoints = {
+    "MiniLM": "multi-qa-MiniLM-L6-cos-v1",
+    "Doc2vec": "",
+    "MPNet": "all-mpnet-base-v2",
 }
+
 
 title_or_content = st.sidebar.selectbox(
     "Compare Title or Content",
@@ -240,30 +203,25 @@ title_or_content = st.sidebar.selectbox(
         "Content",
     ),
 )
-# Choose whether to compare titles or content
-doc = {
-    "Title": titles,
-    "Content": content,
-}[title_or_content]
+
 
 st.sidebar.warning("In progress")
 
 # Choose model
-selected_model = st.sidebar.selectbox("Model Type", model_types.keys())
-model = model_types[selected_model]()
+selected_model = st.sidebar.selectbox("Model Type", model_checkpoints.keys())
+checkpoint = model_checkpoints[selected_model]
+model = load_model(checkpoint)
 
-# Load embeddings of chosen model
-# TODO: Embeddings should be linked to model type, and whether title or content
-content_embeddings, title_embeddings = load_embeddings()
-
-
+# Choose whether to compare titles or content
+doc = titles if title_or_content == "Title" else "content"
 # Fetch title or content embeddings
-embeddings = {
-    "Title": title_embeddings,
-    "Content": content_embeddings,
-}[title_or_content]
+embeddings = (
+    load_title_embeddings(checkpoint)
+    if title_or_content == "Title"
+    else load_content_embeddings(checkpoint)
+)
 
-
+# TODO: Fix cache errors
 search_methods = {
     "Fast Search": SearchHNSW(model=model, sentence_embeddings=embeddings),
     # "Faster": SearchPyNN(model=model, sentence_embeddings=embeddings), # TODO: Problem with hashing class
