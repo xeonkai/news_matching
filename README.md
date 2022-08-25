@@ -3,9 +3,12 @@
 ## Folder structure
 ```bash
 .
+├──app/
+│   └── pages/
 ├──data/
 │   ├── raw/
-│   └── processed/
+│   ├── processed/
+│   └── embeddings/
 ├── figures/
 ├── reports/
 ├── results/
@@ -35,6 +38,16 @@ jupyter lab
 
 # Deactivate environment / close terminal
 conda deactivate
+```
+
+### To setup folder structure and prepare embeddings, and run app
+Run notebooks 01, 02, 03
+```bash
+jupyter lab
+
+# Run notebooks 01, 02, 03 in order
+
+streamlit run app/main.py
 ```
 
 ### To add additional libraries, and update environment
