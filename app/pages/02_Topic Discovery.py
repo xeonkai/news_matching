@@ -11,6 +11,10 @@ from scipy.special import softmax
 from wordcloud import WordCloud
 from sklearn.feature_extraction.text import CountVectorizer
 import plotly.express as px
+import spacy
+from spacy import displacy
+
+NER = spacy.load("en_core_web_sm")
 
 st.title("Topic Discovery")
 st.sidebar.markdown("# Settings")
@@ -103,6 +107,11 @@ def ngram_generator(num_topic, red, ngram_n): #just add column for reduced label
     fig = px.bar(ngram_df, x='phrases', y='count')
     return fig
 
+def display_html_text(text):
+    ner_text = NER(text)
+    ner_disp = displacy.render(ner_text,style="ent",jupyter=False)
+    return ner_disp
+
 #returns top (int art) articles for topic number = num_topic
 def articles_generator(num_topic, art, red):
     # note: for keyword example, doesnt return articles closest to keyword
@@ -116,8 +125,9 @@ def articles_generator(num_topic, art, red):
             st.markdown("##### Summary of Article")
             st.markdown("SUMMARISED TEXT PLACEHOLDER")
             st.markdown("##### Full Article:")
-            st.markdown(txt[articlenum]) #full article text
-            st.text(doc_score[articlenum]) #semantic similarity of document to topic (by cosine sim)
+            ent_html = display_html_text(txt[articlenum])
+            st.markdown(ent_html, unsafe_allow_html=True) #full article text
+            #st.text(doc_score[articlenum]) #semantic similarity of document to topic (by cosine sim)
     st.text(" ")
     st.text(" ")
     st.text(" ")
@@ -188,5 +198,3 @@ text = str(
 red_status=False
 red_status = hierarchical_reduction(h) #sets red_status to Boolean value of True of False
 top_n_topics(k, j, text, h, ng, red_status)
-
-
