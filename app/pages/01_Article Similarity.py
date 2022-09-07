@@ -4,8 +4,8 @@ import pandas as pd
 import time
 import numpy as np
 from sentence_transformers import SentenceTransformer
+from transformers import AutoTokenizer
 import faiss
-from pynndescent import NNDescent
 
 st.set_page_config(layout="wide")
 
@@ -20,10 +20,10 @@ class SearchJaccard:
 
     def __init__(
         self,
-        model,
+        checkpoint,
         corpus: list[str],
     ):
-        self.tokenizer = model.tokenizer
+        self.tokenizer = AutoTokenizer.from_pretrained(checkpoint)
 
         # Save corpus for finding original text
         self.df = pd.DataFrame(corpus, columns=["corpus"])
@@ -64,19 +64,18 @@ class SearchJaccard:
         return similarity
 
 
-@st.cache()
 class SearchHNSW:
     """HNSW Approximate Nearest Neighbour L2 search, use when require low memory usage"""
 
     def __init__(
         self,
-        model,
+        checkpoint,
         sentence_embeddings,
         M=64,  # number of connections each vertex will have
         ef_search=32,  # depth of layers explored during search
         ef_construction=64,  # depth of layers explored during index construction
     ):
-        self.model = model
+        self.model = SentenceTransformer(checkpoint)
 
         d = sentence_embeddings.shape[1]
 
@@ -96,16 +95,15 @@ class SearchHNSW:
         return D[0], I[0]
 
 
-@st.cache()
 class SearchFlatL2:
     """Exhaustive euclidean search on flat vector index"""
 
     def __init__(
         self,
-        model,
+        checkpoint,
         sentence_embeddings,
     ):
-        self.model = model
+        self.model = SentenceTransformer(checkpoint)
 
         d = sentence_embeddings.shape[1]
 
@@ -124,34 +122,13 @@ class SearchFlatL2:
 
 
 # TODO:
+@st.cache()
 class SearchCosine:
     """Exhaustive cosine similarity search on flat vector index"""
 
     # https://github.com/facebookresearch/faiss/wiki/MetricType-and-distances
     # Cosine(u, v) = 1 - L2(u, v), u and v are normalized vectors == L2 on normalized vectors?
     pass
-
-
-@st.cache()
-class SearchPyNN:
-    """NNDescent"""
-
-    def __init__(
-        self,
-        model,
-        sentence_embeddings,
-    ):
-        self.model = model
-
-        # PyNNDescent indexing embeddings
-        self.index = NNDescent(sentence_embeddings)
-
-    def __call__(self, text: str, k: int):
-
-        xq = self.model.encode([text])
-        I, D = self.index.query(xq, k)
-
-        return D[0], I[0]
 
 
 @st.cache()
@@ -178,23 +155,8 @@ def load_content_embeddings(checkpoint):
     return content_embeddings
 
 
-# TODO: Update to load only one model at a time
-@st.cache(allow_output_mutation=True)
-def load_model(checkpoint):
-    if checkpoint == "doc2vec":
-        return NotImplementedError
-    return SentenceTransformer(checkpoint)
-
-
 data_path = Path("data", "processed", "sg_sanctions_on_russia.parquet")
 df, titles, content = load_news_data(data_path)
-
-model_checkpoints = {
-    "MiniLM": "multi-qa-MiniLM-L6-cos-v1",
-    "Doc2vec": "",
-    "MPNet": "all-mpnet-base-v2",
-}
-
 
 title_or_content = st.sidebar.selectbox(
     "Compare Title or Content",
@@ -204,35 +166,39 @@ title_or_content = st.sidebar.selectbox(
     ),
 )
 
+# Set model
+checkpoint = "multi-qa-MiniLM-L6-cos-v1"
 
-st.sidebar.warning("In progress")
 
-# Choose model
-selected_model = st.sidebar.selectbox("Model Type", model_checkpoints.keys())
-checkpoint = model_checkpoints[selected_model]
-model = load_model(checkpoint)
+@st.cache(allow_output_mutation=True)
+def load_search_methods(search_type, checkpoint, title_or_content):
+    # Fetch title or content embeddings
+    embeddings = (
+        load_title_embeddings(checkpoint)
+        if title_or_content == "Title"
+        else load_content_embeddings(checkpoint)
+    )
+    # Choose whether to compare titles or content
+    doc = titles if title_or_content == "Title" else content
 
-# Choose whether to compare titles or content
-doc = titles if title_or_content == "Title" else "content"
-# Fetch title or content embeddings
-embeddings = (
-    load_title_embeddings(checkpoint)
-    if title_or_content == "Title"
-    else load_content_embeddings(checkpoint)
-)
+    model_checkpoint = "sentence-transformers/" + checkpoint
+    # return function? or lazy class with attributes
 
-# TODO: Fix cache errors
-search_methods = {
-    "Fast Search": SearchHNSW(model=model, sentence_embeddings=embeddings),
-    # "Faster": SearchPyNN(model=model, sentence_embeddings=embeddings), # TODO: Problem with hashing class
-    "Exhaustive Search": SearchFlatL2(model=model, sentence_embeddings=embeddings),
-    # "Jaccard": SearchJaccard(model=model, corpus=doc), # TODO: Problem with hashing class
-    # "Cosine": SearchCosine(model=model, sentence_embeddings=embeddings),
-}
+    # TODO: save searchers and load saved versions here
+    if search_type == "Fast Search":
+        return SearchHNSW(checkpoint=model_checkpoint, sentence_embeddings=embeddings)
+    elif search_type == "Exhaustive Search":
+        return SearchFlatL2(checkpoint=model_checkpoint, sentence_embeddings=embeddings)
+    elif search_type == "Jaccard":
+        return SearchJaccard(checkpoint=model_checkpoint, corpus=doc)
+
+
+search_methods = ["Fast Search", "Exhaustive Search", "Jaccard"]
+
 
 selected_search_method = st.sidebar.selectbox(
     "Similarity Metric",
-    search_methods.keys(),
+    search_methods,
 )
 
 k = int(
@@ -244,27 +210,88 @@ k = int(
     )
 )
 
-input_text = st.text_area(
-    "News text",
-)
-
-searcher = search_methods[selected_search_method]
-distances, indexes = searcher(
-    input_text,
-    k=k,
-)
-
-similar_df = df.iloc[indexes]
-
-end_time = time.perf_counter()
-st.text(f"Took {end_time - start_time:.2f} seconds to search.")
-
-st.write(
-    similar_df[
-        [
-            "title",
-            "content",
-            "url",
-        ]
+article_id = st.text_input("Article ID")
+if article_id:
+    input_text = df.loc[
+        article_id, "title" if title_or_content == "Title" else "content"
     ]
-)
+    with st.expander("Input Article"):
+        st.markdown(input_text)
+else:
+    input_text = st.text_area(
+        "News text",
+    )
+
+
+if input_text:
+    searcher = load_search_methods(selected_search_method, checkpoint, title_or_content)
+    distances, indexes = searcher(
+        input_text,
+        k=k,
+    )
+    similar_df = df.iloc[indexes]
+    with st.expander("Filter results"):
+
+        date_filters = st.date_input(
+            "Article dates",
+            value=(similar_df["date"].min(), similar_df["date"].max()),
+            min_value=similar_df["date"].min(),
+            max_value=similar_df["date"].max(),
+        )
+
+        similar_df = similar_df[
+            lambda df: df["date"].dt.date.between(*date_filters)
+        ].copy()
+        filter_col1, filter_col2 = st.columns([1, 8])
+        with filter_col1:
+            filter_title_or_content = st.selectbox(
+                "Filter based on title or content",
+                (
+                    "Title",
+                    "Content",
+                ),
+            )
+        with filter_col2:
+            # OR filter
+            contains_any_words = st.text_input(
+                f"{filter_title_or_content} can contain any of: (separate with comma and space ', ')",
+            ).lower()
+
+            # AND filter
+            contains_all_words = st.text_input(
+                f"{filter_title_or_content} must contain all of: (separate with comma and space ', ')",
+            ).lower()
+
+        if len(contains_any_words) > 0:
+            contains_any_list = contains_any_words.split(", ")
+            similar_df = similar_df[
+                lambda df: df[
+                    "title" if filter_title_or_content == "Title" else "content"
+                ]
+                .str.lower()
+                .str.contains("|".join(contains_any_list))
+            ]
+
+        if len(contains_all_words) > 0:
+            contains_all_list = contains_all_words.split(", ")
+            text_column = similar_df[
+                "title" if filter_title_or_content == "Title" else "content"
+            ].str.lower()
+
+            similar_df = similar_df[
+                np.all([text_column.str.contains(t) for t in contains_all_list], axis=0)
+            ]
+
+    end_time = time.perf_counter()
+    st.text(f"Took {end_time - start_time:.2f} seconds to search.")
+
+    st.write(
+        similar_df[
+            [
+                "title",
+                "content",
+                "url",
+                "date",
+            ]
+        ]
+    )
