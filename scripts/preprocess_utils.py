@@ -24,7 +24,8 @@ def filtering_news(data):
         1. filtered dataframe (pandas.core.frame.DataFrame)
 
     """
-    return data.query("source == 'Online News'")
+    data = data.query("source == 'Online News'")
+    return data.reset_index(drop = True)
 
 
 def remove_punctuation_text(text):
@@ -188,7 +189,7 @@ def tokenization(data, col):
         1. Updated column with each column containing list of strings (pandas.core.series.Series)
 
     """
-    return data[col].apply(word_tokenize)
+    return data[col].apply(lambda x: x.split())
 
 def remove_stopwords_text(text):
     """
@@ -267,6 +268,26 @@ def preprocessing(data, col):
     filtered['removed_punc'] = remove_punctuation_df(filtered, col)
     filtered['lowercased'] = lowercase_df(filtered, 'removed_punc')
     filtered['clean_content'] = full_lemmatization_df(filtered, 'lowercased')
+    return filtered.drop(['removed_punc', 'lowercased'], axis = 1)
+
+def tokenised_preprocessing(data, col):
+    """
+
+    Performs preprocessing with filtering, punctuation removal, lowercasing, and tokenisation
+
+    Args:
+        1. Dataframe (pandas.core.frame.DataFrame)
+        2. Column in dataframe to have preprocessing performed (str)
+    
+    Returns:
+        1. Updated dataframe with an additional column of "clean_content" with completed
+        preprocessing with tokenisation (pandas.core.frame.DataFrame). Each row of clean_content contains a list of tokens.
+ 
+    """
+    filtered = filtering_news(data)
+    filtered['removed_punc'] = remove_punctuation_df(filtered, col)
+    filtered['lowercased'] = lowercase_df(filtered, 'removed_punc')
+    filtered['clean_content'] = tokenization(filtered, 'lowercased')
     return filtered.drop(['removed_punc', 'lowercased'], axis = 1)
 
 def full_preprocessing(data, col):
