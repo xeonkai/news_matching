@@ -7,49 +7,47 @@ from pathlib import Path
 import sys
 import pandas as pd
 from top2vec import Top2Vec
-import matplotlib.pyplot as plt
-from scipy.special import softmax
-from wordcloud import WordCloud
-from sklearn.feature_extraction.text import CountVectorizer
-import plotly.express as px
-sys.path.append(str(Path(__file__).resolve().parent.parent))
-from topic_discovery import topic_discovery_script as td
+import topic_discovery.topic_discovery_script as td
+import pickle
+#sys.path.append(str(Path(__file__).resolve().parent.parent))
+
 
 st.set_page_config(page_title = "Topic Discovery")
 
-@st.cache(allow_output_mutation=True)
+#@st.cache(allow_output_mutation=True)
 def load_news_data(data_path):
     df = pd.read_parquet(data_path)[lambda df: df["source"] == "Online News"]
     return df.copy(), df["title"].to_list(), df["content"].to_list(), df["date"].to_list()
 
-project_folder = Path().absolute().parent
-data_path = Path(project_folder, "data", "processed", "sg_sanctions_on_russia.parquet")
+#project_folder = Path().absolute().parent
+#data_path = Path(project_folder, "data", "processed", "sg_sanctions_on_russia.parquet")
+data_path = Path("data", "intermediate_data", "sg_sanctions_on_russia_filtered.parquet")
 df, titles, content, dates = load_news_data(data_path)
 
+with open(Path("data", "intermediate_data", "selected_model_variable.pickle"), 'rb') as file:
+    selected_model = pickle.load(file)
+
+with open(Path("data", "intermediate_data", "title_or_content_variable.pickle"), 'rb') as file:
+    title_or_content = pickle.load(file)
 
 st.title("Topic Discovery")
 st.sidebar.markdown("# Settings")
 
 start_time = time.perf_counter()
 
-#TODO: link titles
-title_or_content = st.sidebar.selectbox(
-    "Compare Title or Content",
-    (
-        "Title",
-        "Content"
-    ),
-)
-
-
-
-@st.cache(allow_output_mutation=True)
+#@st.cache(allow_output_mutation=True)
 def load_model(checkpoint, title_or_content):
     if checkpoint == "Top2Vec":
-        model_path = Path(project_folder, "scripts", f"top2vec_{title_or_content.lower()}")
-        if model_path.is_file():
-            model = Top2Vec.load(model_path)
+        model = Top2Vec(documents=titles, embedding_model="all-MiniLM-L6-v2", workers=8)
     return model
+
+    #@st.cache(allow_output_mutation=True)
+    #def load_model(checkpoint, title_or_content):
+    #    if checkpoint == "Top2Vec":
+    #        model_path = Path("scripts", f"top2vec_{title_or_content.lower()}")
+    #        if model_path.is_file():
+    #            model = Top2Vec.load(model_path)
+    #    return model
 
 model = load_model(selected_model, title_or_content)
 

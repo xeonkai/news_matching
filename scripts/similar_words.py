@@ -1,6 +1,5 @@
 import requests
 from bs4 import BeautifulSoup
-import pandas as pd
 import json
 
 
@@ -17,5 +16,3 @@ def scraping_similar_phrases(phrases_lst, n):
         for wordscore_pairs in json_string["terms"][:n]:
             similar_lst.append(wordscore_pairs['word'])
     return similar_lst
-
-print(scraping_similar_phrases("singapore, covid", 20))
