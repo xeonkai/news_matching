@@ -2,12 +2,18 @@ from top2vec import Top2Vec
 from wordcloud import WordCloud
 from scipy.special import softmax
 import pandas as pd
+import xlsxwriter
+from io import BytesIO
 import spacy
 from spacy import displacy
 import plotly.express as px
 from sklearn.feature_extraction.text import CountVectorizer
 
 NER = spacy.load("en_core_web_sm")
+
+def generate_df_topic_labels(model, df, reduction_status):
+    df["topic_number"] = model.get_documents_topics(list(range(0,len(df))), reduced = reduction_status)[0]
+    return df
 
 #generates wordcloud for a given topic and all articles in given topic, with boolean input to indicate
 #whether hierarchical reduction has been performed and should be accounted for
@@ -46,7 +52,20 @@ def display_html_text(text):
     ner_disp = displacy.render(ner_text,style="ent",jupyter=False)
     return ner_disp
 
-#returns top (int art) articles for topic number = num_topic
-def articles_generator(model, topic_num, num_articles, reduction_status):
-    txt, doc_score = list(model.search_documents_by_topic(topic_num=topic_num, num_docs=num_articles, reduced=reduction_status))[0:2]
-    return txt, doc_score
+def df_to_excel(df):
+    output = BytesIO()
+    workbook = xlsxwriter.Workbook(output, {'in_memory': True})
+    worksheet = workbook.add_worksheet()
+    # Start from the first cell. Rows and
+    # columns are zero indexed.
+    #row = 0
+    #col = 0
+ 
+    # Iterate over the data and write it out row by row.
+    #for name, score in (scores):
+    #    worksheet.write(row, col, name)
+    #    worksheet.write(row, col + 1, score)
+    #    row += 1
+    worksheet.write('A1', 'Hello')
+    workbook.close()
+    return output

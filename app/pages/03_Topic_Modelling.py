@@ -21,12 +21,14 @@ title_or_content = st.selectbox(
 
 st.button("Load model!")
 
+st.session_state["title_or_content"] = title_or_content
+st.session_state["selected_model"] = selected_model
 
-selected_model_path = Path("data", "intermediate_data", "selected_model_variable.pickle")
-title_or_content_path = Path("data", "intermediate_data", "title_or_content_variable.pickle")
+#selected_model_path = Path("data", "intermediate_data", "selected_model_variable.pickle")
+#title_or_content_path = Path("data", "intermediate_data", "title_or_content_variable.pickle")
 
-with open(selected_model_path, 'wb') as file:
-    pickle.dump(selected_model, file)
+#with open(selected_model_path, 'wb') as file:
+#    pickle.dump(selected_model, file)
 
-with open(title_or_content_path, 'wb') as file:
-    pickle.dump(title_or_content, file)
+#with open(title_or_content_path, 'wb') as file:
+#    pickle.dump(title_or_content, file)
