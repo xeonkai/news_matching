@@ -39,3 +39,4 @@ isort
 pip
 xlsxwriter
 bs4
+hdbscan
