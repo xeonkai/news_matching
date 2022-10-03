@@ -22,7 +22,6 @@ pandas
 pyarrow
 openpyxl
 scikit-learn
-pytorch
 transformers
 sentence-transformers
 bertopic
