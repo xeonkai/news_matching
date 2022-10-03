@@ -36,5 +36,6 @@ dependencies:
   - flake8
   - isort
   - pip
+  - xlsxwriter
   - pip:
       - -r requirements.txt

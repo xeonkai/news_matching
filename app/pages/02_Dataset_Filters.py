@@ -5,8 +5,10 @@ import sys
 
 sys.path.append("./scripts")
 
-from similar_words import scraping_similar_phrases
-from preprocess_utils import tokenised_preprocessing
+# from similar_words import scraping_similar_phrases
+from similar_words import similar_words as sw
+# from preprocess_utils import tokenised_preprocessing
+from preprocess_utils import preprocess_utils as preprocess
 
 st.set_page_config(page_title = "Dataset Filters",
                   layout="wide")
@@ -47,7 +49,7 @@ st.subheader("Dataset")
 
 if 'df_remaining' in st.session_state:
     df = st.session_state["df_remaining"]
-    tokenized_df = tokenised_preprocessing(df, "content")
+    tokenized_df = preprocess.tokenised_preprocessing(df, "content")
     st.session_state['initial_dataframe'] = st.dataframe(df)
 
 elif daily_news is not None:
@@ -65,7 +67,7 @@ elif daily_news is not None:
         st.write("Uploaded dataset: ", file_details["filename"])
         st.write("Number of articles: ", str(df.shape[0]))
         st.dataframe(df)
-    tokenized_df = tokenised_preprocessing(df, "content") 
+    tokenized_df = preprocess.tokenised_preprocessing(df, "content") 
     st.session_state['initial_dataframe'] = df
 
     st.subheader("Filtered Dataset")
@@ -134,7 +136,7 @@ if tokenized_df is not None:
                     df_filtered = df_filtered[lambda df: df["clean_content"].apply(lambda x: bool(set(all_kw_filter).issubset(set(x)))) == True]
                 if len(any_kw_filter) > 0:
                     if similar_option == "Yes":
-                        any_kw_filter = scraping_similar_phrases(any_kw_filter, 5)
+                        any_kw_filter = sw.scraping_similar_phrases(any_kw_filter, 5)
                     else:
                         any_kw_filter = any_kw_filter.split(", ")  
                     #text_column = df["content"].str.lower()

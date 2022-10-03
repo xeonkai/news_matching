@@ -5,3 +5,5 @@ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.4.0
 # https://github.com/explosion/spacy-models/releases/download/en_core_web_trf-3.4.0/en_core_web_trf-3.4.0-py3-none-any.whl
 
 top2vec
+
+stream_aggrid
