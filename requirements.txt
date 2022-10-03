@@ -40,3 +40,4 @@ pip
 xlsxwriter
 bs4
 hdbscan
+joblib==1.1.0
