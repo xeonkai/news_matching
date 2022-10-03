@@ -6,7 +6,7 @@ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.4.0
 
 top2vec
 
-stream-aggrid
+streamlit-aggrid
 
 python-dotenv
 ipywidgets
