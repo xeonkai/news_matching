@@ -6,6 +6,7 @@ import nltk
 from nltk.tokenize import word_tokenize
 from nltk.stem import WordNetLemmatizer
 from nltk.stem import PorterStemmer
+nltk.download('stopwords')
 
 from nltk.corpus import wordnet
 from nltk.corpus import stopwords
