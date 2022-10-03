@@ -38,3 +38,4 @@ flake8
 isort
 pip
 xlsxwriter
+bs4
