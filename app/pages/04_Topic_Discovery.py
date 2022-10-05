@@ -3,10 +3,11 @@ import time
 import nltk
 from nltk.corpus import stopwords
 #nltk.download('stopwords')
-from pathlib import Path
-import sys
+#import sys
 import pandas as pd
 from top2vec import Top2Vec
+import matplotlib.pyplot as plt
+#from app.topic_discovery.topic_discovery_script import wordcloud_generator
 import topic_discovery.topic_discovery_script as td
 from st_aggrid import AgGrid, GridUpdateMode
 from st_aggrid.grid_options_builder import GridOptionsBuilder
@@ -25,16 +26,10 @@ st.set_page_config(page_title = "Topic Discovery")
 #data_path = Path("data", "intermediate_data", "sg_sanctions_on_russia_filtered.parquet")
 #df, titles, content, dates = load_news_data(data_path)
 
-df = st.session_state["df_filtered"][['id', 'source', 'title', 'content', 'url', 'date', 'domain', 'actual impressions']]
-
-#with open(Path("data", "intermediate_data", "selected_model_variable.pickle"), 'rb') as file:
-#    selected_model = pickle.load(file)
-
+#df = st.session_state["df_filtered"][['id', 'source', 'title', 'content', 'url', 'date', 'domain', 'actual impressions']]
+df = st.session_state["df_filtered"][['id', 'title', 'content', 'url', 'date', 'domain', 'actual impressions']]
 title_or_content = st.session_state["title_or_content"]
 selected_model = st.session_state["selected_model"]
-
-#with open(Path("data", "intermediate_data", "title_or_content_variable.pickle"), 'rb') as file:
-#    title_or_content = pickle.load(file)
 
 st.title("Topic Discovery")
 st.sidebar.markdown("# Settings")
@@ -46,7 +41,11 @@ def load_model(checkpoint, title_or_content):
     if "model" in st.session_state:
         model = st.session_state["model"]
     elif checkpoint == "Top2Vec":
-        model = Top2Vec(documents=df[title_or_content.lower()].to_list(), embedding_model="all-MiniLM-L6-v2", workers=8, min_count = 20)
+        hdbscan_args = {'min_cluster_size': 2,'metric': 'euclidean', 'cluster_selection_method': 'leaf', 'min_samples': 1}
+        umap_args = {'n_neighbors': min(10, len(df[title_or_content.lower()].to_list())), 'n_components': 3, 'metric': 'cosine'}
+        model = Top2Vec(documents=df[title_or_content.lower()].to_list(), 
+                        embedding_model="all-MiniLM-L6-v2", workers=8, min_count = 2,
+                        hdbscan_args = hdbscan_args, umap_args = umap_args)
         st.session_state["model"] = model
     return model
 
@@ -77,37 +76,47 @@ def top_n_topics(model, df, num_topics, keywords, topic_granularity, ngram_value
     else:
         red_status = False
     df_labelled = td.generate_df_topic_labels(model, df, red_status)
+
     if keywords != "": #TODO: create an exception if any words in kw have not been learned by model
         tokenized_kw = nltk.word_tokenize(keywords)
         subset_topics = model.search_topics(keywords=tokenized_kw, num_topics=num_topics, reduced=red_status)[3]
     else:
         subset_topics = model.get_topic_sizes(reduced=red_status)[1][0:num_topics]
     for topic_num in subset_topics:
-        fig = td.ngram_bar_visualiser(model, topic_num, red_status, ngram_value)
-        st.plotly_chart(fig)
+
+        subset_of_df_in_topic = df_labelled.query('topic_number == @topic_num').reset_index(drop=True)
+
+        wordcloud = td.wordcloud_generator(subset_of_df_in_topic, topic_num, ngram_value, title_or_content.lower())
+        fig, ax = plt.subplots()
+        ax.imshow(wordcloud, interpolation='bilinear')
+        ax.axis("off")
+        st.pyplot(fig)
+        #fig = td.ngram_bar_visualiser(model, topic_num, red_status, ngram_value)
+        #st.plotly_chart(fig)
         st.text("Number of articles in topic: " + str(model.get_topic_sizes(reduced=red_status)[0][topic_num]))
         st.markdown("#### " + "Articles from Topic " + str(topic_num + 1))
 
-        gd = GridOptionsBuilder.from_dataframe(df_labelled[df_labelled["topic_number"]==topic_num])
+        
+        gd = GridOptionsBuilder.from_dataframe(subset_of_df_in_topic)
         gd.configure_selection(selection_mode='multiple', use_checkbox=True)
         gridoptions = gd.build()
 
-        dict_gridtable[topic_num] = AgGrid(df, height=400, gridOptions=gridoptions,
+        dict_gridtable[topic_num] = AgGrid(subset_of_df_in_topic, height=400, gridOptions=gridoptions,
                         update_mode=GridUpdateMode.SELECTION_CHANGED, key = f"aggrid_{topic_num}")
 
         dict_checkboxes[topic_num] = st.checkbox("Tick if this topic is well-classified", key = f"checkbox_{topic_num}")
         dict_dfs[topic_num] = df_labelled[df_labelled["topic_number"]==topic_num]
         dict_topics[topic_num] = st.text_input(label = "Topic label", value = "", key = f"topic_label_{topic_num}")
         dict_subtopics[topic_num] = st.text_input(label = "Sub-topic label (if any)", value = "", key = f"subtopic_label_{topic_num}")
-        #st.text_input(label = "IDs of poorly classified articles (if any) separated by ', '", value = "")
 
+        
         st.text(" ")
         st.text(" ")
         st.text(" ")
 
 ngram_size = int(
     st.sidebar.slider(
-        label="How many words should be in identified phrases?", min_value=1, value=2, max_value=4, step=1
+        label="How many words should be in identified phrases?", min_value=1, value=1, max_value=3, step=1
     )
 )
 
@@ -155,23 +164,23 @@ with st.form("to_concatenate dataframes"):
                 temp_df["subtopic"] = dict_subtopics[topic_num]
                 approved_dfs.append(temp_df)
 
-        #approved_dfs = [dict_dfs[topic_num] for topic_num in dict_checkboxes if dict_checkboxes[topic_num]]
         combined_df = pd.concat(approved_dfs, ignore_index = True)
 
-        #nested_lst = [[dict_topics[topic_num]]*len(dict_dfs[topic_num]) for topic_num in dict_checkboxes if dict_checkboxes[topic_num]]
-        #combined_df["topic"] = [item for sublist in nested_lst for item in sublist]
-
-        #nested_lst = [[dict_subtopics[topic_num]]*len(dict_dfs[topic_num]) for topic_num in dict_checkboxes if dict_checkboxes[topic_num]]
-        #combined_df["subtopic"] = [item for sublist in nested_lst for item in sublist]
-
         st.session_state["after_form_completion"] = combined_df
-       
+
 
 if "after_form_completion" in st.session_state:
-    st.dataframe(st.session_state["after_form_completion"])
-    output = td.df_to_excel(st.session_state["after_form_completion"])
+
+    if "list_of_dfs" not in st.session_state:
+        st.session_state["list_of_dfs"] = []
+
+    if st.session_state["after_form_completion"] not in st.session_state["list_of_dfs"]:
+        st.session_state["list_of_dfs"].append(st.session_state["after_form_completion"])
+
+    st.dataframe(pd.concat(st.session_state["list_of_dfs"], ignore_index = True))
+    output = td.df_to_excel(pd.concat(st.session_state["list_of_dfs"], ignore_index = True))
     
-    st.download_button("Press to Download",data = output.getvalue(), file_name = 'df_test.xlsx', mime="application/vnd.ms-excel")
+    st.download_button("Press to Download",data = output, file_name = 'df_test.xlsx', mime="application/vnd.ms-excel")
     final_button = st.button("Save remaining data to continue topic modelling on remaining data!")#, on_click = update_remaining_df, args = [df])
 
     if final_button:
@@ -179,7 +188,5 @@ if "after_form_completion" in st.session_state:
         st.session_state["df_remaining"] = pre_filtering_df[~pre_filtering_df.id.isin(st.session_state["after_form_completion"]["id"])]
         st.dataframe(st.session_state["df_remaining"])
         st.text("Return to Dataset Filters page and continue!")
-        #data_processed_path = Path("data", "intermediate_data", "df_remaining.parquet")
-        #df_remaining = df[~df.id.isin(df["id"])]
-        #df_remaining.to_parquet(data_processed_path)
-       # Remove used ones from df. Save as pickle.
+        if "df_filtered" in st.session_state:
+            del st.session_state['df_filtered']

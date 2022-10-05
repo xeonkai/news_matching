@@ -1,8 +1,4 @@
 import streamlit as st
-from pathlib import Path
-import pandas as pd
-import numpy as np
-import pickle
 
 st.set_page_config(page_title = "Topic Modelling",
                   layout="wide")
@@ -19,16 +15,10 @@ title_or_content = st.selectbox(
     ),
 )
 
-st.button("Load model!")
+final_button = st.button("Load model!")
 
 st.session_state["title_or_content"] = title_or_content
 st.session_state["selected_model"] = selected_model
 
-#selected_model_path = Path("data", "intermediate_data", "selected_model_variable.pickle")
-#title_or_content_path = Path("data", "intermediate_data", "title_or_content_variable.pickle")
-
-#with open(selected_model_path, 'wb') as file:
-#    pickle.dump(selected_model, file)
-
-#with open(title_or_content_path, 'wb') as file:
-#    pickle.dump(title_or_content, file)
+if final_button:
+        "Proceed with Topic Discovery!"

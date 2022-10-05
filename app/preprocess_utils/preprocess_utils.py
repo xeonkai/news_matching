@@ -6,7 +6,6 @@ import nltk
 from nltk.tokenize import word_tokenize
 from nltk.stem import WordNetLemmatizer
 from nltk.stem import PorterStemmer
-nltk.download('stopwords')
 
 from nltk.corpus import wordnet
 from nltk.corpus import stopwords
@@ -268,7 +267,7 @@ def preprocessing(data, col):
     filtered = filtering_news(data)
     filtered['removed_punc'] = remove_punctuation_df(filtered, col)
     filtered['lowercased'] = lowercase_df(filtered, 'removed_punc')
-    filtered['clean_content'] = full_lemmatization_df(filtered, 'lowercased')
+    filtered[f'clean_{col}'] = full_lemmatization_df(filtered, 'lowercased')
     return filtered.drop(['removed_punc', 'lowercased'], axis = 1)
 
 def tokenised_preprocessing(data, col):
@@ -285,11 +284,11 @@ def tokenised_preprocessing(data, col):
         preprocessing with tokenisation (pandas.core.frame.DataFrame). Each row of clean_content contains a list of tokens.
  
     """
-    filtered = filtering_news(data)
-    filtered['removed_punc'] = remove_punctuation_df(filtered, col)
-    filtered['lowercased'] = lowercase_df(filtered, 'removed_punc')
-    filtered['clean_content'] = tokenization(filtered, 'lowercased')
-    return filtered.drop(['removed_punc', 'lowercased'], axis = 1)
+    #filtered = filtering_news(data)
+    data['removed_punc'] = remove_punctuation_df(data, col)
+    data['lowercased'] = lowercase_df(data, 'removed_punc')
+    data[f'clean_{col}'] = tokenization(data, 'lowercased')
+    return data.drop(['removed_punc', 'lowercased'], axis = 1)
 
 def full_preprocessing(data, col):
     """
@@ -310,5 +309,5 @@ def full_preprocessing(data, col):
     filtered['removed_punc'] = remove_punctuation_df(filtered, col)
     filtered['lowercased'] = lowercase_df(filtered, 'removed_punc')
     filtered['lemmatized'] = full_lemmatization_df(filtered, 'lowercased')
-    filtered['clean_content'] = remove_stopwords_df(filtered, 'lemmatized')
+    filtered[f'clean_{col}'] = remove_stopwords_df(filtered, 'lemmatized')
     return filtered.drop(['removed_punc', 'lowercased', 'lemmatized'], axis = 1)
