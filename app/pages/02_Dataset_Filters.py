@@ -15,8 +15,8 @@ st.set_page_config(page_title = "Dataset Filters",
 
 if "model" in st.session_state:
     del st.session_state['model']
-if "after_form_completion" in st.session_state:
-    del st.session_state['after_form_completion']
+if "df_after_form_completion" in st.session_state:
+    del st.session_state['df_after_form_completion']
 if "title_or_content" in st.session_state:
     del st.session_state['title_or_content']
 if "selected_model" in st.session_state:
@@ -33,14 +33,15 @@ st.subheader("Dataset")
 
 if 'df_remaining' in st.session_state:
     df = st.session_state["df_remaining"]
-    tokenized_df = preprocess.tokenised_preprocessing(df, "content")
-    tokenized_df = preprocess.tokenised_preprocessing(df, "title")
+    #tokenized_df = preprocess.tokenised_preprocessing(df, "content")
+    #tokenized_df = preprocess.tokenised_preprocessing(df, "title")
     #modify later
-    tokenized_df = tokenized_df[['date', 'title', 'content', 'url', 'domain', 'actual impressions', 'clean_content', 'clean_title']]
+    tokenized_df = df[['date', 'title', 'content', 'url', 'domain', 'actual impressions', 'clean_content', 'clean_title']]
     tokenized_df["id"] = tokenized_df.index
     #tokenized_df.columns = ['date', 'title', 'content', 'url', 'domain', 'actual impressions', 'clean_content']
     #end
-    st.session_state['initial_dataframe'] = st.dataframe(tokenized_df)
+    st.session_state['initial_dataframe'] = tokenized_df
+    st.dataframe(tokenized_df)
 
 elif daily_news is not None:
     if daily_news.type == "text/csv":

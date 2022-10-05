@@ -166,26 +166,34 @@ with st.form("to_concatenate dataframes"):
 
         combined_df = pd.concat(approved_dfs, ignore_index = True)
 
-        st.session_state["after_form_completion"] = combined_df
+        st.session_state["df_after_form_completion"] = combined_df
 
 
-if "after_form_completion" in st.session_state:
+if "df_after_form_completion" in st.session_state:
 
-    if "list_of_dfs" not in st.session_state:
-        st.session_state["list_of_dfs"] = []
+    st.dataframe(st.session_state["df_after_form_completion"])
+    if "list_of_selected_dfs" not in st.session_state:
+        st.session_state["list_of_selected_dfs"] = []
 
-    if st.session_state["after_form_completion"] not in st.session_state["list_of_dfs"]:
-        st.session_state["list_of_dfs"].append(st.session_state["after_form_completion"])
+    if list(st.session_state["df_after_form_completion"]["id"]) not in [list(subset_df["id"]) for subset_df in st.session_state["list_of_selected_dfs"]]: #this line has issues
+        st.session_state["list_of_selected_dfs"].append(st.session_state["df_after_form_completion"])
 
-    st.dataframe(pd.concat(st.session_state["list_of_dfs"], ignore_index = True))
-    output = td.df_to_excel(pd.concat(st.session_state["list_of_dfs"], ignore_index = True))
+    pre_filtering_df = st.session_state['initial_dataframe']
+
+    unlabelled_data = pre_filtering_df[~pre_filtering_df.id.isin(st.session_state["df_after_form_completion"]["id"])]
+    unlabelled_data["topic"] = ""
+    unlabelled_data["subtopic"] = ""
+    unlabelled_data = unlabelled_data.drop(["clean_title", "clean_content"], axis = 1)
+
+    list_of_dfs_concatenated = pd.concat(st.session_state["list_of_selected_dfs"], ignore_index = True)
+    output = td.df_to_excel(pd.concat([list_of_dfs_concatenated, unlabelled_data], ignore_index = True))
     
+
     st.download_button("Press to Download",data = output, file_name = 'df_test.xlsx', mime="application/vnd.ms-excel")
-    final_button = st.button("Save remaining data to continue topic modelling on remaining data!")#, on_click = update_remaining_df, args = [df])
+    final_button = st.button("Save remaining data to continue topic modelling on remaining data!")
 
     if final_button:
-        pre_filtering_df = st.session_state['initial_dataframe']
-        st.session_state["df_remaining"] = pre_filtering_df[~pre_filtering_df.id.isin(st.session_state["after_form_completion"]["id"])]
+        st.session_state["df_remaining"] = pre_filtering_df[~pre_filtering_df.id.isin(st.session_state["df_after_form_completion"]["id"])]
         st.dataframe(st.session_state["df_remaining"])
         st.text("Return to Dataset Filters page and continue!")
         if "df_filtered" in st.session_state:
