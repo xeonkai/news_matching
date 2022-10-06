@@ -3,6 +3,7 @@ import numpy as np
 import string
 
 import nltk
+nltk.download('stopwords')
 from nltk.tokenize import word_tokenize
 from nltk.stem import WordNetLemmatizer
 from nltk.stem import PorterStemmer
