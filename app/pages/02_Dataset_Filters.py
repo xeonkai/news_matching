@@ -4,9 +4,7 @@ import sys
 
 sys.path.append("./scripts")
 
-#from similar_words import scraping_similar_phrases
 from similar_words import similar_words as sw
-#from preprocess_utils import tokenised_preprocessing
 from preprocess_utils import preprocess_utils as preprocess
 
 
@@ -17,10 +15,6 @@ if "model" in st.session_state:
     del st.session_state['model']
 if "df_after_form_completion" in st.session_state:
     del st.session_state['df_after_form_completion']
-if "title_or_content" in st.session_state:
-    del st.session_state['title_or_content']
-if "selected_model" in st.session_state:
-    del st.session_state['selected_model']
 
 tokenized_df = None
 
@@ -33,13 +27,8 @@ st.subheader("Dataset")
 
 if 'df_remaining' in st.session_state:
     df = st.session_state["df_remaining"]
-    #tokenized_df = preprocess.tokenised_preprocessing(df, "content")
-    #tokenized_df = preprocess.tokenised_preprocessing(df, "title")
-    #modify later
-    tokenized_df = df[['date', 'title', 'content', 'url', 'domain', 'actual impressions', 'clean_content', 'clean_title']]
+    tokenized_df = df[["Published", "Headline", "Summary", "Link", "Domain", "Facebook Interactions", "clean_Summary", "clean_Headline"]]
     tokenized_df["id"] = tokenized_df.index
-    #tokenized_df.columns = ['date', 'title', 'content', 'url', 'domain', 'actual impressions', 'clean_content']
-    #end
     st.session_state['initial_dataframe'] = tokenized_df
     st.dataframe(tokenized_df)
 
@@ -58,17 +47,14 @@ elif daily_news is not None:
         st.write("Number of articles: ", str(df.shape[0]))
     tokenized_df = preprocess.tokenised_preprocessing(df, "Summary")
     tokenized_df = preprocess.tokenised_preprocessing(df, "Headline")
-    ##modify later
-    tokenized_df = tokenized_df[["Published", "Headline", "Summary", "Link", "Domain", "Facebook Interactions", 'clean_Summary', 'clean_Headline']]
-    tokenized_df.columns = ['date', 'title', 'content', 'url', 'domain', 'actual impressions', 'clean_content', 'clean_title']
-    tokenized_df["clean_content"] = tokenized_df.apply(lambda x: x["clean_content"] + x["content"].split(" ") + preprocess.remove_punctuation_text(x["content"]).split(" "), axis = 1)
-    tokenized_df["clean_title"] = tokenized_df.apply(lambda x: x["clean_title"] + x["title"].split(" ") + preprocess.remove_punctuation_text(x["title"]).split(" "), axis = 1)
-    tokenized_df = tokenized_df.astype({'date': 'datetime64', 'title': 'string', 
-                                        'content': 'string', 'url': 'string',
-                                        'domain': 'string', 'actual impressions': 'int'})
+    tokenized_df["clean_Summary"] = tokenized_df.apply(lambda x: x["clean_Summary"] + x["Summary"].split(" ") + preprocess.remove_punctuation_text(x["Summary"]).split(" "), axis = 1)
+    tokenized_df["clean_Headline"] = tokenized_df.apply(lambda x: x["clean_Headline"] + x["Headline"].split(" ") + preprocess.remove_punctuation_text(x["Headline"]).split(" "), axis = 1)
+    tokenized_df = tokenized_df[["Published", "Headline", "Summary", "Link", "Domain", "Facebook Interactions", "clean_Summary", "clean_Headline"]]
+    tokenized_df = tokenized_df.astype({'Published': 'datetime64', 'Headline': 'string', 
+                                        'Summary': 'string', 'Link': 'string',
+                                        'Domain': 'string', 'Facebook Interactions': 'int'})
     tokenized_df["id"] = tokenized_df.index
-    ##end of modification
-    st.dataframe(tokenized_df)
+    st.dataframe(tokenized_df[["Published", "Headline", "Summary", "Link", "Domain", "Facebook Interactions"]])
     st.session_state['initial_dataframe'] = tokenized_df
     st.subheader("Filtered Dataset")
 
@@ -80,19 +66,21 @@ if tokenized_df is not None:
             st.markdown("# Filters")
 
             min_engagement = int(
-                st.slider(
-                    label = "Minimum no. of Facebook engagements:", 
+                st.number_input(
+                    label = "Minimum no. of Facebook Interactions:", 
                     min_value = 0,
-                    #max_value = max(tokenized_df["Facebook Interactions"]),
-                    max_value = max(tokenized_df["actual impressions"]),
-                    step = 50
+                    max_value = max(tokenized_df["Facebook Interactions"]),
+                    value = 0
                 )
             )
 
             date_range = st.date_input("Date range of articles", 
-                            value = (tokenized_df["date"].min(), tokenized_df["date"].max()),
-                            min_value=min(tokenized_df["date"]),
-                            max_value=max(tokenized_df["date"]))
+                            value = (tokenized_df["Published"].min(), tokenized_df["Published"].max()),
+                            min_value=min(tokenized_df["Published"]),
+                            max_value=max(tokenized_df["Published"]))
+
+
+            domain_filter = st.multiselect(label = "Article domains to exclude", options = tokenized_df["Domain"].unique(), default = None)
 
             all_kw_filter = str(
                 st.text_input(
@@ -118,38 +106,38 @@ if tokenized_df is not None:
                 )
             )
 
-            domain_filter = st.multiselect(label = "Article domains to exclude", options = tokenized_df["domain"].unique(), default = None)
             submit_button = st.form_submit_button(label = 'Submit')
 
             if submit_button:
-                df_filtered = tokenized_df[lambda df: df["actual impressions"] >= min_engagement]
-                df_filtered = df_filtered[lambda df: df["date"].dt.date.between(*date_range)]
-                df_filtered = df_filtered[lambda df: ~df["domain"].isin(domain_filter)]
+                df_filtered = tokenized_df[lambda df: df["Facebook Interactions"] >= min_engagement]
+                df_filtered = df_filtered[lambda df: df["Published"].dt.date.between(*date_range)]
+                df_filtered = df_filtered[lambda df: ~df["Domain"].isin(domain_filter)]
                 if len(kw_filter_remove) > 0:
                     kw_filter_remove = kw_filter_remove.split(", ")
-                    df_filtered = df_filtered[lambda df: ((df["clean_content"].apply(lambda x: bool(set(x) & set(kw_filter_remove))) == False) & 
-                                               (df["clean_title"].apply(lambda x: bool(set(x) & set(kw_filter_remove))) == False))]
+                    df_filtered = df_filtered[lambda df: ((df["clean_Summary"].apply(lambda x: bool(set(x) & set(kw_filter_remove))) == False) & 
+                                               (df["clean_Headline"].apply(lambda x: bool(set(x) & set(kw_filter_remove))) == False))]
                 if len(all_kw_filter) > 0:    
                     all_kw_filter = all_kw_filter.split(", ")     
-                    df_filtered = df_filtered[lambda df: ((df["clean_content"].apply(lambda x: bool(set(all_kw_filter).issubset(set(x)))) == True)| 
-                                               (df["clean_title"].apply(lambda x: bool(set(all_kw_filter).issubset(set(x)))) == True)) ]
+                    df_filtered = df_filtered[lambda df: ((df["clean_Summary"].apply(lambda x: bool(set(all_kw_filter).issubset(set(x)))) == True)| 
+                                               (df["clean_Headline"].apply(lambda x: bool(set(all_kw_filter).issubset(set(x)))) == True)) ]
                 if len(any_kw_filter) > 0:
                     if similar_option == "Yes":
                         any_kw_filter = sw.scraping_similar_phrases(any_kw_filter, 5)
                     else:
                         any_kw_filter = any_kw_filter.split(", ")  
-                    df_filtered = df_filtered[lambda df: ((df_filtered["clean_content"].apply(lambda x: bool(set(x) & set(any_kw_filter))) == True) |
-                                                (df_filtered["clean_title"].apply(lambda x: bool(set(x) & set(any_kw_filter))) == True))]
-                    df_filtered = df_filtered.drop(["clean_content", "clean_title"], axis = 1)
+                    df_filtered = df_filtered[lambda df: ((df_filtered["clean_Summary"].apply(lambda x: bool(set(x) & set(any_kw_filter))) == True) |
+                                                (df_filtered["clean_Headline"].apply(lambda x: bool(set(x) & set(any_kw_filter))) == True))]
+                    #df_filtered = df_filtered.drop(["clean_content", "clean_title"], axis = 1)
                 #df_filtered = df_filtered.reset_index(True)
+                df_filtered["filtered_id"] = range(len(df_filtered))
                 st.session_state['df_filtered'] = df_filtered
 
 
     if "df_filtered" in st.session_state:
         st.write(f"Similar keywords considered: {any_kw_filter}")
         st.write("Number of articles: ", str(st.session_state["df_filtered"].shape[0]))
-        st.dataframe(st.session_state["df_filtered"])
-        final_button = st.button("Proceed with this subset of articles?", key=None, help=None)
+        st.dataframe(st.session_state["df_filtered"][["Published", "Headline", "Summary", "Link", "Domain", "Facebook Interactions"]])
+        final_button = st.button("Discover topics in this set of articles?", key=None, help=None)
 
         if final_button:
-            "Proceed with Topic Modelling on this subset of articles!"
+            "Proceed with Topic Discovery on this subset of articles!"
