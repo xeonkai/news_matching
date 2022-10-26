@@ -140,4 +140,4 @@ if tokenized_df is not None:
         final_button = st.button("Discover topics in this set of articles?", key=None, help=None)
 
         if final_button:
-            "Proceed with Topic Discovery on this subset of articles!"
+            st.write("Proceed with Topic Discovery on this subset of articles!")

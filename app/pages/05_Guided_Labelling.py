@@ -22,6 +22,7 @@ if "current_headline_index" not in st.session_state:
 
 with st.form("manual_labelling_form"):
     updated_list_of_topic_labels = []
+    updated_list_of_subtopic_labels = []
     for filtered_id in dict_filtered_id_and_embedding:
         ordered_labels_dict = {label: topic_vector 
                                     for label, topic_vector in sorted(dict_topic_label_and_mean_vector.items(), 
@@ -33,22 +34,24 @@ with st.form("manual_labelling_form"):
         st.markdown(curr_headline)
         topic_label_choice = st.radio(label = "", options= topic_label_options, index = (len(topic_label_options)-1), key = filtered_id)
 
-        topic_label_text = st.text_input("If none of the above, input topic label:", key = filtered_id)
-
+        topic_label_text = st.text_input("If none of the above, input topic label:", key = f'{filtered_id}_topic')
+        subtopic_label_text = st.text_input("Input sub-topic label (if any):", key = f'{filtered_id}_subtopic')
         if topic_label_choice == "None of the above":
             topic_label = topic_label_text
         else:
             topic_label = topic_label_choice
         updated_list_of_topic_labels.append(topic_label)
+        updated_list_of_subtopic_labels.append(subtopic_label_text)
     submit_button = st.form_submit_button("Submit final dataframe!")
 
 if submit_button:
     leftover_filtered_df["Index"] = updated_list_of_topic_labels
+    leftover_filtered_df["Sub-Index"] = updated_list_of_subtopic_labels
     #st.dataframe(leftover_filtered_df)
     st.dataframe(leftover_filtered_df)
     #leftover_filtered_df = leftover_filtered_df[leftover_filtered_df["topic"]!=""]
     final_df = pd.concat([intermediate_labelled_topics_df, leftover_filtered_df], axis = 0, ignore_index=True)
-    final_df = final_df.drop(["filtered_id", "id", "clean_Summary", "clean_Headline"], axis = 1)
+    final_df = final_df.drop(["filtered_id", "id", "clean_Summary", "clean_Headline", "full_text", "ranked_topic_number", "topic_number"], axis = 1)
     output = td.df_to_excel(final_df)
 
     st.download_button("Press to Download", data = output, file_name = 'df_test.xlsx', mime="application/vnd.ms-excel")

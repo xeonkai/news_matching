@@ -18,9 +18,10 @@ def generate_df_topic_labels(model, df, reduction_status):
     df["topic_number"] = model.get_documents_topics(list(range(0,len(df))), reduced = reduction_status)[0]
     topics_ranked_by_fb = list(df.groupby("topic_number", as_index=False).sum("Facebook Interactions").sort_values(by= "Facebook Interactions", ascending=False)["topic_number"])
     df['ranked_topic_number'] = df["topic_number"].apply(lambda topic_num: topics_ranked_by_fb.index(topic_num))
-    return df
+    topics_ranked_by_fb = dict(zip(topics_ranked_by_fb, range(len(topics_ranked_by_fb)))) #{topic_num: ranked_topic_num for ranked_topic_num, topic_num in enumerate(topics_ranked_by_fb)}
+    return df, topics_ranked_by_fb
 
-def wordcloud_generator(df, topic_num, ngram, text_column): #hasnt accounted for change in granularity yet!
+def wordcloud_generator(df, topic_num, ngram, text_column):
     df = df.query("ranked_topic_number == @topic_num")
     df["clean_text"] = preproc.remove_punctuation_df(df, text_column)
     df["clean_text"] = preproc.lowercase_df(df, 'clean_text')

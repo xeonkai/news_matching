@@ -14,14 +14,16 @@ from st_aggrid import AgGrid, GridUpdateMode
 from st_aggrid.grid_options_builder import GridOptionsBuilder
 #sys.path.append(str(Path(__file__).resolve().parent.parent))
 import random
+from warnings import simplefilter
 
+simplefilter(action='ignore', category=FutureWarning)
 random.seed(10)
 
 st.set_page_config(page_title = "Topic Discovery")
 df = st.session_state["df_filtered"][['filtered_id', 'Headline', 'Summary', 'Link', 'Published', 'Domain', 'Facebook Interactions', 'id']]
 
 if "Summary" in df.columns:
-    df["full_text"] = df["Headline"] + df["Summary"]
+    df["full_text"] = df[["Headline", "Summary"]].agg(" ".join, axis = 1)
 else:
     df["full_text"] = df["Headline"]
 
@@ -38,8 +40,8 @@ def load_model():
         list_documents = df["full_text"].tolist()
         hdbscan_args = {'min_cluster_size': 2,'metric': 'euclidean', 'cluster_selection_method': 'leaf', 'min_samples': 1}
         umap_args = {'n_neighbors': min(10, len(list_documents)), 'n_components': 3, 'metric': 'cosine'}
-        model = Top2Vec(documents=list_documents, 
-                        embedding_model="all-MiniLM-L6-v2", workers=8, min_count = 2,
+        model = Top2Vec(documents = list_documents, 
+                        embedding_model = "all-MiniLM-L6-v2", workers = 8, min_count = 2,
                         hdbscan_args = hdbscan_args, umap_args = umap_args)
         st.session_state["model"] = model
     return model
@@ -59,14 +61,21 @@ def top_n_topics(model, df, num_topics, keywords, topic_granularity, ngram_value
         red_status = True
     else:
         red_status = False
-    df_labelled = td.generate_df_topic_labels(model, df, red_status)
+    df_labelled, topics_ranked_by_fb = td.generate_df_topic_labels(model, df, red_status)
 
-    #if keywords != "": #TODO: create an exception if any words in kw have not been learned by model
-    #    tokenized_kw = nltk.word_tokenize(keywords)
-    #    subset_topics = model.search_topics(keywords=tokenized_kw, num_topics=num_topics, reduced=red_status)[3]
-    #else:
-    #    subset_topics = model.get_topic_sizes(reduced=red_status)[1][0:num_topics]
-    for topic_num in range(model.get_num_topics()):
+    #st.write(topics_ranked_by_fb)
+    if keywords != "": #TODO: create an exception if any words in kw have not been learned by model
+        if keywords in model.vocab:
+            tokenized_kw = nltk.word_tokenize(keywords)
+            subset_topics = model.search_topics(keywords=tokenized_kw, num_topics=num_topics, reduced=red_status)[3]
+            subset_ranked_topics = [topics_ranked_by_fb[topic_num] for topic_num in subset_topics]
+        else:
+            st.write("Keywords not found in any article. Performing topic discovery as per normal.")
+            subset_ranked_topics = list(range(num_topics))
+    else:
+        subset_ranked_topics = list(range(num_topics))
+
+    for topic_num in subset_ranked_topics:
 
         subset_of_df_in_topic = df_labelled.query('ranked_topic_number == @topic_num').reset_index(drop=True)
         wordcloud = td.wordcloud_generator(subset_of_df_in_topic, topic_num, ngram_value, "full_text")
@@ -79,10 +88,10 @@ def top_n_topics(model, df, num_topics, keywords, topic_granularity, ngram_value
         st.markdown("#### " + "Articles from Topic " + str(topic_num + 1))
 
         
-        gd = GridOptionsBuilder.from_dataframe(subset_of_df_in_topic)
+        gd = GridOptionsBuilder.from_dataframe(subset_of_df_in_topic[["Headline", "Summary", "Link", "Published", "Domain", "Facebook Interactions"]])
         gd.configure_selection(selection_mode='multiple', use_checkbox=True)
         gridoptions = gd.build()
-        gridoptions['columnDefs'][0]['checkboxSelection']=True
+        #gridoptions['columnDefs'][0]['checkboxSelection']=True
         dict_gridtable[topic_num] = AgGrid(subset_of_df_in_topic, height=200, gridOptions=gridoptions,
                         update_mode=GridUpdateMode.SELECTION_CHANGED, key = f"aggrid_{topic_num}", reload_data = True)
 
@@ -164,7 +173,7 @@ if "df_after_form_completion" in st.session_state:
 
     unlabelled_data = pre_filtering_df[~pre_filtering_df.id.isin(st.session_state["df_after_form_completion"]["id"])]
     unlabelled_data["Index"] = ""
-    unlabelled_data["Sub_Index"] = ""
+    unlabelled_data["Sub-Index"] = ""
     unlabelled_data = unlabelled_data.drop(["clean_Headline", "clean_Summary"], axis = 1)
 
     list_of_dfs_concatenated = pd.concat(st.session_state["list_of_selected_dfs"], ignore_index = True)
@@ -186,7 +195,7 @@ if "df_after_form_completion" in st.session_state:
 
     if manual_labelling_button:
         selected_topic_labels = list_of_dfs_concatenated["Index"].unique().tolist()
-        st.write(selected_topic_labels)
+        #st.write(selected_topic_labels)
         df_filtered = st.session_state['df_filtered']
         intermediate_labelled_topics_df = st.session_state["intermediate_labelled_topics_df"]
         st.session_state["leftover_filtered_df"] = df_filtered[~df_filtered.filtered_id.isin(intermediate_labelled_topics_df["filtered_id"])]
@@ -200,7 +209,7 @@ if "df_after_form_completion" in st.session_state:
         
         for topic_label in selected_topic_labels:
             list_of_ids_in_topic = intermediate_labelled_topics_df[intermediate_labelled_topics_df["Index"]==topic_label]["filtered_id"].tolist()
-            st.write(list_of_ids_in_topic)
+            #st.write(list_of_ids_in_topic)
             list_of_embeddings_in_topic = []
             for id in list_of_ids_in_topic:
                 id_embedding = model.document_vectors[id]
@@ -208,6 +217,8 @@ if "df_after_form_completion" in st.session_state:
             mean_vector_of_topic = np.mean(list_of_embeddings_in_topic, axis = 0)
             dict_topic_label_and_mean_vector[topic_label] = mean_vector_of_topic
         st.session_state["dict_topic_label_and_mean_vector"] = dict_topic_label_and_mean_vector
+
+        st.write("Proceed with Guided Labelling on remaining articles!")
 ## Parts idk how to account for:
 ### Adding custom text
 ### Ordering options
