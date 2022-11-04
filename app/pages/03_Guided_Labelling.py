@@ -48,10 +48,12 @@ if submit_button:
     leftover_filtered_df["Index"] = updated_list_of_topic_labels
     leftover_filtered_df["Sub-Index"] = updated_list_of_subtopic_labels
     #st.dataframe(leftover_filtered_df)
-    st.dataframe(leftover_filtered_df)
     #leftover_filtered_df = leftover_filtered_df[leftover_filtered_df["topic"]!=""]
     final_df = pd.concat([intermediate_labelled_topics_df, leftover_filtered_df], axis = 0, ignore_index=True)
     final_df = final_df.drop(["filtered_id", "id", "clean_Summary", "clean_Headline", "full_text", "ranked_topic_number", "topic_number"], axis = 1)
+    final_df = final_df.sort_values(["Index", "Sub-Index"], na_position='last')
+    final_df = pd.concat([final_df[final_df['Index']!=""], final_df[final_df['Index']==""]], ignore_index=False)
+    st.dataframe(final_df)
     output = td.df_to_excel(final_df)
 
     st.download_button("Press to Download", data = output, file_name = 'df_test.xlsx', mime="application/vnd.ms-excel")

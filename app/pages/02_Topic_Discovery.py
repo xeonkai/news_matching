@@ -162,16 +162,16 @@ with st.form("to_concatenate dataframes"):
 
 if "df_after_form_completion" in st.session_state:
 
-    st.dataframe(st.session_state["df_after_form_completion"])
+    st.dataframe(st.session_state["df_after_form_completion"][["Headline", "Summary", "Link", "Published", "Domain", "Facebook Interactions", "Index", "Sub-Index"]])
     if "list_of_selected_dfs" not in st.session_state:
         st.session_state["list_of_selected_dfs"] = []
 
     if list(st.session_state["df_after_form_completion"]["id"]) not in [list(subset_df["id"]) for subset_df in st.session_state["list_of_selected_dfs"]]:
         st.session_state["list_of_selected_dfs"].append(st.session_state["df_after_form_completion"])
 
-    pre_filtering_df = st.session_state['initial_dataframe']
-
-    unlabelled_data = pre_filtering_df[~pre_filtering_df.id.isin(st.session_state["df_after_form_completion"]["id"])]
+    #pre_filtering_df = st.session_state['initial_dataframe']
+    filtered_df = st.session_state["df_filtered"]
+    unlabelled_data = filtered_df[~filtered_df.id.isin(st.session_state["df_after_form_completion"]["id"])]
     unlabelled_data["Index"] = ""
     unlabelled_data["Sub-Index"] = ""
     unlabelled_data = unlabelled_data.drop(["clean_Headline", "clean_Summary"], axis = 1)
@@ -179,19 +179,20 @@ if "df_after_form_completion" in st.session_state:
     list_of_dfs_concatenated = pd.concat(st.session_state["list_of_selected_dfs"], ignore_index = True)
     st.session_state["intermediate_labelled_topics_df"] = list_of_dfs_concatenated
     intermediate_topics_and_unlabelled_df = pd.concat([list_of_dfs_concatenated, unlabelled_data], ignore_index = True)
+    intermediate_topics_and_unlabelled_df = intermediate_topics_and_unlabelled_df[["Headline", "Summary", "Link", "Published", "Domain", "Facebook Interactions", "Index", "Sub-Index"]]
     output = td.df_to_excel(intermediate_topics_and_unlabelled_df)
     
 
     st.download_button("Press to Download",data = output, file_name = 'df_test.xlsx', mime="application/vnd.ms-excel")
     manual_labelling_button = st.button("Label remaining filtered data based on model suggestions")
-    final_button = st.button("Save remaining data to continue topic modelling on remaining data!")
+    #final_button = st.button("Save remaining data to continue topic modelling on remaining data!")
 
-    if final_button:
-        st.session_state["df_remaining"] = pre_filtering_df[~pre_filtering_df.id.isin(st.session_state["df_after_form_completion"]["id"])]
-        st.dataframe(st.session_state["df_remaining"])
-        st.text("Return to Dataset Filters page and continue!")
-        if "df_filtered" in st.session_state:
-            del st.session_state['df_filtered']
+    #if final_button:
+    #    st.session_state["df_remaining"] = pre_filtering_df[~pre_filtering_df.id.isin(st.session_state["df_after_form_completion"]["id"])]
+    #    st.dataframe(st.session_state["df_remaining"])
+    #    st.text("Return to Dataset Filters page and continue!")
+    #    if "df_filtered" in st.session_state:
+   #         del st.session_state['df_filtered']
 
     if manual_labelling_button:
         selected_topic_labels = list_of_dfs_concatenated["Index"].unique().tolist()

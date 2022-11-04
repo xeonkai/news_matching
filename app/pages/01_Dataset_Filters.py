@@ -11,10 +11,10 @@ from preprocess_utils import preprocess_utils as preprocess
 st.set_page_config(page_title = "Dataset Filters",
                   layout="wide")
 
-if "model" in st.session_state:
-    del st.session_state['model']
-if "df_after_form_completion" in st.session_state:
-    del st.session_state['df_after_form_completion']
+#if "model" in st.session_state:
+#    del st.session_state['model']
+#if "df_after_form_completion" in st.session_state:
+#    del st.session_state['df_after_form_completion']
 
 tokenized_df = None
 
@@ -25,14 +25,14 @@ daily_news = st.file_uploader("Upload news dataset here:", type=["csv", "xlsx"])
 
 st.subheader("Dataset")
 
-if 'df_remaining' in st.session_state:
-    df = st.session_state["df_remaining"]
-    tokenized_df = df[["Published", "Headline", "Summary", "Link", "Domain", "Facebook Interactions", "clean_Summary", "clean_Headline"]]
-    tokenized_df["id"] = tokenized_df.index
-    st.session_state['initial_dataframe'] = tokenized_df
-    st.dataframe(tokenized_df)
+#if 'df_remaining' in st.session_state:
+#    df = st.session_state["df_remaining"]
+#    tokenized_df = df[["Published", "Headline", "Summary", "Link", "Domain", "Facebook Interactions", "clean_Summary", "clean_Headline"]]
+#    tokenized_df["id"] = tokenized_df.index
+#    st.session_state['initial_dataframe'] = tokenized_df
+#   st.dataframe(tokenized_df)
 
-elif daily_news is not None:
+if daily_news is not None:
     if daily_news.type == "text/csv":
         file_details = {"filename": daily_news.name, "filetype": daily_news.type,
                                 "filesize": daily_news.size}
@@ -101,7 +101,7 @@ if tokenized_df is not None:
 
             kw_filter_remove = str(
                 st.text_input(
-                    label = "Remove articles containing keywords (separate by comma and space ', '): ", 
+                    label = "Remove articles containing ANY keywords (separate by comma and space ', '): ", 
                     value = ""
                 )
             )
