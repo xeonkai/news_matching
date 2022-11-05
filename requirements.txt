@@ -44,6 +44,4 @@ joblib==1.1.0
 requests
 scipy
 wordcloud
-io
-sklearn
-sys
+
