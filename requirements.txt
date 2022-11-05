@@ -42,7 +42,6 @@ bs4
 hdbscan
 joblib==1.1.0
 requests
-string
 scipy
 wordcloud
 io
