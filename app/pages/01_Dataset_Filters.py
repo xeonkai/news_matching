@@ -1,38 +1,30 @@
 import streamlit as st
 import pandas as pd
 import sys
-
-sys.path.append("./scripts")
-
 from similar_words import similar_words as sw
 from preprocess_utils import preprocess_utils as preprocess
 
+#TODO: Check if this is the best practice for appending a different folder
+sys.path.append("./scripts")
+
+##### main page #####
 
 st.set_page_config(page_title = "Dataset Filters",
                   layout="wide")
 
-#if "model" in st.session_state:
-#    del st.session_state['model']
-#if "df_after_form_completion" in st.session_state:
-#    del st.session_state['df_after_form_completion']
+st.title("Dataset Filters")
+st.subheader("Dataset")
+daily_news = st.file_uploader("Upload news dataset here:", type=["csv", "xlsx"])
 
 tokenized_df = None
 
-##### main page #####
-
-st.title("Dataset Filters")
-daily_news = st.file_uploader("Upload news dataset here:", type=["csv", "xlsx"])
-
-st.subheader("Dataset")
-
-#if 'df_remaining' in st.session_state:
-#    df = st.session_state["df_remaining"]
-#    tokenized_df = df[["Published", "Headline", "Summary", "Link", "Domain", "Facebook Interactions", "clean_Summary", "clean_Headline"]]
-#    tokenized_df["id"] = tokenized_df.index
-#    st.session_state['initial_dataframe'] = tokenized_df
-#   st.dataframe(tokenized_df)
-
+# read uploaded text/csv file and preprocess "Headline" and "Summary" text 
 if daily_news is not None:
+    # save file name for future output name
+    file_name = daily_news.name.replace(".xlsx", "")
+    file_name = file_name.replace(".csv", "")
+    st.session_state["file_name"] = file_name
+
     if daily_news.type == "text/csv":
         file_details = {"filename": daily_news.name, "filetype": daily_news.type,
                                 "filesize": daily_news.size}
@@ -65,6 +57,7 @@ if tokenized_df is not None:
         with st.form(key = "filter_params"):
             st.markdown("# Filters")
 
+            # numerical entry filter for minimum facebook engagement
             min_engagement = int(
                 st.number_input(
                     label = "Minimum no. of Facebook Interactions:", 
@@ -73,15 +66,16 @@ if tokenized_df is not None:
                     value = 0
                 )
             )
-
+            # filter for date range of articles
             date_range = st.date_input("Date range of articles", 
                             value = (tokenized_df["Published"].min(), tokenized_df["Published"].max()),
                             min_value=min(tokenized_df["Published"]),
                             max_value=max(tokenized_df["Published"]))
 
-
+            # selection-based filter for article domains to be removed
             domain_filter = st.multiselect(label = "Article domains to exclude", options = tokenized_df["Domain"].unique(), default = None)
 
+            # keyword-based filter based on tokens separated by comma and space. If ALL input tokens present in headline/summary of article, then include article
             all_kw_filter = str(
                 st.text_input(
                     label = "Keep articles containing ALL keywords (separate by comma and space ', '): ", 
@@ -89,6 +83,7 @@ if tokenized_df is not None:
                 )
             )
 
+            # keyword-based filter based on tokens separated by comma and space. If ANY of the input tokens present in headline/summary of article, then INCLUDE article
             any_kw_filter = str(
                 st.text_input(
                     label = "Keep articles containing ANY keywords (separate by comma and space ', '): ", 
@@ -96,9 +91,12 @@ if tokenized_df is not None:
                 )
             )
 
+            # keyword-based filter based on tokens separated by comma and space. If ANY of the input tokens OR similar words to input tokens present in headline/summary of article, then INCLUDE article
+            # similar articles are identified based on open-source API in https://relatedwords.org/
             similar_option = st.selectbox('Consider similar keywords to input keywords for "ANY" option?',
         ('Yes', 'No'))
 
+            # keyword-based filter based on tokens separated by comma and space. If ANY of the input tokens present in headline/summary of article, then EXCLUDE article
             kw_filter_remove = str(
                 st.text_input(
                     label = "Remove articles containing ANY keywords (separate by comma and space ', '): ", 
@@ -107,11 +105,12 @@ if tokenized_df is not None:
             )
 
             submit_button = st.form_submit_button(label = 'Submit')
-
+            # filters dataset according to filters set in sidebar
             if submit_button:
                 df_filtered = tokenized_df[lambda df: df["Facebook Interactions"] >= min_engagement]
                 df_filtered = df_filtered[lambda df: df["Published"].dt.date.between(*date_range)]
                 df_filtered = df_filtered[lambda df: ~df["Domain"].isin(domain_filter)]
+                # text-based filters are applied to both summary and headline
                 if len(kw_filter_remove) > 0:
                     kw_filter_remove = kw_filter_remove.split(", ")
                     df_filtered = df_filtered[lambda df: ((df["clean_Summary"].apply(lambda x: bool(set(x) & set(kw_filter_remove))) == False) & 
@@ -127,13 +126,12 @@ if tokenized_df is not None:
                         any_kw_filter = any_kw_filter.split(", ")  
                     df_filtered = df_filtered[lambda df: ((df_filtered["clean_Summary"].apply(lambda x: bool(set(x) & set(any_kw_filter))) == True) |
                                                 (df_filtered["clean_Headline"].apply(lambda x: bool(set(x) & set(any_kw_filter))) == True))]
-                    #df_filtered = df_filtered.drop(["clean_content", "clean_title"], axis = 1)
-                #df_filtered = df_filtered.reset_index(True)
                 df_filtered["filtered_id"] = range(len(df_filtered))
                 st.session_state['df_filtered'] = df_filtered
 
 
     if "df_filtered" in st.session_state:
+        # Preview filtered dataframe and allow for progression to next page for Topic Discovery
         st.write(f"Similar keywords considered: {any_kw_filter}")
         st.write("Number of articles: ", str(st.session_state["df_filtered"].shape[0]))
         st.dataframe(st.session_state["df_filtered"][["Published", "Headline", "Summary", "Link", "Domain", "Facebook Interactions"]])
