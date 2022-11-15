@@ -30,7 +30,7 @@ with st.form("manual_labelling_form"):
         topic_label_options = list(ordered_labels_dict.keys())
         topic_label_options.append("None of the above")
 
-        st.markdown(curr_headline)
+        st.markdown(f"###### {curr_headline}")
         topic_label_choice = st.selectbox(label = "", options= topic_label_options, index = (len(topic_label_options)-1), key = filtered_id)
 
         topic_label_text = st.text_input("If none of the above, input topic label:", key = f'{filtered_id}_topic')
