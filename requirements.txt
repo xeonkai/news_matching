@@ -27,7 +27,6 @@ sentence-transformers
 bertopic
 faiss-cpu
 pynndescent
-spacy==3.4.0
 gensim
 nltk
 pre-commit
@@ -42,6 +41,5 @@ bs4
 hdbscan
 joblib==1.1.0
 requests
-string
 scipy
 wordcloud
