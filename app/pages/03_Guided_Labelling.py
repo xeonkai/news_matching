@@ -50,9 +50,12 @@ if submit_button:
 
     # concatenate both labelled articles' dataframes together and preview. Order by index & sub-index in alphabetical order
     final_df = pd.concat([intermediate_labelled_topics_df, leftover_filtered_df], axis = 0, ignore_index=True)
-    final_df = final_df.drop(["filtered_id", "id", "clean_Summary", "clean_Headline", "full_text", "ranked_topic_number", "topic_number"], axis = 1)
-    final_df = final_df.sort_values(["Index", "Sub-Index"], na_position='last')
-    final_df = pd.concat([final_df[final_df['Index']!=""], final_df[final_df['Index']==""]], ignore_index=False)
+    ordered_topics_df = final_df.groupby(["Index", "Sub-Index"], as_index=False).agg(fb_sum= ('Facebook Interactions', 'sum')).sort_values('fb_sum', ascending=False)
+    final_df = pd.merge(final_df, ordered_topics_df, how = 'left', on=['Index', 'Sub-Index'])
+    final_df = final_df.sort_values(['fb_sum', 'Headline'], ascending=False)
+    final_df = final_df.drop(["filtered_id", "id", "clean_Summary", "clean_Headline", "full_text", "ranked_topic_number", "topic_number", "fb_sum"], axis = 1)
+    final_df = pd.concat([final_df[final_df['Index']!=""], final_df[final_df['Index']==""]], ignore_index=False).reset_index(drop=True)
+
     st.dataframe(final_df)
 
     # output dataframe as excel file for download as XLSX
