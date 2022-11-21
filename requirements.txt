@@ -1,21 +1,6 @@
-# spacy tok2vec language model, in place of "python -m spacy download en_core_web_sm" for env consistency, https://github.com/explosion/spacy-models/releases/tag/en_core_web_sm-3.4.0
-https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.4.0/en_core_web_sm-3.4.0-py3-none-any.whl
-
-# # Alternative transformer model
-# https://github.com/explosion/spacy-models/releases/download/en_core_web_trf-3.4.0/en_core_web_trf-3.4.0-py3-none-any.whl
-
 top2vec
-
 streamlit-aggrid
-
-python-dotenv
-ipywidgets
 matplotlib
-seaborn
-hvplot
-datashader
-plotly
-jupyter-dash
 streamlit
 numpy
 pandas
@@ -24,13 +9,10 @@ openpyxl
 scikit-learn
 transformers
 sentence-transformers
-bertopic
 faiss-cpu
-pynndescent
 gensim
 nltk
 pre-commit
-pyspellchecker
 nbqa
 black
 flake8
@@ -38,8 +20,6 @@ isort
 pip
 xlsxwriter
 bs4
-hdbscan
-joblib==1.1.0
 requests
-scipy
 wordcloud
+lxml
