@@ -137,27 +137,27 @@ if tokenized_df is not None:
             )
 
             # keyword-based filter based on tokens separated by comma and space. If ALL input tokens present in headline/summary of article, then include article
-            all_kw_filter = str(
-                st.text_input(
-                    label="Keep articles containing ALL keywords (separate by comma and space ', '): ",
-                    value="",
-                )
-            )
+            #all_kw_filter = str(
+            #    st.text_input(
+            #        label="Keep articles containing ALL keywords (separate by comma and space ', '): ",
+            #        value="",
+            #    )
+            #)
 
             # keyword-based filter based on tokens separated by comma and space. If ANY of the input tokens present in headline/summary of article, then INCLUDE article
-            any_kw_filter = str(
-                st.text_input(
-                    label="Keep articles containing ANY keywords (separate by comma and space ', '): ",
-                    value="",
-                )
-            )
+            #any_kw_filter = str(
+            #    st.text_input(
+            #        label="Keep articles containing ANY keywords (separate by comma and space ', '): ",
+            #        value="",
+            #    )
+            #)
 
             # keyword-based filter based on tokens separated by comma and space. If ANY of the input tokens OR similar words to input tokens present in headline/summary of article, then INCLUDE article
             # similar articles are identified based on open-source API in https://relatedwords.org/
-            similar_option = st.selectbox(
-                'Consider similar keywords to input keywords for "ANY" option?',
-                ("Yes", "No"),
-            )
+            #similar_option = st.selectbox(
+            #    'Consider similar keywords to input keywords for "ANY" option?',
+            #    ("Yes", "No"),
+            #)
 
             # keyword-based filter based on tokens separated by comma and space. If ANY of the input tokens present in headline/summary of article, then EXCLUDE article
             kw_filter_remove = str(
@@ -212,33 +212,33 @@ if tokenized_df is not None:
                             )
                         )
                     ]
-                if len(all_kw_filter) > 0:
-                    all_kw_filter = all_kw_filter.split(", ")
-                    df_filtered = df_filtered[
-                        lambda df: (
-                            df["clean_Summary"].apply(
-                                lambda x: bool(set(all_kw_filter).issubset(set(x)))
-                            )
-                            | df["clean_Headline"].apply(
-                                lambda x: bool(set(all_kw_filter).issubset(set(x)))
-                            )
-                        )
-                    ]
-                if len(any_kw_filter) > 0:
-                    if similar_option == "Yes":
-                        any_kw_filter = sw.scraping_similar_phrases(any_kw_filter, 5)
-                    else:
-                        any_kw_filter = any_kw_filter.split(", ")
-                    df_filtered = df_filtered[
-                        lambda df: (
-                            df["clean_Summary"].apply(
-                                lambda x: bool(set(x) & set(any_kw_filter))
-                            )
-                            | df["clean_Headline"].apply(
-                                lambda x: bool(set(x) & set(any_kw_filter))
-                            )
-                        )
-                    ]
+                #if len(all_kw_filter) > 0:
+                #    all_kw_filter = all_kw_filter.split(", ")
+                #    df_filtered = df_filtered[
+                #        lambda df: (
+                #            df["clean_Summary"].apply(
+                #                lambda x: bool(set(all_kw_filter).issubset(set(x)))
+                #            )
+                #            | df["clean_Headline"].apply(
+                #                lambda x: bool(set(all_kw_filter).issubset(set(x)))
+                #            )
+                #        )
+                #    ]
+                #if len(any_kw_filter) > 0:
+                #    if similar_option == "Yes":
+                #        any_kw_filter = sw.scraping_similar_phrases(any_kw_filter, 5)
+                #    else:
+                #        any_kw_filter = any_kw_filter.split(", ")
+                #    df_filtered = df_filtered[
+                #        lambda df: (
+                #            df["clean_Summary"].apply(
+                #                lambda x: bool(set(x) & set(any_kw_filter))
+                #            )
+                #            | df["clean_Headline"].apply(
+                #                lambda x: bool(set(x) & set(any_kw_filter))
+                #            )
+                #        )
+                #    ]
                 if len(df_filtered) > 0:
                     searcher = load_similarity_search_methods(
                         sim_search_method,
@@ -250,7 +250,7 @@ if tokenized_df is not None:
                         k=sim_search_k,
                     )
                     df_filtered = (
-                        df_filtered.iloc[indexes]  # .reset_index(drop=True)
+                        df_filtered.iloc[indexes].reset_index(drop=True)
                         # .assign(similarity_score=distances)
                     )
 
@@ -259,7 +259,7 @@ if tokenized_df is not None:
 
     if "df_filtered" in st.session_state:
         # Preview filtered dataframe and allow for progression to next page for Topic Discovery
-        st.write(f"Similar keywords considered: {any_kw_filter}")
+        #st.write(f"Similar keywords considered: {any_kw_filter}")
         st.write("Number of articles: ", str(st.session_state["df_filtered"].shape[0]))
         st.dataframe(
             st.session_state["df_filtered"][
