@@ -1,11 +1,7 @@
 import streamlit as st
 import pandas as pd
 import sys
-from similar_words import similar_words as sw
-from article_similarity.search_methods import (
-    load_similarity_search_methods,
-    SIM_SEARCH_METHODS,
-)
+from article_similarity.search_methods import load_similarity_search
 from preprocess_utils import preprocess_utils as preprocess
 
 # TODO: Check if this is the best practice for appending a different folder
@@ -144,18 +140,13 @@ if tokenized_df is not None:
                 )
             )
 
-            sim_search_method = st.selectbox(
-                "Similarity Metric",
-                SIM_SEARCH_METHODS,
-            )
-
             sim_search_text = st.text_area(
                 "Order articles by semantic similarity to keywords:",
             )
 
             sim_search_k = int(
                 st.number_input(
-                    label="Top n articles",
+                    label="Keep top n articles",
                     min_value=1,
                     value=len(tokenized_df),
                     step=1,
@@ -166,46 +157,39 @@ if tokenized_df is not None:
             # filters dataset according to filters set in sidebar
             if submit_button:
                 df_filtered = tokenized_df[
-                    lambda df: df["Facebook Interactions"] >= min_engagement
+                    lambda df: (df["Facebook Interactions"] >= min_engagement)
+                    & (df["Published"].dt.date.between(*date_range))
+                    & (~df["Domain"].isin(domain_filter))
                 ]
-                df_filtered = df_filtered[
-                    lambda df: df["Published"].dt.date.between(*date_range)
-                ]
-                df_filtered = df_filtered[lambda df: ~df["Domain"].isin(domain_filter)]
                 # text-based filters are applied to both summary and headline
                 if len(kw_filter_remove) > 0:
                     kw_filter_remove = kw_filter_remove.split(" ")
                     df_filtered = df_filtered[
                         lambda df: (
-                            (
-                                df["clean_Summary"].apply(
-                                    lambda x: bool(set(x) & set(kw_filter_remove))
-                                )
-                                == False
+                            ~df["clean_Summary"].apply(
+                                lambda x: bool(set(x) & set(kw_filter_remove))
                             )
-                            & (
-                                df["clean_Headline"].apply(
-                                    lambda x: bool(set(x) & set(kw_filter_remove))
-                                )
-                                == False
+                            & ~df["clean_Headline"].apply(
+                                lambda x: bool(set(x) & set(kw_filter_remove))
                             )
                         )
                     ]
-             
-                if len(df_filtered) > 0:
-                    searcher = load_similarity_search_methods(
-                        sim_search_method,
-                        "multi-qa-MiniLM-L6-cos-v1",
-                        df_filtered.copy(),
+
+                if (len(df_filtered) > 0) & (len(sim_search_text) > 0):
+                    searcher = load_similarity_search(
+                        "multi-qa-MiniLM-L6-cos-v1", df_filtered["Headline"].to_list()
                     )
                     distances, indexes = searcher(
                         sim_search_text,
-                        k=sim_search_k,
+                        k=min(sim_search_k, len(df_filtered)),
                     )
                     df_filtered = (
                         df_filtered.iloc[indexes].reset_index(drop=True)
                         # .assign(similarity_score=distances)
                     )
+
+                df_filtered.index = df_filtered.index + 1
+                df_filtered = df_filtered.head(min(sim_search_k, len(df_filtered)))
 
                 df_filtered["filtered_id"] = range(len(df_filtered))
                 st.session_state["df_filtered"] = df_filtered
