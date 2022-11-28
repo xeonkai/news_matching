@@ -188,7 +188,6 @@ if tokenized_df is not None:
                         # .assign(similarity_score=distances)
                     )
 
-                df_filtered.index = df_filtered.index + 1
                 df_filtered = df_filtered.head(min(sim_search_k, len(df_filtered)))
 
                 df_filtered["filtered_id"] = range(len(df_filtered))
