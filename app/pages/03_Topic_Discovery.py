@@ -34,7 +34,7 @@ def load_model(df):
     else:
         list_documents = df["full_text"].tolist()
         hdbscan_args = {'min_cluster_size': 2,'metric': 'euclidean', 'cluster_selection_method': 'leaf', 'min_samples': 1}
-        umap_args = {'n_neighbors': min(10, len(list_documents)), 'n_components': 3, 'metric': 'cosine'}
+        umap_args = {'n_neighbors': min(5, len(list_documents)), 'n_components': 3, 'metric': 'cosine'}
         model = Top2Vec(documents = list_documents, 
                         embedding_model = "all-MiniLM-L6-v2", workers = 8, min_count = 1,
                         hdbscan_args = hdbscan_args, umap_args = umap_args)
@@ -89,11 +89,11 @@ def top_n_topics(model, df, keywords, topic_granularity, ngram_value):
 
     for topic_num in subset_ranked_topics:
         subset_of_df_in_topic = df_labelled.query("ranked_topic_number == @topic_num").reset_index(drop=True)
-        wordcloud = td.wordcloud_generator(subset_of_df_in_topic, topic_num, ngram_value, "full_text")
-        fig, ax = plt.subplots()
-        ax.imshow(wordcloud, interpolation='bilinear')
-        ax.axis("off")
-        st.pyplot(fig)
+        #wordcloud = td.wordcloud_generator(subset_of_df_in_topic, topic_num, ngram_value, "full_text")
+        #fig, ax = plt.subplots()
+        #ax.imshow(wordcloud, interpolation='bilinear')
+        #ax.axis("off")
+        #st.pyplot(fig)
 
         st.text(f"Number of articles in topic: {len(subset_of_df_in_topic)}")
         st.text(f"Total number of Facebook interactions: {sum(subset_of_df_in_topic['Facebook Interactions'])}")

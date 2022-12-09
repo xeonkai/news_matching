@@ -67,7 +67,7 @@ def wordcloud_generator(df, topic_num, ngram, text_column):
     df = pd.DataFrame(dense, columns=feature_names)
     cloud = WordCloud(background_color="white", max_words=30, width=800, height=400).generate_from_frequencies(df.T.sum(axis=1))
     return cloud
-   
+
 def df_to_excel(df):
     """
     Convert dataframe to Excel file for download in Streamlit
@@ -83,6 +83,30 @@ def df_to_excel(df):
     output = BytesIO()
     writer = pd.ExcelWriter(output, engine='xlsxwriter')
     df.to_excel(writer, index=False, sheet_name='Sheet1')
+    workbook = writer.book
+    worksheet = writer.sheets['Sheet1']
+    format1 = workbook.add_format({'num_format': '0.00'}) 
+    worksheet.set_column('A:A', None, format1)  
+    writer.save()
+    processed_data = output.getvalue()
+    return processed_data
+
+def df_to_excel_both(df1, df2):
+    """
+    Convert dataframe to Excel file for download in Streamlit
+
+    Input:
+    df (pandas.DataFrame) - input dataframe
+
+    Output:
+    processed_data - output dataframe for Excel export
+    
+    """
+
+    output = BytesIO()
+    writer = pd.ExcelWriter(output, engine='xlsxwriter')
+    df1.to_excel(writer, index=False, sheet_name='Sheet1')
+    df2.to_excel(writer, index=True, sheet_name='Sheet2')
     workbook = writer.book
     worksheet = writer.sheets['Sheet1']
     format1 = workbook.add_format({'num_format': '0.00'}) 

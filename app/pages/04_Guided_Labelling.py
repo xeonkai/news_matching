@@ -1,6 +1,7 @@
 import streamlit as st
 import math
 import pandas as pd
+import numpy as np
 import topic_discovery.topic_discovery_script as td
 
 ### sidebar ###
@@ -27,11 +28,15 @@ with st.form("manual_labelling_form"):
                                     for label, topic_vector in sorted(dict_topic_label_and_mean_vector.items(), 
                                                                        key = lambda items: math.dist(items[1], dict_filtered_id_and_embedding[filtered_id]))}
         curr_headline = leftover_filtered_df.loc[filtered_id]["Headline"]
+        curr_summary = leftover_filtered_df.loc[filtered_id]["Summary"]
+        curr_link = leftover_filtered_df.loc[filtered_id]["Link"]
         topic_label_options = list(ordered_labels_dict.keys())
         topic_label_options.append("None of the above")
 
-        st.markdown(f"###### {curr_headline}")
-        topic_label_choice = st.selectbox(label = "", options= topic_label_options, index = (len(topic_label_options)-1), key = filtered_id)
+        st.markdown(f"###### Headline: {curr_headline}")
+        st.markdown(f"###### Summary: {curr_summary}")
+        st.markdown(f"###### Link: {curr_link}")
+        topic_label_choice = st.selectbox(label = "", options = topic_label_options, index = (len(topic_label_options)-1), key = filtered_id)
 
         topic_label_text = st.text_input("If none of the above, input topic label:", key = f'{filtered_id}_topic')
         subtopic_label_text = st.text_input("Input sub-topic label (if any):", key = f'{filtered_id}_subtopic')
@@ -57,7 +62,12 @@ if submit_button:
     final_df = pd.concat([final_df[final_df['Index']!=""], final_df[final_df['Index']==""]], ignore_index=False).reset_index(drop=True)
 
     st.dataframe(final_df)
+    pivot_df = pd.pivot_table(final_df, 
+                                values = ["Facebook Interactions"], 
+                                index = ["Index", "Sub-Index"], aggfunc={'Facebook Interactions': [np.sum, 
+                                                                                                    (lambda x: np.round(100*np.sum(x)/final_df["Facebook Interactions"].sum(), 1))]})
+    pivot_df.columns.set_levels(['Percentage','Sum'],level=1,inplace=True)
 
     # output dataframe as excel file for download as XLSX
-    output = td.df_to_excel(final_df)
+    output = td.df_to_excel_both(final_df, pivot_df)
     st.download_button("Press to Download", data = output, file_name = f'{st.session_state["file_name"]}_labelled.xlsx', mime="application/vnd.ms-excel")
