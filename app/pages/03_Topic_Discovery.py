@@ -16,8 +16,9 @@ simplefilter(action='ignore', category=FutureWarning)
 random.seed(10)
 
 ### sidebar ###
-st.set_page_config(page_title = "Topic Discovery")
+st.set_page_config(page_title = "Topic Discovery", layout = 'wide')
 st.sidebar.markdown("# Settings")
+
 
 ### main page ###
 st.title("Topic Discovery")
@@ -55,7 +56,7 @@ dict_checkboxes = {}
 dict_topics = {}
 dict_subtopics = {}
 
-def top_n_topics(model, df, keywords, topic_granularity, ngram_value):
+def top_n_topics(model, df, keywords, topic_granularity):
     """
     Iterate through all topics identified by Top2Vec model, sorted by descending Facebook engagement, and print
     topic number, topic-specific phrase cloud, topic-specific dataframe, and basic details of topic
@@ -66,7 +67,6 @@ def top_n_topics(model, df, keywords, topic_granularity, ngram_value):
     df (pandas.DataFrame) - complete dataframe without labels
     keywords (string) - If non-empty, order topics based on relevance to input keywords
     topic_granularity (int) - Number of expected topics
-    ngram_value (int) - Number of expected words in phrase cloud
 
     """
     if topic_granularity != model.get_num_topics():
@@ -89,17 +89,11 @@ def top_n_topics(model, df, keywords, topic_granularity, ngram_value):
 
     for topic_num in subset_ranked_topics:
         subset_of_df_in_topic = df_labelled.query("ranked_topic_number == @topic_num").reset_index(drop=True)
-        #wordcloud = td.wordcloud_generator(subset_of_df_in_topic, topic_num, ngram_value, "full_text")
-        #fig, ax = plt.subplots()
-        #ax.imshow(wordcloud, interpolation='bilinear')
-        #ax.axis("off")
-        #st.pyplot(fig)
 
+        st.markdown(f"##### Topic {topic_num + 1}")
         st.text(f"Number of articles in topic: {len(subset_of_df_in_topic)}")
         st.text(f"Total number of Facebook interactions: {sum(subset_of_df_in_topic['Facebook Interactions'])}")
-        st.markdown(f"##### Articles from Topic {topic_num + 1}")
 
-        
         gd = GridOptionsBuilder.from_dataframe(subset_of_df_in_topic[["Headline", "Summary", "Link", "Published", "Domain", "Facebook Interactions"]], min_column_width = 600)
         gd.configure_selection(selection_mode='multiple', use_checkbox=True)
         gridoptions = gd.build()
@@ -115,33 +109,47 @@ def top_n_topics(model, df, keywords, topic_granularity, ngram_value):
         st.text(" ")
         st.text(" ")
 
-# Number of words expected in phrase-cloud
-ngram_size = int(
-    st.sidebar.slider(
-        label="How many words should be in identified phrases?", min_value=1, value=1, max_value=3, step=1
-    )
+st.markdown(
+    """
+    <style>
+    [data-testid="stSidebar"][aria-expanded="true"] > div:first-child {
+        width: 650px;
+    }
+    [data-testid="stSidebar"][aria-expanded="false"] > div:first-child {
+        width: 650px;
+        margin-left: -650px;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
 )
 
-# Number of topics expected
-topic_granularity = int(
-    st.sidebar.slider(
-        label="How granular should topics be?", 
-        min_value=1, 
-        value=model.get_num_topics(), 
-        max_value=model.get_num_topics(),
-        step=1
-    )
-)
+with st.sidebar:
+    st.header("Top 10 Articles")
+    df_filtered = st.session_state["df_filtered"]
+    top_articles = df_filtered.sort_values(by = ["Facebook Interactions"], ascending = False).head(10).reset_index()
+    st.dataframe(top_articles[["Headline", "Summary", "Link", "Published", "Domain", "Facebook Interactions"]])
 
-# Orders topics by relevance to keywords
-downstream_keywords = str(
-    st.sidebar.text_input("Search for keywords in topics", ""
+    # Number of topics expected
+    topic_granularity = int(
+        st.sidebar.slider(
+            label="How granular should topics be?", 
+            min_value=1, 
+            value=model.get_num_topics(), 
+            max_value=model.get_num_topics(),
+            step=1
+        )
     )
-)
+
+    # Orders topics by relevance to keywords
+    downstream_keywords = str(
+        st.sidebar.text_input("Search for keywords in topics", ""
+        )
+    )
 
 # Upon submitting form, 
 with st.form("to_concatenate dataframes"):
-    top_n_topics(model, df, downstream_keywords, topic_granularity, ngram_size)
+    top_n_topics(model, df, downstream_keywords, topic_granularity)
     submitted = st.form_submit_button("Submit")
 
     if submitted:
@@ -180,7 +188,7 @@ if "df_after_form_completion" in st.session_state:
     output = td.df_to_excel(intermediate_topics_and_unlabelled_df)
     
 
-    st.download_button("Press to Download",data = output, file_name = f'{st.session_state["file_name"]}_labelled.xlsx', mime="application/vnd.ms-excel")
+    st.download_button("Press to Download",data = output, file_name = f'{st.session_state["file_name"]}_labelled_intermediate.xlsx', mime="application/vnd.ms-excel")
     manual_labelling_button = st.button("Label remaining filtered data based on model suggestions")
 
     # saving specific embeddings for guided labelling

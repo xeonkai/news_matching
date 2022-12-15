@@ -5,7 +5,7 @@ import numpy as np
 import topic_discovery.topic_discovery_script as td
 
 ### sidebar ###
-st.set_page_config(page_title = "Guided Labelling")
+st.set_page_config(page_title = "Guided Labelling", layout = 'wide')
 st.sidebar.markdown("# Settings")
 
 
@@ -19,6 +19,8 @@ leftover_filtered_df = leftover_filtered_df.set_index("filtered_id")
 dict_filtered_id_and_embedding = st.session_state["dict_filtered_id_and_embedding"]
 intermediate_labelled_topics_df = st.session_state["df_after_form_completion"]
 
+curr_index = 0
+
 with st.form("manual_labelling_form"):
     updated_list_of_topic_labels = []
     updated_list_of_subtopic_labels = []
@@ -27,15 +29,15 @@ with st.form("manual_labelling_form"):
         ordered_labels_dict = {label: topic_vector 
                                     for label, topic_vector in sorted(dict_topic_label_and_mean_vector.items(), 
                                                                        key = lambda items: math.dist(items[1], dict_filtered_id_and_embedding[filtered_id]))}
-        curr_headline = leftover_filtered_df.loc[filtered_id]["Headline"]
-        curr_summary = leftover_filtered_df.loc[filtered_id]["Summary"]
-        curr_link = leftover_filtered_df.loc[filtered_id]["Link"]
+
         topic_label_options = list(ordered_labels_dict.keys())
         topic_label_options.append("None of the above")
+        preview_row = leftover_filtered_df.loc[[filtered_id]][["Headline", "Summary", "Link"]].T
+        preview_row = preview_row.rename(columns={preview_row.columns[0]: curr_index + 1})
 
-        st.markdown(f"###### Headline: {curr_headline}")
-        st.markdown(f"###### Summary: {curr_summary}")
-        st.markdown(f"###### Link: {curr_link}")
+        st.markdown(f"### Article {curr_index + 1}")
+        st.dataframe(preview_row, width = 800)
+
         topic_label_choice = st.selectbox(label = "", options = topic_label_options, index = (len(topic_label_options)-1), key = filtered_id)
 
         topic_label_text = st.text_input("If none of the above, input topic label:", key = f'{filtered_id}_topic')
@@ -46,6 +48,9 @@ with st.form("manual_labelling_form"):
             topic_label = topic_label_choice
         updated_list_of_topic_labels.append(topic_label)
         updated_list_of_subtopic_labels.append(subtopic_label_text)
+
+        curr_index +=1
+
     submit_button = st.form_submit_button("Submit final dataframe!")
 
 if submit_button:
