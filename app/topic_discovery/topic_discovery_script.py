@@ -2,6 +2,7 @@ from wordcloud import WordCloud
 import pandas as pd
 from io import BytesIO
 import plotly.express as px
+import numpy as np
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 import sys
 sys.path.append("./scripts")
@@ -14,6 +15,7 @@ def add_full_text(df):
         df["full_text"] = df["Headline"]
     return df
 
+# to change this function
 def generate_df_topic_labels(model, df, reduction_status):
     """
     Adds an additional column to dataframe of articles to rank topics output by topic modelling, in descending order
@@ -35,7 +37,25 @@ def generate_df_topic_labels(model, df, reduction_status):
     topics_ranked_by_fb = list(df.groupby("topic_number", as_index=False).sum("Facebook Interactions").sort_values(by= "Facebook Interactions", ascending=False)["topic_number"])
     df['ranked_topic_number'] = df["topic_number"].apply(lambda topic_num: topics_ranked_by_fb.index(topic_num))
     topics_ranked_by_fb = dict(zip(topics_ranked_by_fb, range(len(topics_ranked_by_fb)))) #{topic_num: ranked_topic_num for ranked_topic_num, topic_num in enumerate(topics_ranked_by_fb)}
-    return df, topics_ranked_by_fb
+    
+    #added 4/4/23
+    #to arrange topics on topic discovery page based on highest no. of fb interactions, then calc next closest cluster based on euclidean distance
+    topic_vectors = list(model.topic_vectors) #get topic vectors
+    curr_topic = list(topics_ranked_by_fb.keys())[0] #get topic no. with highest number of fb interactions
+    final_ranked = {} #key: topic num, value: ranked topic num
+    count = 0
+    final_ranked[curr_topic] = 0 #set curr_topic to highest ranked topic
+    curr_vector = topic_vectors[curr_topic]
+    num_topics = len(topics_ranked_by_fb)
+    while num_topics > 1:
+        #calc distance of other topic vectors to current topic vector
+        count += 1
+        topic_distance = {i: np.linalg.norm(topic_vectors[i] - curr_vector) for i in range(len(topic_vectors))}
+        sorted_topic_distance = dict(sorted(topic_distance.items(), key=lambda x: x[1]))
+        curr_topic = list({key: sorted_topic_distance[key] for key in sorted_topic_distance if key not in final_ranked}.keys())[0] #choose next topic with topic vector closest to the current topic
+        final_ranked[curr_topic] = count
+        num_topics -= 1
+    return df, final_ranked
 
 def wordcloud_generator(df, topic_num, ngram, text_column):
     """

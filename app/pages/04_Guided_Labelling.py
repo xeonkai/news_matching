@@ -63,7 +63,8 @@ if submit_button:
     ordered_topics_df = final_df.groupby(["Index", "Sub-Index"], as_index=False).agg(fb_sum= ('Facebook Interactions', 'sum')).sort_values('fb_sum', ascending=False)
     final_df = pd.merge(final_df, ordered_topics_df, how = 'left', on=['Index', 'Sub-Index'])
     final_df = final_df.sort_values(['fb_sum', 'Headline'], ascending=False)
-    final_df = final_df.drop(["filtered_id", "id", "clean_Summary", "clean_Headline", "full_text", "ranked_topic_number", "topic_number", "fb_sum"], axis = 1)
+    final_df = final_df.drop(["filtered_id", "id", "clean_Summary", "clean_Headline", "full_text", "ranked_topic_number", "topic_number", "fb_sum", 
+                              "_selectedRowNodeInfo", "topic_score"], axis = 1)
     final_df = pd.concat([final_df[final_df['Index']!=""], final_df[final_df['Index']==""]], ignore_index=False).reset_index(drop=True)
 
     st.dataframe(final_df)

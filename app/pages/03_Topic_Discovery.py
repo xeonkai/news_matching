@@ -79,7 +79,7 @@ st.header("Top News Topics")
 # Initialise dictionaries for storage of user input data
 dict_gridtable = {}
 dict_dfs = {}
-dict_checkboxes = {}
+# dict_checkboxes = {}
 dict_topics = {}
 dict_subtopics = {}
 
@@ -133,7 +133,6 @@ def top_n_topics(model, df, keywords, topic_granularity):
         st.text(
             f"Total number of Facebook interactions: {sum(subset_of_df_in_topic['Facebook Interactions'])}"
         )
-
         gd = GridOptionsBuilder.from_dataframe(
             subset_of_df_in_topic[
                 [
@@ -148,6 +147,10 @@ def top_n_topics(model, df, keywords, topic_granularity):
             min_column_width=600,
         )
         gd.configure_selection(selection_mode="multiple", use_checkbox=True)
+        
+        #added
+        gd.configure_column('Headline', headerCheckboxSelection=True)
+
         gridoptions = gd.build()
         dict_gridtable[topic_num] = AgGrid(
             subset_of_df_in_topic,
@@ -158,9 +161,9 @@ def top_n_topics(model, df, keywords, topic_granularity):
             key=f"aggrid_{topic_num}",
             reload_data=True,
         )
-        dict_checkboxes[topic_num] = st.checkbox(
-            "Tick if this topic is well-classified", key=f"checkbox_{topic_num}"
-        )
+        # dict_checkboxes[topic_num] = st.checkbox(
+        #     "Tick if this topic is well-classified", key=f"checkbox_{topic_num}"
+        # )
         dict_dfs[topic_num] = df_labelled[
             df_labelled["ranked_topic_number"] == topic_num
         ]
@@ -215,32 +218,44 @@ with st.sidebar:
         st.sidebar.text_input("Search for keywords in topics", "")
     )
 
+#to change this after adding in select all checkbox
 # Upon submitting form,
 with st.form("to_concatenate dataframes"):
     top_n_topics(model, df, downstream_keywords, topic_granularity)
     submitted = st.form_submit_button("Submit")
 
     if submitted:
+        # approved_dfs = []
+        # removed_filtered_ids_list = []
+        # for topic_num in dict_dfs:
+        #     ids_to_remove = []
+        #     if dict_checkboxes[topic_num]:
+        #         for selected_row in dict_gridtable[topic_num]["selected_rows"]:
+        #             ids_to_remove.append(selected_row["id"])
+        #         temp_df = dict_dfs[topic_num]
+        #         # Removes articles that user manually indicated as irrelevant within a topic indicated as correctly-classified.
+        #         temp_df = temp_df[~temp_df.id.isin(ids_to_remove)]
+        #         # Allows user to indicate topic and sub-topic labels for all correctly-classified topics in bulk
+        #         temp_df["Index"] = dict_topics[topic_num]
+        #         temp_df["Sub-Index"] = dict_subtopics[topic_num]
+        #         approved_dfs.append(temp_df)
+        # # Concatenates dataframes that user identified as relevant topics
+        # combined_df = pd.concat(approved_dfs, ignore_index=True)
+
+        # st.session_state["df_after_form_completion"] = combined_df
+
         approved_dfs = []
-        removed_filtered_ids_list = []
         for topic_num in dict_dfs:
-            ids_to_remove = []
-            if dict_checkboxes[topic_num]:
-                for selected_row in dict_gridtable[topic_num]["selected_rows"]:
-                    ids_to_remove.append(selected_row["id"])
-                temp_df = dict_dfs[topic_num]
-                # Removes articles that user manually indicated as irrelevant within a topic indicated as correctly-classified.
-                temp_df = temp_df[~temp_df.id.isin(ids_to_remove)]
-                # Allows user to indicate topic and sub-topic labels for all correctly-classified topics in bulk
+            temp_df = pd.DataFrame(dict_gridtable[topic_num]["selected_rows"])
+            if temp_df.shape[0] > 0: #if more than 1 row selected
                 temp_df["Index"] = dict_topics[topic_num]
                 temp_df["Sub-Index"] = dict_subtopics[topic_num]
                 approved_dfs.append(temp_df)
-        # Concatenates dataframes that user identified as relevant topics
+
         combined_df = pd.concat(approved_dfs, ignore_index=True)
 
         st.session_state["df_after_form_completion"] = combined_df
-
-
+    
 if "df_after_form_completion" in st.session_state:
     # Preview concatenated dataframe of labelled articles
     st.dataframe(
