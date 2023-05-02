@@ -41,20 +41,30 @@ def generate_df_topic_labels(model, df, reduction_status):
     #added 4/4/23
     #to arrange topics on topic discovery page based on highest no. of fb interactions, then calc next closest cluster based on euclidean distance
     topic_vectors = list(model.topic_vectors) #get topic vectors
+    # print(topic_vectors)
     curr_topic = list(topics_ranked_by_fb.keys())[0] #get topic no. with highest number of fb interactions
     final_ranked = {} #key: topic num, value: ranked topic num
     count = 0
     final_ranked[curr_topic] = 0 #set curr_topic to highest ranked topic
     curr_vector = topic_vectors[curr_topic]
     num_topics = len(topics_ranked_by_fb)
+    unexplored_topics = list(range(len(topic_vectors)))
+
     while num_topics > 1:
-        #calc distance of other topic vectors to current topic vector
         count += 1
-        topic_distance = {i: np.linalg.norm(topic_vectors[i] - curr_vector) for i in range(len(topic_vectors))}
-        sorted_topic_distance = dict(sorted(topic_distance.items(), key=lambda x: x[1]))
-        curr_topic = list({key: sorted_topic_distance[key] for key in sorted_topic_distance if key not in final_ranked}.keys())[0] #choose next topic with topic vector closest to the current topic
-        final_ranked[curr_topic] = count
+        unexplored_topics.remove(curr_topic) # remove current topic
+        # topic_distance = {i: np.linalg.norm(topic_vectors[i] - curr_vector) for i in unexplored_topics} #calc euclidean distance of other topic vectors to current topic vector
+        topic_distance = {i: np.dot(topic_vectors[i], curr_vector)/(np.linalg.norm(topic_vectors[i]) * np.linalg.norm(curr_vector)) for i in unexplored_topics} #use cosine similarity to find the distance between current topic vector and other topic vectors
+        sorted_topic_distance = dict(sorted(topic_distance.items(), key=lambda x: x[1], reverse=True)) #sort in descending order, higher cosine similarity score, more similar
+        print(sorted_topic_distance)
+        curr_topic = list(sorted_topic_distance.keys())[0] #choose next topic with topic vector closest to the current topic
+        curr_vector = topic_vectors[curr_topic] #get topic vector of next topic
+        final_ranked[curr_topic] = count #set ranking of next topic
         num_topics -= 1
+    
+    print(final_ranked)
+    df['ranked_topic_number'] = df["topic_number"].map(final_ranked)
+    print(df.head())
     return df, final_ranked
 
 def wordcloud_generator(df, topic_num, ngram, text_column):
