@@ -7,6 +7,7 @@ from st_aggrid import AgGrid, GridUpdateMode, ColumnsAutoSizeMode, JsCode
 from st_aggrid.grid_options_builder import GridOptionsBuilder
 import time
 import json
+import ast
 
 
 # Function to process dataframe - extract top theme, index and subindex
@@ -156,7 +157,7 @@ def display_stats(df, title=True, show_themes=True, show_theme_count=True):
 
 
 # Function to display aggrid by themes
-@st.cache_resource(experimental_allow_widgets=True, show_spinner=False)
+# @st.cache_resource(experimental_allow_widgets=True, show_spinner=False)
 def display_aggrid_by_theme(df_collection, current_theme_index):
     current_theme = list(df_collection.keys())[current_theme_index]
     n_themes = len(df_collection.keys())
@@ -252,7 +253,7 @@ def table_pagination_menu():
 
 
 # Function to display aggrid table
-@st.cache_resource(experimental_allow_widgets=True, show_spinner=False)
+# @st.cache_resource(experimental_allow_widgets=True, show_spinner=False)
 def display_aggrid(df, load_state, selected_rows):
     # Initialising columns for new input
     if not load_state:
@@ -262,6 +263,11 @@ def display_aggrid(df, load_state, selected_rows):
         cols = df.columns.tolist()
         cols = cols[1:] + cols[:1]
         df = df[cols]
+    else:
+        df['suggested_themes'] = df['suggested_themes'].apply(lambda x: ast.literal_eval(x) if type(x) == str else x)
+        df['suggested_indexes'] = df['suggested_indexes'].apply(lambda x: ast.literal_eval(x) if type(x) == str else x)
+        df['suggested_subindexes'] = df['suggested_subindexes'].apply(lambda x: ast.literal_eval(x) if type(x) == str else x)
+    
 
     # loading taxonomy from cache
     if utils.check_session_state_key("taxonomy"):
@@ -281,6 +287,9 @@ def display_aggrid(df, load_state, selected_rows):
         "subindex",
         "new subindex",
         # "suggested_labels",
+        # "suggested_themes",
+        # "suggested_indexes",
+        # "suggested_subindexes",
     ]
 
     gb = GridOptionsBuilder.from_dataframe(df)
@@ -404,4 +413,6 @@ def display_aggrid(df, load_state, selected_rows):
         columns_auto_size_mode=ColumnsAutoSizeMode.FIT_ALL_COLUMNS_TO_VIEW,
         allow_unsafe_jscode=True,
     )
+
+
     return grid_response
