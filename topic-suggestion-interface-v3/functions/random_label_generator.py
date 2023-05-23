@@ -2,9 +2,8 @@ import numpy as np
 import random
 import pandas as pd
 
+
 # Given a list of 5 topics, randomly assign a probability to each topic and return sorted list of topics.
-
-
 def random_label_generator(label, seed=None):
     if seed:
         # Set np seed for reproducibility
@@ -20,16 +19,12 @@ def random_label_generator(label, seed=None):
 
 
 # Extract dictionary of top-k topics and their associated probabilities from a list of topics with probabilities
-
-
 def extract_top_k_labels(labels_with_probabilities, k):
     top_k_labels = dict(labels_with_probabilities[:k])
     return top_k_labels
 
 
 # Given a dataframe, assign a list of themes sorted by random probabilities to each row and return the dataframe with the theme column appended.
-
-
 def assign_labels_to_dataframe(df, themes, indexes, subindexes, k, seed=None):
     if seed:
         # Set np seed for reproducibility
@@ -51,8 +46,6 @@ def assign_labels_to_dataframe(df, themes, indexes, subindexes, k, seed=None):
 
 
 # Given a dataframe, assign a list of predicted theme chains sorted by random probabilities to each row and return the dataframe with the theme column appended.
-
-
 def assign_theme_chain_to_dataframe(df, theme_chains, k, seed=None):
     if seed:
         # Set np seed for reproducibility
@@ -68,8 +61,6 @@ def assign_theme_chain_to_dataframe(df, theme_chains, k, seed=None):
 
 
 # Melt the dataframe to get a row for each topic and their associated probability
-
-
 def melt_dataframe(df):
     # Melt the dataframe to get a row for each topic and their associated probability
     new_df = (

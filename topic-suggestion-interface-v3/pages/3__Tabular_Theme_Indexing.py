@@ -15,7 +15,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-st.title("🔮 Tabular Theme Indexing")
+st.title("📝 Tabular Theme Indexing")
 format.horizontal_line()
 format.align_text(
     """
@@ -27,15 +27,6 @@ format.align_text(
 )
 
 format.horizontal_line()
-
-
-def display_labelled_articles():
-    if utils.check_session_state_key("csv_file_with_chosen_labels"):
-        st.subheader("Previewing Labelled Articles")
-        chosen_labels_df = utils.get_cached_object("csv_file_with_chosen_labels")[
-            ["Headline", "Theme", "Index", "Sub-Index"]
-        ]
-        st.dataframe(chosen_labels_df, use_container_width=True)
 
 
 def run():

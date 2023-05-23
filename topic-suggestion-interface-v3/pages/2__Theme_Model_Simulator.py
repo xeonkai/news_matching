@@ -25,6 +25,30 @@ format.align_text(
 format.horizontal_line()
 
 
+def run_theme_model_simulator(taxonomy, taxonomy_chains):
+    uploaded_data = utils.get_cached_object("csv_file")
+
+    uploaded_data_with_themes = assign_labels_to_dataframe(
+        uploaded_data.copy(),
+        taxonomy["themes"],
+        taxonomy["indexes"],
+        taxonomy["subindexes"],
+        5,
+    )
+
+    uploaded_data_with_themes = assign_theme_chain_to_dataframe(
+        uploaded_data.copy(), taxonomy_chains, 5
+    )
+
+    # sort by facebook interactions
+    uploaded_data_with_themes = uploaded_data_with_themes.sort_values(
+        by=["Facebook Interactions"], ascending=False
+    ).reset_index(drop=True)
+
+    utils.cache_object(uploaded_data_with_themes, "csv_file_with_predicted_labels")
+    utils.customDisppearingMsg("Running Theme Model Simulator", wait=3, type_="info")
+
+
 def run():
     if utils.check_session_state_key("csv_file"):
         taxonomy = read_taxonomy()
@@ -34,31 +58,8 @@ def run():
         st.write(taxonomy)
         st.write(taxonomy_chains)
         if st.button("Run Theme Model Simulator"):
-            uploaded_data = utils.get_cached_object("csv_file")
+            run_theme_model_simulator(taxonomy, taxonomy_chains)
 
-            uploaded_data_with_themes = assign_labels_to_dataframe(
-                uploaded_data.copy(),
-                taxonomy["themes"],
-                taxonomy["indexes"],
-                taxonomy["subindexes"],
-                5,
-            )
-
-            uploaded_data_with_themes = assign_theme_chain_to_dataframe(
-                uploaded_data.copy(), taxonomy_chains, 5
-            )
-
-            # TODO: Abstract this to a function
-            # sort by facebook interactions
-            uploaded_data_with_themes = uploaded_data_with_themes.sort_values(
-                by=["Facebook Interactions"], ascending=False
-            ).reset_index(drop=True)
-            utils.cache_object(
-                uploaded_data_with_themes, "csv_file_with_predicted_labels"
-            )
-            utils.customDisppearingMsg(
-                "Running Theme Model Simulator", wait=3, type_="info"
-            )
         if utils.check_session_state_key("csv_file_with_predicted_labels"):
             format.horizontal_line()
             st.subheader("Dataframe with Themes")

@@ -47,6 +47,15 @@ def consolidate_grid_responses(grid_responses, columns):
         axis=1,
     )
 
+    # Filtering out rows without new theme/index/subindex
+
+    consolidated_df = consolidated_df[consolidated_df["theme"] != "-Enter New Theme"]
+    consolidated_df = consolidated_df[consolidated_df["index"] != "-Enter New Index"]
+    consolidated_df = consolidated_df[
+        consolidated_df["subindex"] != "-Enter New Subindex"
+    ]
+
+
     # selecting relevent columns
     consolidated_df = consolidated_df[columns.tolist() + ["theme", "index", "subindex"]]
 
