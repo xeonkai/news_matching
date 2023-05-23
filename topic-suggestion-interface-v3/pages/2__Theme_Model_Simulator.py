@@ -25,7 +25,7 @@ format.align_text(
 format.horizontal_line()
 
 
-def run_theme_model_simulator(taxonomy, taxonomy_chains):
+def run_theme_model_simulator(taxonomy, taxonomy_chains, k=5):
     uploaded_data = utils.get_cached_object("csv_file")
 
     uploaded_data_with_themes = assign_labels_to_dataframe(
@@ -33,11 +33,11 @@ def run_theme_model_simulator(taxonomy, taxonomy_chains):
         taxonomy["themes"],
         taxonomy["indexes"],
         taxonomy["subindexes"],
-        5,
+        k,
     )
 
     uploaded_data_with_themes = assign_theme_chain_to_dataframe(
-        uploaded_data.copy(), taxonomy_chains, 5
+        uploaded_data.copy(), taxonomy_chains, k
     )
 
     # sort by facebook interactions
@@ -55,10 +55,25 @@ def run():
         taxonomy_chains = generate_label_chains(reformat_taxonomy(taxonomy))
         utils.cache_object(taxonomy, "taxonomy")
         st.subheader("Previewing the Taxonomy")
-        st.write(taxonomy)
-        st.write(taxonomy_chains)
-        if st.button("Run Theme Model Simulator"):
-            run_theme_model_simulator(taxonomy, taxonomy_chains)
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            st.dataframe(taxonomy)
+        with c2:
+            st.dataframe(taxonomy_chains)
+
+        with st.form("Theme Model Simulator Form"):
+            k = st.number_input(
+                "Top-K predictions for each article",
+                min_value=1,
+                max_value=10,
+                value=5,
+            )
+            if st.form_submit_button("Run Theme Model Simulator"):
+                run_theme_model_simulator(taxonomy, taxonomy_chains, k)
+
+
+        
+        # if st.button("Run Theme Model Simulator"):
 
         if utils.check_session_state_key("csv_file_with_predicted_labels"):
             format.horizontal_line()
