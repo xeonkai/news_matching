@@ -71,10 +71,6 @@ def run():
             if st.form_submit_button("Run Theme Model Simulator"):
                 run_theme_model_simulator(taxonomy, taxonomy_chains, k)
 
-
-        
-        # if st.button("Run Theme Model Simulator"):
-
         if utils.check_session_state_key("csv_file_with_predicted_labels"):
             format.horizontal_line()
             st.subheader("Dataframe with Themes")
