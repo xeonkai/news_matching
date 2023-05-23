@@ -25,16 +25,8 @@ format.align_text(
 format.horizontal_line()
 
 
-def run_theme_model_simulator(taxonomy, taxonomy_chains, k=5):
+def run_theme_model_simulator(taxonomy_chains, k=5):
     uploaded_data = utils.get_cached_object("csv_file")
-
-    uploaded_data_with_themes = assign_labels_to_dataframe(
-        uploaded_data.copy(),
-        taxonomy["themes"],
-        taxonomy["indexes"],
-        taxonomy["subindexes"],
-        k,
-    )
 
     uploaded_data_with_themes = assign_theme_chain_to_dataframe(
         uploaded_data.copy(), taxonomy_chains, k
@@ -69,7 +61,7 @@ def run():
                 value=5,
             )
             if st.form_submit_button("Run Theme Model Simulator"):
-                run_theme_model_simulator(taxonomy, taxonomy_chains, k)
+                run_theme_model_simulator(taxonomy_chains, k)
 
         if utils.check_session_state_key("csv_file_with_predicted_labels"):
             format.horizontal_line()
