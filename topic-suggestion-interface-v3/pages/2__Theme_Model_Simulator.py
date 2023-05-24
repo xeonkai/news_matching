@@ -28,6 +28,10 @@ format.horizontal_line()
 def run_theme_model_simulator(taxonomy_chains, k=5):
     uploaded_data = utils.get_cached_object("csv_file_filtered")
 
+    if utils.check_session_state_key("K"):
+        k = utils.get_cached_object("K")
+    utils.cache_object(k, "K") 
+
     uploaded_data_with_themes = assign_theme_chain_to_dataframe(
         uploaded_data.copy(), taxonomy_chains, k
     )
@@ -42,14 +46,16 @@ def run_theme_model_simulator(taxonomy_chains, k=5):
 
 
 def run():
+
     if utils.check_session_state_key("csv_file_filtered"):
-        taxonomy = read_taxonomy()
-        taxonomy_chains = generate_label_chains(reformat_taxonomy(taxonomy))
+        taxonomy = reformat_taxonomy(read_taxonomy())
+        taxonomy_chains = generate_label_chains(taxonomy)
+
         utils.cache_object(taxonomy, "taxonomy")
         st.subheader("Previewing the Taxonomy")
         c1, c2, c3 = st.columns(3)
         with c1:
-            st.dataframe(taxonomy)
+            st.write(taxonomy)
         with c2:
             st.dataframe(taxonomy_chains)
 
@@ -57,7 +63,7 @@ def run():
             k = st.number_input(
                 "Top-K predictions for each article",
                 min_value=1,
-                max_value=10,
+                max_value=999,
                 value=5,
             )
             if st.form_submit_button("Run Theme Model Simulator"):

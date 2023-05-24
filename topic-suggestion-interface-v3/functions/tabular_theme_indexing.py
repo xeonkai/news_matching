@@ -13,8 +13,15 @@ import ast
 # Function to process dataframe - extract top theme, index and subindex
 @st.cache_data
 def process_table(df):
+
+    k = utils.get_cached_object("K")
+
     df["suggested_labels"] = df["Predicted_Theme_Chains"].apply(
-        lambda x: [chain for chain in list(x.keys())[:5]]
+        lambda x: [chain for chain in list(x.keys())[:k]]
+    )
+
+    df["suggested_label"] = df["suggested_labels"].apply(
+        lambda x: x[0]
     )
 
     df["suggested_themes"] = df["Predicted_Theme_Chains"].apply(
@@ -50,6 +57,12 @@ def process_table(df):
     )
     df["subindex_prob"] = df["Predicted_Theme_Chains"].apply(
         lambda x: list(x.values())[0]
+    )
+
+    taxonomy = utils.get_cached_object("taxonomy")
+
+    df["taxonomy"] = df["Predicted_Theme_Chains"].apply(
+        lambda x: taxonomy
     )
 
     # st.write(df)
@@ -147,7 +160,7 @@ def display_stats(df, title=True, show_themes=True, show_theme_count=True):
 
 
 # Function to display aggrid by themes
-@st.cache_resource(experimental_allow_widgets=True, show_spinner=False)
+# @st.cache_resource(experimental_allow_widgets=True, show_spinner=False)
 def display_aggrid_by_theme(df_collection, current_theme_index):
     current_theme = list(df_collection.keys())[current_theme_index]
     n_themes = len(df_collection.keys())
@@ -313,7 +326,7 @@ def validate_current_response(current_response):
 
 
 # Function to display aggrid table
-@st.cache_resource(experimental_allow_widgets=True, show_spinner=False)
+# @st.cache_resource(experimental_allow_widgets=True, show_spinner=False)
 def display_aggrid(df, load_state, selected_rows):
     # Initialising columns for new input
     if not load_state:
@@ -333,6 +346,12 @@ def display_aggrid(df, load_state, selected_rows):
         df["suggested_subindexes"] = df["suggested_subindexes"].apply(
             lambda x: ast.literal_eval(x) if type(x) == str else x
         )
+        df["suggested_labels"] = df["suggested_labels"].apply(
+            lambda x: ast.literal_eval(x) if type(x) == str else x
+        )
+        df["taxonomy"] = df["taxonomy"].apply(
+            lambda x: ast.literal_eval(x) if type(x) == str else x
+        )
 
     # loading taxonomy from cache
     if utils.check_session_state_key("taxonomy"):
@@ -346,12 +365,12 @@ def display_aggrid(df, load_state, selected_rows):
         "facebook_interactions",
         "domain",
         "theme",
-        "new theme",
+        # "new theme",
         "index",
-        "new index",
+        # "new index",
         "subindex",
-        "new subindex",
-        # "suggested_labels",
+        # "new subindex",
+        "suggested_label",
         # "suggested_themes",
         # "suggested_indexes",
         # "suggested_subindexes",
@@ -377,13 +396,53 @@ def display_aggrid(df, load_state, selected_rows):
 
     gb.configure_column("suggested_labels", width=900, cellRenderer=tooltipjs)
 
+    labeljs = JsCode (
+        """
+        function(params) {
+        const predictedLabels = params.data.suggested_labels;
+        //predictedLabels.indexOf("-Enter New Label") === -1 ? predictedLabels.push("-Enter New Label") : null;
+            return {
+                values: predictedLabels,
+                popupPosition: "under",
+                cellHeight: 30,
+            }
+        }
+        
+        """
+    )
+
+    
+    gb.configure_column(
+        "suggested_label",
+        editable=True,
+        cellEditor="agRichSelectCellEditor",
+        cellEditorParams=labeljs,
+        width=900,
+
+    )
+
+    # themejs = JsCode(
+    #     """
+    #     function(params) {
+    #     const predictedThemes = params.data.suggested_themes;
+    #     predictedThemes.indexOf("-Enter New Theme") === -1 ? predictedThemes.push("-Enter New Theme") : null;
+    #         return {
+    #             values: predictedThemes,
+    #             popupPosition: "under",
+    #             cellHeight: 30,
+    #         }
+    #     }
+        
+    #     """
+    # )
+
     themejs = JsCode(
         """
         function(params) {
-        const predictedThemes = params.data.suggested_themes;
-        predictedThemes.indexOf("-Enter New Theme") === -1 ? predictedThemes.push("-Enter New Theme") : null;
+        const themes = Object.keys(params.data.taxonomy);
+        //themes.indexOf("-Enter New Theme") === -1 ? themes.push("-Enter New Theme") : null;
             return {
-                values: predictedThemes,
+                values: themes,
                 popupPosition: "under",
                 cellHeight: 30,
             }
@@ -399,13 +458,29 @@ def display_aggrid(df, load_state, selected_rows):
         cellEditorParams=themejs,
     )
 
+    # indexesjs = JsCode(
+    #     """
+    #     function(params) {
+    #     const predictedIndexes = params.data.suggested_indexes;
+    #     predictedIndexes.indexOf("-Enter New Index") === -1 ? predictedIndexes.push("-Enter New Index") : null;
+    #         return {
+    #             values: predictedIndexes,
+    #             popupPosition: "under",
+    #             cellHeight: 30,
+    #         }
+    #     }
+        
+    #     """
+    # )
+
     indexesjs = JsCode(
         """
         function(params) {
-        const predictedIndexes = params.data.suggested_indexes;
-        predictedIndexes.indexOf("-Enter New Index") === -1 ? predictedIndexes.push("-Enter New Index") : null;
+        const theme = params.data.theme;
+        const indexes = Object.keys(params.data.taxonomy[theme]);
+        //indexes.indexOf("-Enter New Index") === -1 ? indexes.push("-Enter New Index") : null;
             return {
-                values: predictedIndexes,
+                values: indexes,
                 popupPosition: "under",
                 cellHeight: 30,
             }
@@ -421,13 +496,29 @@ def display_aggrid(df, load_state, selected_rows):
         cellEditorParams=indexesjs,
     )
 
+    # subindexesjs = JsCode(
+    #     """
+    #     function(params) {
+    #     const predictedSubIndexes = params.data.suggested_subindexes;
+    #     predictedSubIndexes.indexOf("-Enter New Subindex") === -1 ? predictedSubIndexes.push("-Enter New Subindex") : null;
+    #         return {
+    #             values: predictedSubIndexes,
+    #             popupPosition: "under",
+    #             cellHeight: 30,
+    #         }
+    #     }
+    #     """
+    # )
+
     subindexesjs = JsCode(
         """
         function(params) {
-        const predictedSubIndexes = params.data.suggested_subindexes;
-        predictedSubIndexes.indexOf("-Enter New Subindex") === -1 ? predictedSubIndexes.push("-Enter New Subindex") : null;
+        const theme = params.data.theme;
+        const index = params.data.index;
+        const subindexes = params.data.taxonomy[theme][index];
+        //subindexes.indexOf("-Enter New Subindex") === -1 ? subindexes.push("-Enter New Subindex") : null;
             return {
-                values: predictedSubIndexes,
+                values: subindexes,
                 popupPosition: "under",
                 cellHeight: 30,
             }
@@ -481,6 +572,7 @@ def display_aggrid(df, load_state, selected_rows):
     grid_response = AgGrid(
         df,
         gridOptions=gridOptions,
+        # update_mode=GridUpdateMode.VALUE_CHANGED,
         update_mode=GridUpdateMode.MODEL_CHANGED,
         columns_auto_size_mode=ColumnsAutoSizeMode.FIT_ALL_COLUMNS_TO_VIEW,
         allow_unsafe_jscode=True,
