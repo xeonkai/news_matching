@@ -1,0 +1,23 @@
+name: news_matching
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.9
+  - sentence-transformers
+  - streamlit=1.22
+  - altair<5 # streamlit 1.22 support
+  - pyarrow
+  - python-duckdb
+  - numpy=1.23 # numba support
+  - numba=0.56 # UMAP error
+  - pandas
+  - faiss
+  - pynndescent
+  - umap-learn
+  - bertopic
+  - xlsxwriter
+  # - jupyterlab
+  - pip
+  - pip:
+      - streamlit-aggrid

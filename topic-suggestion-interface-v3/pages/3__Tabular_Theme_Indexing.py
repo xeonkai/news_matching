@@ -30,7 +30,7 @@ format.horizontal_line()
 
 
 def run():
-    if utils.check_session_state_key("csv_file"):
+    if utils.check_session_state_key("csv_file_filtered"):
         if utils.check_session_state_key("csv_file_with_predicted_labels"):
             uploaded_data_with_themes = utils.get_cached_object(
                 "csv_file_with_predicted_labels"

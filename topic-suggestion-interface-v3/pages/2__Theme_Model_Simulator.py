@@ -26,7 +26,7 @@ format.horizontal_line()
 
 
 def run_theme_model_simulator(taxonomy_chains, k=5):
-    uploaded_data = utils.get_cached_object("csv_file")
+    uploaded_data = utils.get_cached_object("csv_file_filtered")
 
     if utils.check_session_state_key("K"):
         k = utils.get_cached_object("K")
@@ -38,7 +38,7 @@ def run_theme_model_simulator(taxonomy_chains, k=5):
 
     # sort by facebook interactions
     uploaded_data_with_themes = uploaded_data_with_themes.sort_values(
-        by=["Facebook Interactions"], ascending=False
+        by=["facebook_interactions"], ascending=False
     ).reset_index(drop=True)
 
     utils.cache_object(uploaded_data_with_themes, "csv_file_with_predicted_labels")
@@ -46,10 +46,11 @@ def run_theme_model_simulator(taxonomy_chains, k=5):
 
 
 def run():
-    if utils.check_session_state_key("csv_file"):
+
+    if utils.check_session_state_key("csv_file_filtered"):
         taxonomy = reformat_taxonomy(read_taxonomy())
-        # st.write(taxonomy)
         taxonomy_chains = generate_label_chains(taxonomy)
+
         utils.cache_object(taxonomy, "taxonomy")
         st.subheader("Previewing the Taxonomy")
         c1, c2, c3 = st.columns(3)
