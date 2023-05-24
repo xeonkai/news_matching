@@ -160,8 +160,9 @@ def display_stats(df, title=True, show_themes=True, show_theme_count=True):
 
 
 # Function to display aggrid by themes
-# @st.cache_resource(experimental_allow_widgets=True, show_spinner=False)
+@st.cache_resource(experimental_allow_widgets=True, show_spinner=False)
 def display_aggrid_by_theme(df_collection, current_theme_index):
+    # st.write(st.session_state)
     current_theme = list(df_collection.keys())[current_theme_index]
     n_themes = len(df_collection.keys())
     df = df_collection[current_theme]
@@ -181,42 +182,52 @@ def display_aggrid_by_theme(df_collection, current_theme_index):
         grid_responses = utils.get_cached_object("grid_responses")
     else:
         grid_responses = {}
-        utils.cache_object(grid_responses, "grid_responses")
 
     with st.form("aggrid_form"):
         load_state = False
+
         selected_rows = []
+            
         if current_theme in grid_responses:
+            st.write("Loading from cache")
             load_state = True
-            df = grid_responses[current_theme]["data"]
-            selected_rows = grid_responses[current_theme]["selected_rows"]
+            df = grid_responses[current_theme]["data"].copy()
+            selected_rows = [row for row in grid_responses[current_theme]["selected_rows"]]
 
         current_response = display_aggrid(df, load_state, selected_rows)
 
         if st.form_submit_button("Confirm"):
+
+
+            grid_responses[current_theme] = current_response
+
+            utils.cache_object(grid_responses, "grid_responses")
+
             valid_submission = validate_current_response(current_response)
 
-            grid_responses_validation = {}
+            if utils.check_session_state_key("grid_responses_validation"):
+                grid_responses_validation = utils.get_cached_object(
+                    "grid_responses_validation"
+                )
+            else:
+                grid_responses_validation = {}
+
             grid_responses_validation[current_theme] = valid_submission
             utils.cache_object(grid_responses_validation, "grid_responses_validation")
 
-            grid_responses[current_theme] = current_response
-            utils.cache_object(grid_responses, "grid_responses")
-
             if valid_submission:
-
                 st.success(
-                    f"Article Labels Confirmed for {current_theme}! You may overwrite by pressing 'Confirm' again!",
+                    f"Article Labels Confirmed for {current_theme}!",
                     icon="✅",
                 )
-                # st.experimental_rerun() 
+                st.experimental_rerun() 
 
             else:
                 st.warning(
                     f"Please enter blank fields that require new inputs!",
                     icon="⚠️",
                 )
-            st.experimental_rerun() 
+                st.experimental_rerun() 
         elif (
             load_state
             and utils.check_session_state_key("grid_responses_validation")
@@ -224,7 +235,7 @@ def display_aggrid_by_theme(df_collection, current_theme_index):
             and utils.get_cached_object("grid_responses_validation")[current_theme]
         ):
             st.success(
-                f"Article Labels Confirmed for {current_theme}! You may overwrite by pressing 'Confirm' again!",
+                f"Article Labels Confirmed for {current_theme}!",
                 icon="✅",
             )
         elif (
@@ -237,6 +248,7 @@ def display_aggrid_by_theme(df_collection, current_theme_index):
                 f"Please enter blank fields that require new inputs!",
                 icon="⚠️",
             )
+        
 
     # Buttons
     nav_buttons(current_theme_index, n_themes)
@@ -353,23 +365,23 @@ def display_aggrid(df, load_state, selected_rows):
             lambda x: ast.literal_eval(x) if type(x) == str else x
         )
 
-    # loading taxonomy from cache
-    if utils.check_session_state_key("taxonomy"):
-        taxonomy = utils.get_cached_object("taxonomy")
-    else:
-        taxonomy = read_taxonomy()
-        utils.cache_object(taxonomy, "taxonomy")
+    # # loading taxonomy from cache
+    # if utils.check_session_state_key("taxonomy"):
+    #     taxonomy = utils.get_cached_object("taxonomy")
+    # else:
+    #     taxonomy = read_taxonomy()
+    #     utils.cache_object(taxonomy, "taxonomy")
 
     columns_to_show = [
         "headline",
         "facebook_interactions",
         "domain",
         "theme",
-        # "new theme",
+        "new theme",
         "index",
-        # "new index",
+        "new index",
         "subindex",
-        # "new subindex",
+        "new subindex",
         "suggested_label",
         # "suggested_themes",
         # "suggested_indexes",
@@ -390,17 +402,17 @@ def display_aggrid(df, load_state, selected_rows):
     # Configure individual columns
     gb.configure_column("headline", headerCheckboxSelection=True, width=1200)
 
-    tooltipjs = JsCode(
-        """ function(params) { return '<span title="' + params.value + '">'+params.value+'</span>';  }; """
-    )  # if using with cellRenderer
+    # tooltipjs = JsCode(
+    #     """ function(params) { return '<span title="' + params.value + '">'+params.value+'</span>';  }; """
+    # )  # if using with cellRenderer
 
-    gb.configure_column("suggested_labels", width=900, cellRenderer=tooltipjs)
+    # gb.configure_column("suggested_labels", width=500, cellRenderer=tooltipjs)
 
     labeljs = JsCode (
         """
         function(params) {
         const predictedLabels = params.data.suggested_labels;
-        //predictedLabels.indexOf("-Enter New Label") === -1 ? predictedLabels.push("-Enter New Label") : null;
+        predictedLabels.indexOf("-Enter New Label") === -1 ? predictedLabels.push("-Enter New Label") : null;
             return {
                 values: predictedLabels,
                 popupPosition: "under",
@@ -421,27 +433,13 @@ def display_aggrid(df, load_state, selected_rows):
 
     )
 
-    # themejs = JsCode(
-    #     """
-    #     function(params) {
-    #     const predictedThemes = params.data.suggested_themes;
-    #     predictedThemes.indexOf("-Enter New Theme") === -1 ? predictedThemes.push("-Enter New Theme") : null;
-    #         return {
-    #             values: predictedThemes,
-    #             popupPosition: "under",
-    #             cellHeight: 30,
-    #         }
-    #     }
-        
-    #     """
-    # )
-
     themejs = JsCode(
         """
         function(params) {
         const themes = Object.keys(params.data.taxonomy);
-        //themes.indexOf("-Enter New Theme") === -1 ? themes.push("-Enter New Theme") : null;
+        themes.indexOf("-Enter New Theme") === -1 ? themes.push("-Enter New Theme") : null;
             return {
+                valueGetter: params.data.suggested_label,
                 values: themes,
                 popupPosition: "under",
                 cellHeight: 30,
@@ -458,28 +456,14 @@ def display_aggrid(df, load_state, selected_rows):
         cellEditorParams=themejs,
     )
 
-    # indexesjs = JsCode(
-    #     """
-    #     function(params) {
-    #     const predictedIndexes = params.data.suggested_indexes;
-    #     predictedIndexes.indexOf("-Enter New Index") === -1 ? predictedIndexes.push("-Enter New Index") : null;
-    #         return {
-    #             values: predictedIndexes,
-    #             popupPosition: "under",
-    #             cellHeight: 30,
-    #         }
-    #     }
-        
-    #     """
-    # )
-
     indexesjs = JsCode(
         """
         function(params) {
         const theme = params.data.theme;
         const indexes = Object.keys(params.data.taxonomy[theme]);
-        //indexes.indexOf("-Enter New Index") === -1 ? indexes.push("-Enter New Index") : null;
+        indexes.indexOf("-Enter New Index") === -1 ? indexes.push("-Enter New Index") : null;
             return {
+                field: 1,
                 values: indexes,
                 popupPosition: "under",
                 cellHeight: 30,
@@ -495,20 +479,6 @@ def display_aggrid(df, load_state, selected_rows):
         cellEditor="agRichSelectCellEditor",
         cellEditorParams=indexesjs,
     )
-
-    # subindexesjs = JsCode(
-    #     """
-    #     function(params) {
-    #     const predictedSubIndexes = params.data.suggested_subindexes;
-    #     predictedSubIndexes.indexOf("-Enter New Subindex") === -1 ? predictedSubIndexes.push("-Enter New Subindex") : null;
-    #         return {
-    #             values: predictedSubIndexes,
-    #             popupPosition: "under",
-    #             cellHeight: 30,
-    #         }
-    #     }
-    #     """
-    # )
 
     subindexesjs = JsCode(
         """
@@ -537,16 +507,7 @@ def display_aggrid(df, load_state, selected_rows):
     gb.configure_column("new index", editable=True)
     gb.configure_column("new subindex", editable=True)
 
-    # gb.configure_grid_options(domLayout="normal")
-    # st.write(selected_rows)
-    selected_rows_id = [
-        row["_selectedRowNodeInfo"]["nodeRowIndex"] for row in selected_rows
-    ]
-    gb.configure_selection(
-        selection_mode="multiple",
-        use_checkbox=True,
-        pre_selected_rows=selected_rows_id,
-    )
+
 
     # Pagination
 
@@ -561,6 +522,15 @@ def display_aggrid(df, load_state, selected_rows):
         paginationPageSize=n_articles_per_page,
     )
 
+    selected_rows_id = [
+        row["_selectedRowNodeInfo"]["nodeRowIndex"] for row in selected_rows
+    ]
+    gb.configure_selection(
+        selection_mode="multiple",
+        use_checkbox=True,
+        pre_selected_rows=selected_rows_id,
+    )
+
     gridOptions = gb.build()
 
     columns_to_hide = [i for i in df.columns if i not in columns_to_show]
@@ -572,10 +542,12 @@ def display_aggrid(df, load_state, selected_rows):
     grid_response = AgGrid(
         df,
         gridOptions=gridOptions,
-        # update_mode=GridUpdateMode.VALUE_CHANGED,
-        update_mode=GridUpdateMode.MODEL_CHANGED,
+        update_mode=GridUpdateMode.MODEL_CHANGED | GridUpdateMode.VALUE_CHANGED | GridUpdateMode.SELECTION_CHANGED,
+        # update_mode=GridUpdateMode.MANUAL,
         columns_auto_size_mode=ColumnsAutoSizeMode.FIT_ALL_COLUMNS_TO_VIEW,
         allow_unsafe_jscode=True,
+        reload_data=True
     )
 
     return grid_response
+

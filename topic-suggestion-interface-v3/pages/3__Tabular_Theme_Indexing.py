@@ -48,6 +48,7 @@ def run():
 
             format.horizontal_line()
 
+
             display_aggrid_by_theme(table_collection, current_theme_index)
 
             format.horizontal_line()

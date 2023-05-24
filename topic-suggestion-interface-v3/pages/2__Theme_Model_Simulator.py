@@ -1,4 +1,5 @@
 import streamlit as st
+import pandas as pd
 from functions.random_label_generator import (
     assign_labels_to_dataframe,
     assign_theme_chain_to_dataframe,
@@ -8,6 +9,7 @@ from functions.taxonomy_reader import (
     generate_label_chains,
     reformat_taxonomy,
 )
+from streamlit_extras.dataframe_explorer import dataframe_explorer
 import utils.design_format as format
 import utils.utils as utils
 
@@ -53,11 +55,9 @@ def run():
 
         utils.cache_object(taxonomy, "taxonomy")
         st.subheader("Previewing the Taxonomy")
-        c1, c2, c3 = st.columns(3)
-        with c1:
-            st.write(taxonomy)
-        with c2:
-            st.dataframe(taxonomy_chains)
+
+        taxonomy_chains_df = pd.DataFrame(taxonomy_chains, columns=["Chain"])
+        st.dataframe(taxonomy_chains_df, use_container_width=True)
 
         with st.form("Theme Model Simulator Form"):
             k = st.number_input(

@@ -65,10 +65,10 @@ def cache_object(object, key):
     """
 
     if key not in st.session_state:
-        print("INFO: Key does not exist in session state. Creating new key.")
+        # print("INFO: Key does not exist in session state. Creating new key.")
         st.session_state[key] = object
     else:
-        print("INFO: Key exists in session state. Overwriting key.")
+        # print("INFO: Key exists in session state. Overwriting key.")
         st.session_state[key] = object
     return st.session_state[key]
 
@@ -83,10 +83,10 @@ def get_cached_object(key):
     """
 
     if key in st.session_state:
-        print("INFO: Key exists in session state. Returning cached object.")
+        # print("INFO: Key exists in session state. Returning cached object.")
         return st.session_state[key]
     else:
-        print("INFO: Key does not exist in session state. Returning None.")
+        # print("INFO: Key does not exist in session state. Returning None.")
         return None
 
 
