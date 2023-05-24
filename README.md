@@ -3,20 +3,15 @@
 ## Folder structure
 ```bash
 .
-├──app/
+├──topic-suggestion-interface-v3/
 │   └── pages/
 ├──data/
 │   ├── raw/
-│   ├── processed/
-│   └── embeddings/
-├── figures/
-├── reports/
-├── results/
-├── scripts/
-│   └──deprecated/
+│   └── processed/
 ├── .gitignore
 ├── environment.yml
 ├── README.md
+├── environment.yml
 └── requirements.txt
 ```
 
@@ -25,29 +20,26 @@
 ### To reproduce and use environment with required libaries
 Takes like 10mins for first time ~
 ```bash
-# Create environment from file
-conda env create -f environment.yml
+# # Create environment from file
+# conda env create -f environment.yml
+# # To use created environment
+# conda activate news_matching
+# # Deactivate environment / close terminal
+# conda deactivate
 
+# Create virtual env
+python -m venv venv
 # To use created environment
-conda activate news_matching
-
-# Open jupyter lab and code
-jupyter lab
-
-# Ctrl + C to stop jupyter server
-
+source venv/bin/activate
+# To install packages from file
+python -m pip install -r requirements.txt
 # Deactivate environment / close terminal
-conda deactivate
+deactivate
 ```
 
-### To setup folder structure and prepare embeddings, and run app
-Run notebooks 01, 02, 03
+### To run app
 ```bash
-jupyter lab
-
-# Run notebooks 01, 02, 03 in order
-
-streamlit run app/main.py
+streamlit run app/topic-suggestion-interface-v3.py
 ```
 
 ### To add additional libraries, and update environment
