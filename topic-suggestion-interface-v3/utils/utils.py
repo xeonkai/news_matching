@@ -75,10 +75,10 @@ def get_cached_object(key):
     """
 
     if key in st.session_state:
-        print("INFO: Key exists in seesion state. Returning cached object.")
+        print("INFO: Key exists in session state. Returning cached object.")
         return st.session_state[key]
     else:
-        print("INFO: Key does not exist in seesion state. Returning None.")
+        print("INFO: Key does not exist in session state. Returning None.")
         return None
 
 

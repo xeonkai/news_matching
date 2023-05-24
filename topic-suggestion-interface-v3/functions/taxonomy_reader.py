@@ -1,5 +1,5 @@
 import json
-from random import sample
+from random import sample, seed
 
 
 def read_taxonomy():
@@ -17,9 +17,11 @@ def reformat_taxonomy(taxonomy):
 
     for theme in themes:
         new_taxonomy[theme] = {}
-        for index in sample(indexes, 3):
+        # seed(42)
+        for index in sample(indexes, 5):
             new_taxonomy[theme][index] = []
-            new_taxonomy[theme][index].extend(sample(subindexes, 3))
+            # seed(42)
+            new_taxonomy[theme][index].extend(sample(subindexes, 5))
             new_taxonomy[theme][index].extend(["NA"])
 
     return new_taxonomy

@@ -1,7 +1,7 @@
 import numpy as np
 import random
 import pandas as pd
-
+import streamlit as st
 
 # Given a list of 5 topics, randomly assign a probability to each topic and return sorted list of topics.
 def random_label_generator(label, seed=None):
@@ -47,6 +47,7 @@ def assign_labels_to_dataframe(df, themes, indexes, subindexes, k, seed=None):
 
 # Given a dataframe, assign a list of predicted theme chains sorted by random probabilities to each row and return the dataframe with the theme column appended.
 def assign_theme_chain_to_dataframe(df, theme_chains, k, seed=None):
+    # st.dataframe(theme_chains)
     if seed:
         # Set np seed for reproducibility
         np.random.seed(seed)
