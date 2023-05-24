@@ -195,7 +195,7 @@ class FileHandler:
                 parse_dates=["Published"],
             )
             .assign(
-                timestamp=lambda df: df["Published"].astype(int) // 10**9,
+                timestamp=lambda df: df["Published"].astype('int64') // 10**9,
                 source=source,
             )
             .rename(lambda col_name: col_name.lower().replace(" ", "_"), axis="columns")

@@ -388,7 +388,7 @@ def display_aggrid(df, load_state, selected_rows):
     )
 
     # Configure individual columns
-    gb.configure_column("Headline", headerCheckboxSelection=True, width=1200)
+    gb.configure_column("headline", headerCheckboxSelection=True, width=1200)
 
     tooltipjs = JsCode(
         """ function(params) { return '<span title="' + params.value + '">'+params.value+'</span>';  }; """
