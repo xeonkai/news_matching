@@ -8,7 +8,7 @@ from st_aggrid.grid_options_builder import GridOptionsBuilder
 import time
 import json
 import ast
-
+import copy
 
 # Function to process dataframe - extract top theme, index and subindex
 @st.cache_data
@@ -192,7 +192,7 @@ def display_aggrid_by_theme(df_collection, current_theme_index):
             st.write("Loading from cache")
             load_state = True
             df = grid_responses[current_theme]["data"].copy()
-            selected_rows = [row for row in grid_responses[current_theme]["selected_rows"]]
+            selected_rows = copy.deepcopy(grid_responses[current_theme]["selected_rows"])
 
         current_response = display_aggrid(df, load_state, selected_rows)
 
@@ -338,7 +338,7 @@ def validate_current_response(current_response):
 
 
 # Function to display aggrid table
-# @st.cache_resource(experimental_allow_widgets=True, show_spinner=False)
+@st.cache_resource(experimental_allow_widgets=True, show_spinner=False)
 def display_aggrid(df, load_state, selected_rows):
     # Initialising columns for new input
     if not load_state:
@@ -377,11 +377,11 @@ def display_aggrid(df, load_state, selected_rows):
         "facebook_interactions",
         "domain",
         "theme",
-        "new theme",
+        # "new theme",
         "index",
-        "new index",
+        # "new index",
         "subindex",
-        "new subindex",
+        # "new subindex",
         "suggested_label",
         # "suggested_themes",
         # "suggested_indexes",
@@ -412,7 +412,7 @@ def display_aggrid(df, load_state, selected_rows):
         """
         function(params) {
         const predictedLabels = params.data.suggested_labels;
-        predictedLabels.indexOf("-Enter New Label") === -1 ? predictedLabels.push("-Enter New Label") : null;
+        // predictedLabels.indexOf("-Enter New Label") === -1 ? predictedLabels.push("-Enter New Label") : null;
             return {
                 values: predictedLabels,
                 popupPosition: "under",
@@ -437,9 +437,8 @@ def display_aggrid(df, load_state, selected_rows):
         """
         function(params) {
         const themes = Object.keys(params.data.taxonomy);
-        themes.indexOf("-Enter New Theme") === -1 ? themes.push("-Enter New Theme") : null;
+        // themes.indexOf("-Enter New Theme") === -1 ? themes.push("-Enter New Theme") : null;
             return {
-                valueGetter: params.data.suggested_label,
                 values: themes,
                 popupPosition: "under",
                 cellHeight: 30,
@@ -461,9 +460,8 @@ def display_aggrid(df, load_state, selected_rows):
         function(params) {
         const theme = params.data.theme;
         const indexes = Object.keys(params.data.taxonomy[theme]);
-        indexes.indexOf("-Enter New Index") === -1 ? indexes.push("-Enter New Index") : null;
+        // indexes.indexOf("-Enter New Index") === -1 ? indexes.push("-Enter New Index") : null;
             return {
-                field: 1,
                 values: indexes,
                 popupPosition: "under",
                 cellHeight: 30,
@@ -542,11 +540,10 @@ def display_aggrid(df, load_state, selected_rows):
     grid_response = AgGrid(
         df,
         gridOptions=gridOptions,
-        update_mode=GridUpdateMode.MODEL_CHANGED | GridUpdateMode.VALUE_CHANGED | GridUpdateMode.SELECTION_CHANGED,
+        update_mode=GridUpdateMode.MODEL_CHANGED,
         # update_mode=GridUpdateMode.MANUAL,
         columns_auto_size_mode=ColumnsAutoSizeMode.FIT_ALL_COLUMNS_TO_VIEW,
         allow_unsafe_jscode=True,
-        reload_data=True
     )
 
     return grid_response
