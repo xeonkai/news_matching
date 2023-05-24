@@ -2,6 +2,14 @@ import streamlit as st
 import pandas as pd
 import time
 import json
+from sentence_transformers import SentenceTransformer
+import pyarrow as pa
+import pyarrow.parquet as pq
+import datetime
+from pathlib import Path
+
+RAW_DATA_DIR = Path("data", "raw")
+PROCESSED_DATA_DIR = Path("data", "processed")
 
 
 def csv_file_uploader():
@@ -134,3 +142,113 @@ def no_file_uploaded():
         type_="warning",
         icon="⚠️",
     )
+
+
+def load_embedding_model() -> SentenceTransformer:
+    model = SentenceTransformer(
+        "sentence-transformers/multi-qa-MiniLM-L6-cos-v1",
+        cache_folder="cached_models",
+    )
+    return model
+
+
+def embed_df(df: pd.DataFrame, model: SentenceTransformer, column: str) -> pa.Table:
+    embeddings = model.encode(df[column])
+    embedded_table = pa.Table.from_pandas(df, preserve_index=False).append_column(
+        "vector",
+        pa.FixedSizeListArray.from_arrays(
+            embeddings.ravel(),
+            list_size=embeddings.shape[-1],
+        ),
+    )
+    return embedded_table
+
+
+class FileHandler:
+    def __init__(self, raw_data_dir, processed_data_dir):
+        self.raw_data_dir = raw_data_dir
+        self.processed_data_dir = processed_data_dir
+
+        self.raw_data_dir.mkdir(parents=True, exist_ok=True)
+        self.processed_data_dir.mkdir(parents=True, exist_ok=True)
+
+    @staticmethod
+    def preprocess_daily_scan(file, source: str = "") -> pd.DataFrame:
+        df = (
+            pd.read_csv(
+                file,
+                usecols=[
+                    "Published",
+                    "Headline",
+                    "Summary",
+                    "Link",
+                    "Domain",
+                    "Facebook Interactions",
+                ],
+                dtype={
+                    "Headline": "string",
+                    "Summary": "string",
+                    "Link": "string",
+                    "Domain": "string",
+                    "Facebook Interactions": "int",
+                },
+                parse_dates=["Published"],
+            )
+            .assign(
+                timestamp=lambda df: df["Published"].astype(int) // 10**9,
+                source=source,
+            )
+            .rename(lambda col_name: col_name.lower().replace(" ", "_"), axis="columns")
+        )
+        return df
+
+    def write_csv(self, file):
+        filepath = self.raw_data_dir / file.name
+        filepath.write_bytes(file.getbuffer())
+        return filepath
+
+    def write_processed_parquet(self, file, embedding_model):
+        df = self.preprocess_daily_scan(file, source=file.name)
+        embedded_table = embed_df(df, embedding_model, column="headline")
+        # Save processed data
+        filepath = self.processed_data_dir / file.name.replace(".csv", ".parquet")
+        pq.write_table(
+            embedded_table,
+            filepath,
+        )
+        return filepath
+
+    def list_csv_filenames(self):
+        return [file.name for file in self.raw_data_dir.iterdir()]
+
+    def list_csv_files(self):
+        return list(self.raw_data_dir.iterdir())
+
+    def list_csv_files_df(self):
+        raw_files_info = [
+            {
+                "filename": file.name,
+                "modified": datetime.datetime.fromtimestamp(file.stat().st_mtime),
+                # "filesize": f"{file.stat().st_size / 1000 / 1000:.2f} MB",
+            }
+            for file in self.raw_data_dir.iterdir()
+        ]
+        return pd.DataFrame(raw_files_info)
+
+    def remove_files(self, filenames):
+        for filename in filenames:
+            (self.raw_data_dir / filename).unlink(missing_ok=True)
+            (self.processed_data_dir / filename.replace(".csv", ".parquet")).unlink(
+                missing_ok=True
+            )
+        return [self.raw_data_dir / filename for filename in filenames]
+
+    def download_csv_files(self):
+        # Convert folder to zip, return zip file
+        raise NotImplementedError
+
+    def __str__(self):
+        return f"{[file.name for file in self.raw_data_dir.iterdir()]}"
+
+    def __len__(self):
+        return len(self.raw_data_dir.iterdir())

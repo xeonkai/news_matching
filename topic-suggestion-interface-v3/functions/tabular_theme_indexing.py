@@ -93,10 +93,10 @@ def slice_table(df):
 # Function to get top themes based on facebook interactions
 @st.cache_data
 def get_top_themes(df):
-    df_sum = df.groupby(["theme"]).agg({"Facebook Interactions": "sum"})
+    df_sum = df.groupby(["theme"]).agg({"facebook_interactions": "sum"})
 
     df_sum = df_sum.sort_values(
-        by=["Facebook Interactions"], ascending=False
+        by=["facebook_interactions"], ascending=False
     ).reset_index()
 
     top_themes = df_sum["theme"].unique()
@@ -113,7 +113,7 @@ def display_stats(df, title=True, show_themes=True, show_theme_count=True):
     n_themes = len(df["theme"].unique())
     n_index = len(df["index"].unique())
     n_subindex = len(df["subindex"].unique())
-    n_fb_interactions = df["Facebook Interactions"].sum()
+    n_fb_interactions = df["facebook_interactions"].sum()
 
     col1, col2, col3, col4, col5 = st.columns(5)
 
@@ -342,9 +342,9 @@ def display_aggrid(df, load_state, selected_rows):
         utils.cache_object(taxonomy, "taxonomy")
 
     columns_to_show = [
-        "Headline",
-        "Facebook Interactions",
-        "Domain",
+        "headline",
+        "facebook_interactions",
+        "domain",
         "theme",
         "new theme",
         "index",
