@@ -94,7 +94,17 @@ def modify_taxonomy(taxonomy):
         for index in taxonomy[theme].keys():
             taxonomy[theme][index].append("-Enter New Subindex")
 
-    taxonomy["-Enter New Theme"] = {i: subindexes for i in indexes}
+    # unpack taxonomy by indexes
+    unpacked_taxonomy = {}
+    for theme in themes:
+        for index in taxonomy[theme].keys():
+            if index not in unpacked_taxonomy.keys():
+                unpacked_taxonomy[index] = taxonomy[theme][index]
+            else:
+                unpacked_taxonomy[index] = list(
+                    set(unpacked_taxonomy[index] + taxonomy[theme][index]))
+
+    taxonomy["-Enter New Theme"] = {i: unpacked_taxonomy[i] for i in indexes}
     taxonomy["-Enter New Theme"]["-Enter New Index"] = [i for i in subindexes]
 
     return taxonomy
@@ -444,7 +454,7 @@ def display_aggrid(df, load_state, selected_rows):
         const themes = Object.keys(params.data.taxonomy);
         // themes.indexOf("-Enter New Theme") === -1 ? themes.push("-Enter New Theme") : null;
             return {
-                values: themes,
+                values: themes.sort(),
                 popupPosition: "under",
                 cellHeight: 30,
             }
@@ -467,7 +477,7 @@ def display_aggrid(df, load_state, selected_rows):
         const indexes = Object.keys(params.data.taxonomy[theme]);
         // indexes.indexOf("-Enter New Index") === -1 ? indexes.push("-Enter New Index") : null;
             return {
-                values: indexes,
+                values: indexes.sort(),
                 popupPosition: "under",
                 cellHeight: 30,
             }
@@ -491,7 +501,7 @@ def display_aggrid(df, load_state, selected_rows):
         const subindexes = params.data.taxonomy[theme][index];
         // subindexes.indexOf("-Enter New Subindex") === -1 ? subindexes.push("-Enter New Subindex") : null;
             return {
-                values: subindexes,
+                values: subindexes.sort(),
                 popupPosition: "under",
                 cellHeight: 30,
             }
