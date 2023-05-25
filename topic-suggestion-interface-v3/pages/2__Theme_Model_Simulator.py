@@ -8,6 +8,7 @@ from functions.taxonomy_reader import (
     read_taxonomy,
     generate_label_chains,
     reformat_taxonomy,
+    convert_chain_to_list,
 )
 from streamlit_extras.dataframe_explorer import dataframe_explorer
 import utils.design_format as format
@@ -54,14 +55,15 @@ def run():
 
     if utils.check_session_state_key("csv_file_filtered"):
         taxonomy = read_taxonomy()
-        # taxonomy = reformat_taxonomy(read_taxonomy())
         taxonomy_chains = generate_label_chains(taxonomy)
 
         utils.cache_object(taxonomy, "taxonomy")
         st.subheader("Previewing the Taxonomy")
 
-        taxonomy_chains_df = pd.DataFrame(taxonomy_chains, columns=["Chain"])
-        st.dataframe(taxonomy_chains_df, use_container_width=True)
+        taxonomy_chains_df = pd.DataFrame(pd.DataFrame(taxonomy_chains, columns=["Chain"]).apply(
+            lambda x: convert_chain_to_list(x[0]), axis=1).to_list(), columns=["Theme", "Index", "Subindex"])
+        taxonomy_chains_df_explorer = dataframe_explorer(taxonomy_chains_df)
+        st.dataframe(taxonomy_chains_df_explorer, use_container_width=True)
 
         with st.form("Theme Model Simulator Form"):
             k = st.number_input(
