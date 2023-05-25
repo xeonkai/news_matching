@@ -211,7 +211,8 @@ class FileHandler:
         df = self.preprocess_daily_scan(file, source=file.name)
         embedded_table = embed_df(df, embedding_model, column="headline")
         # Save processed data
-        filepath = self.processed_data_dir / file.name.replace(".csv", ".parquet")
+        filepath = self.processed_data_dir / \
+            file.name.replace(".csv", ".parquet")
         pq.write_table(
             embedded_table,
             filepath,

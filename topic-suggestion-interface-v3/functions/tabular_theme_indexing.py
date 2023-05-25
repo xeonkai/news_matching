@@ -32,11 +32,12 @@ def process_table(df):
     df["suggested_themes"] = df["suggested_themes"].apply(
         lambda x: list(dict.fromkeys(x))
     )
-    df["theme"] = df["Predicted_Theme_Chains"].apply(
-        lambda x: [convert_chain_to_list(chain)[0]
-                   for chain in list(x.keys())][0]
-    )
-
+    # df["theme"] = df["Predicted_Theme_Chains"].apply(
+    #     lambda x: [convert_chain_to_list(chain)[0]
+    #                for chain in list(x.keys())][0]
+    # )
+    df["theme"] = ""
+    
     df["theme_prob"] = df["Predicted_Theme_Chains"].apply(
         lambda x: list(x.values())[0])
 
@@ -47,10 +48,13 @@ def process_table(df):
     df["suggested_indexes"] = df["suggested_indexes"].apply(
         lambda x: list(dict.fromkeys(x))
     )
-    df["index"] = df["Predicted_Theme_Chains"].apply(
-        lambda x: [convert_chain_to_list(chain)[1]
-                   for chain in list(x.keys())][0]
-    )
+    # df["index"] = df["Predicted_Theme_Chains"].apply(
+    #     lambda x: [convert_chain_to_list(chain)[1]
+    #                for chain in list(x.keys())][0]
+    # )
+    
+    df["index"] = ""
+
     df["index_prob"] = df["Predicted_Theme_Chains"].apply(
         lambda x: list(x.values())[0])
 
@@ -61,10 +65,12 @@ def process_table(df):
     df["suggested_subindexes"] = df["suggested_subindexes"].apply(
         lambda x: list(dict.fromkeys(x))
     )
-    df["subindex"] = df["Predicted_Theme_Chains"].apply(
-        lambda x: [convert_chain_to_list(chain)[2]
-                   for chain in list(x.keys())][0]
-    )
+    # df["subindex"] = df["Predicted_Theme_Chains"].apply(
+    #     lambda x: [convert_chain_to_list(chain)[2]
+    #                for chain in list(x.keys())][0]
+    # )
+    df["subindex"] = ""
+    
     df["subindex_prob"] = df["Predicted_Theme_Chains"].apply(
         lambda x: list(x.values())[0]
     )
@@ -92,7 +98,8 @@ def modify_taxonomy(taxonomy):
     for theme in themes:
         taxonomy[theme]["-Enter New Index"] = [i for i in subindexes]
         for index in taxonomy[theme].keys():
-            taxonomy[theme][index].append("-Enter New Subindex")
+            if "-Enter New Subindex" not in taxonomy[theme][index]:
+                taxonomy[theme][index].append("-Enter New Subindex")
 
     # unpack taxonomy by indexes
     unpacked_taxonomy = {}
@@ -316,7 +323,6 @@ def theme_jumper(df_collection):
 
 # Table interface menu
 def table_pagination_menu():
-    # TODO: Menu to toggle pagination
     if utils.check_session_state_key("n_articles_per_page"):
         n_articles_per_page = utils.get_cached_object("n_articles_per_page")
     else:
@@ -454,6 +460,7 @@ def display_aggrid(df, load_state, selected_rows):
         const themes = Object.keys(params.data.taxonomy);
         // themes.indexOf("-Enter New Theme") === -1 ? themes.push("-Enter New Theme") : null;
             return {
+                value: "",
                 values: themes.sort(),
                 popupPosition: "under",
                 cellHeight: 30,
