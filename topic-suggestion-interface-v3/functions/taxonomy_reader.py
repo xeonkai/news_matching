@@ -8,6 +8,13 @@ def read_taxonomy():
         return data
 
 
+def process_taxonomy(taxonomy):
+    for theme in taxonomy.keys():
+        for index in taxonomy[theme].keys():
+            taxonomy[theme][index].append("NA")
+    return taxonomy
+
+
 def reformat_taxonomy(taxonomy):
     themes = taxonomy["themes"]
     indexes = taxonomy["indexes"]

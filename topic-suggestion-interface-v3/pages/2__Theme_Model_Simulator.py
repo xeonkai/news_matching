@@ -7,7 +7,7 @@ from functions.random_label_generator import (
 from functions.taxonomy_reader import (
     read_taxonomy,
     generate_label_chains,
-    reformat_taxonomy,
+    process_taxonomy,
     convert_chain_to_list,
 )
 from streamlit_extras.dataframe_explorer import dataframe_explorer
@@ -54,7 +54,7 @@ def run_theme_model_simulator(taxonomy_chains, k=5):
 def run():
 
     if utils.check_session_state_key("csv_file_filtered"):
-        taxonomy = read_taxonomy()
+        taxonomy = process_taxonomy(read_taxonomy())
         taxonomy_chains = generate_label_chains(taxonomy)
 
         utils.cache_object(taxonomy, "taxonomy")
