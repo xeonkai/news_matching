@@ -4,6 +4,8 @@ import pandas as pd
 import streamlit as st
 
 # Given a list of 5 topics, randomly assign a probability to each topic and return sorted list of topics.
+
+
 def random_label_generator(label, seed=None):
     if seed:
         # Set np seed for reproducibility
@@ -38,7 +40,8 @@ def assign_labels_to_dataframe(df, themes, indexes, subindexes, k, seed=None):
         lambda x: extract_top_k_labels(random_label_generator(indexes, seed), k), axis=1
     )
     df["Predicted_SubIndexes"] = df.apply(
-        lambda x: extract_top_k_labels(random_label_generator(subindexes, seed), k),
+        lambda x: extract_top_k_labels(
+            random_label_generator(subindexes, seed), k),
         axis=1,
     )
 
@@ -54,7 +57,8 @@ def assign_theme_chain_to_dataframe(df, theme_chains, k, seed=None):
 
     # For each row, generate a distribution of themes
     df["Predicted_Theme_Chains"] = df.apply(
-        lambda x: extract_top_k_labels(random_label_generator(theme_chains, seed), k),
+        lambda x: extract_top_k_labels(
+            random_label_generator(theme_chains, seed), k),
         axis=1,
     )
 

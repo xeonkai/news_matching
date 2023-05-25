@@ -21,7 +21,8 @@ format.horizontal_line()
 
 def run():
     embedding_model = st.cache_resource(utils.load_embedding_model)()
-    file_handler = utils.FileHandler(utils.RAW_DATA_DIR, utils.PROCESSED_DATA_DIR)
+    file_handler = utils.FileHandler(
+        utils.RAW_DATA_DIR, utils.PROCESSED_DATA_DIR)
 
     st.subheader("Uploaded files")
     files_table = st.empty()

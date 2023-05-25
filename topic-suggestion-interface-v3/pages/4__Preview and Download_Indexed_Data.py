@@ -3,7 +3,8 @@ import utils.design_format as format
 import utils.utils as utils
 from functions.grid_response_consolidator import consolidate_grid_responses
 
-st.set_page_config(page_title="Download Indexed Data", page_icon="📰", layout="wide")
+st.set_page_config(page_title="Download Indexed Data",
+                   page_icon="📰", layout="wide")
 
 st.title("📊 Download Indexed Data")
 format.horizontal_line()
@@ -28,7 +29,8 @@ def run():
                 grid_response["selected_rows"]
                 for grid_response in grid_responses.values()
             ]
-            selected_rows = selected_rows[0] if len(selected_rows) else selected_rows
+            selected_rows = selected_rows[0] if len(
+                selected_rows) else selected_rows
 
             if len(selected_rows):
                 consolidated_df = consolidate_grid_responses(

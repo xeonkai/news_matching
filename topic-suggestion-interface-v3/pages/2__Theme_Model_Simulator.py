@@ -13,7 +13,8 @@ from streamlit_extras.dataframe_explorer import dataframe_explorer
 import utils.design_format as format
 import utils.utils as utils
 
-st.set_page_config(page_title="Theme Model Simulator", page_icon="📰", layout="wide")
+st.set_page_config(page_title="Theme Model Simulator",
+                   page_icon="📰", layout="wide")
 
 st.title("🔮 Theme Model Simulator")
 format.horizontal_line()
@@ -32,7 +33,7 @@ def run_theme_model_simulator(taxonomy_chains, k=5):
 
     if utils.check_session_state_key("K"):
         k = utils.get_cached_object("K")
-    utils.cache_object(k, "K") 
+    utils.cache_object(k, "K")
 
     uploaded_data_with_themes = assign_theme_chain_to_dataframe(
         uploaded_data.copy(), taxonomy_chains, k
@@ -43,14 +44,17 @@ def run_theme_model_simulator(taxonomy_chains, k=5):
         by=["facebook_interactions"], ascending=False
     ).reset_index(drop=True)
 
-    utils.cache_object(uploaded_data_with_themes, "csv_file_with_predicted_labels")
-    utils.customDisppearingMsg("Running Theme Model Simulator", wait=3, type_="info")
+    utils.cache_object(uploaded_data_with_themes,
+                       "csv_file_with_predicted_labels")
+    utils.customDisppearingMsg(
+        "Running Theme Model Simulator", wait=3, type_="info")
 
 
 def run():
 
     if utils.check_session_state_key("csv_file_filtered"):
-        taxonomy = reformat_taxonomy(read_taxonomy())
+        taxonomy = read_taxonomy()
+        # taxonomy = reformat_taxonomy(read_taxonomy())
         taxonomy_chains = generate_label_chains(taxonomy)
 
         utils.cache_object(taxonomy, "taxonomy")

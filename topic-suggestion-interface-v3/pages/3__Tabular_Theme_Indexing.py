@@ -36,18 +36,19 @@ def run():
                 "csv_file_with_predicted_labels"
             )
 
-            table_collection = slice_table(process_table(uploaded_data_with_themes))
+            table_collection = slice_table(
+                process_table(uploaded_data_with_themes))
 
             display_stats(uploaded_data_with_themes)
 
             if utils.check_session_state_key("current_theme_index"):
-                current_theme_index = utils.get_cached_object("current_theme_index")
+                current_theme_index = utils.get_cached_object(
+                    "current_theme_index")
             else:
                 current_theme_index = 0
                 utils.cache_object(current_theme_index, "current_theme_index")
 
             format.horizontal_line()
-
 
             display_aggrid_by_theme(table_collection, current_theme_index)
 

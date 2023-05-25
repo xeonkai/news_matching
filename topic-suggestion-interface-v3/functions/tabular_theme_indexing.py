@@ -5,8 +5,6 @@ import utils.utils as utils
 import utils.design_format as format
 from st_aggrid import AgGrid, GridUpdateMode, ColumnsAutoSizeMode, JsCode
 from st_aggrid.grid_options_builder import GridOptionsBuilder
-import time
-import json
 import ast
 import copy
 from itertools import chain
@@ -38,6 +36,7 @@ def process_table(df):
         lambda x: [convert_chain_to_list(chain)[0]
                    for chain in list(x.keys())][0]
     )
+
     df["theme_prob"] = df["Predicted_Theme_Chains"].apply(
         lambda x: list(x.values())[0])
 
@@ -99,26 +98,6 @@ def modify_taxonomy(taxonomy):
     taxonomy["-Enter New Theme"]["-Enter New Index"] = [i for i in subindexes]
 
     return taxonomy
-
-
-# Function to generate json file for URL and top suggested themes, indexes and subindexes
-def generate_json(df):
-    output = {}
-    df.apply(
-        lambda x: output.update(
-            {
-                x["Link"]: {
-                    "themes": x["suggested_themes"],
-                    "indexes": x["suggested_indexes"],
-                    "subindexes": x["suggested_subindexes"],
-                }
-            }
-        ),
-        axis=1,
-    )
-    # save to json
-
-    return output
 
 
 # Function to slice table based on top theme and sort by top_index
@@ -399,13 +378,6 @@ def display_aggrid(df, load_state, selected_rows):
             lambda x: ast.literal_eval(x) if type(x) == str else x
         )
 
-    # # loading taxonomy from cache
-    # if utils.check_session_state_key("taxonomy"):
-    #     taxonomy = utils.get_cached_object("taxonomy")
-    # else:
-    #     taxonomy = read_taxonomy()
-    #     utils.cache_object(taxonomy, "taxonomy")
-
     columns_to_show = [
         "headline",
         "facebook_interactions",
@@ -572,7 +544,6 @@ def display_aggrid(df, load_state, selected_rows):
         df,
         gridOptions=gridOptions,
         update_mode=GridUpdateMode.MODEL_CHANGED,
-        # update_mode=GridUpdateMode.MANUAL,
         columns_auto_size_mode=ColumnsAutoSizeMode.FIT_ALL_COLUMNS_TO_VIEW,
         allow_unsafe_jscode=True,
     )

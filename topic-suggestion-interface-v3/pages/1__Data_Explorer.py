@@ -21,6 +21,7 @@ format.horizontal_line()
 
 def run():
     # Metrics placeholder
+
     col1, col2 = st.columns([1, 1])
     with col1:
         nrows_metric = st.empty()
@@ -119,7 +120,8 @@ def run():
         st.session_state["csv_file_filtered"] = results_filtered_df
 
         # Update metrics on filtered data
-        nrows_metric.metric(label="Number of Rows", value=results_filtered_df.shape[0])
+        nrows_metric.metric(label="Number of Rows",
+                            value=results_filtered_df.shape[0])
 
         st.write(
             results_filtered.limit(
