@@ -1,6 +1,6 @@
 import pandas as pd
 import streamlit as st
-from functions.taxonomy_reader import read_taxonomy, convert_chain_to_list
+from functions.taxonomy_reader import convert_chain_to_list
 import utils.utils as utils
 import utils.design_format as format
 from st_aggrid import AgGrid, GridUpdateMode, ColumnsAutoSizeMode, JsCode
@@ -9,8 +9,11 @@ import time
 import json
 import ast
 import copy
+from itertools import chain
 
 # Function to process dataframe - extract top theme, index and subindex
+
+
 @st.cache_data
 def process_table(df):
 
@@ -25,41 +28,49 @@ def process_table(df):
     )
 
     df["suggested_themes"] = df["Predicted_Theme_Chains"].apply(
-        lambda x: [convert_chain_to_list(chain)[0] for chain in list(x.keys())[:5]]
+        lambda x: [convert_chain_to_list(chain)[0]
+                   for chain in list(x.keys())[:5]]
     )
     df["suggested_themes"] = df["suggested_themes"].apply(
         lambda x: list(dict.fromkeys(x))
     )
     df["theme"] = df["Predicted_Theme_Chains"].apply(
-        lambda x: [convert_chain_to_list(chain)[0] for chain in list(x.keys())][0]
+        lambda x: [convert_chain_to_list(chain)[0]
+                   for chain in list(x.keys())][0]
     )
-    df["theme_prob"] = df["Predicted_Theme_Chains"].apply(lambda x: list(x.values())[0])
+    df["theme_prob"] = df["Predicted_Theme_Chains"].apply(
+        lambda x: list(x.values())[0])
 
     df["suggested_indexes"] = df["Predicted_Theme_Chains"].apply(
-        lambda x: [convert_chain_to_list(chain)[1] for chain in list(x.keys())[:5]]
+        lambda x: [convert_chain_to_list(chain)[1]
+                   for chain in list(x.keys())[:5]]
     )
     df["suggested_indexes"] = df["suggested_indexes"].apply(
         lambda x: list(dict.fromkeys(x))
     )
     df["index"] = df["Predicted_Theme_Chains"].apply(
-        lambda x: [convert_chain_to_list(chain)[1] for chain in list(x.keys())][0]
+        lambda x: [convert_chain_to_list(chain)[1]
+                   for chain in list(x.keys())][0]
     )
-    df["index_prob"] = df["Predicted_Theme_Chains"].apply(lambda x: list(x.values())[0])
+    df["index_prob"] = df["Predicted_Theme_Chains"].apply(
+        lambda x: list(x.values())[0])
 
     df["suggested_subindexes"] = df["Predicted_Theme_Chains"].apply(
-        lambda x: [convert_chain_to_list(chain)[2] for chain in list(x.keys())[:5]]
+        lambda x: [convert_chain_to_list(chain)[2]
+                   for chain in list(x.keys())[:5]]
     )
     df["suggested_subindexes"] = df["suggested_subindexes"].apply(
         lambda x: list(dict.fromkeys(x))
     )
     df["subindex"] = df["Predicted_Theme_Chains"].apply(
-        lambda x: [convert_chain_to_list(chain)[2] for chain in list(x.keys())][0]
+        lambda x: [convert_chain_to_list(chain)[2]
+                   for chain in list(x.keys())][0]
     )
     df["subindex_prob"] = df["Predicted_Theme_Chains"].apply(
         lambda x: list(x.values())[0]
     )
 
-    taxonomy = utils.get_cached_object("taxonomy")
+    taxonomy = modify_taxonomy(utils.get_cached_object("taxonomy"))
 
     df["taxonomy"] = df["Predicted_Theme_Chains"].apply(
         lambda x: taxonomy
@@ -67,6 +78,27 @@ def process_table(df):
 
     # st.write(df)
     return df
+
+
+# Function to modify taxonomy to include options to select new theme, index and subindex
+def modify_taxonomy(taxonomy):
+    # st.write(taxonomy)
+    taxonomy = copy.deepcopy(taxonomy)
+    themes = list(taxonomy.keys())
+    indexes = list(set(chain.from_iterable(
+        [list(taxonomy[theme].keys()) for theme in themes])))
+    subindexes = list(set(chain.from_iterable(
+        [taxonomy[theme][index] for theme in themes for index in indexes if index in taxonomy[theme].keys()]))) + ["-Enter New Subindex"]
+
+    for theme in themes:
+        taxonomy[theme]["-Enter New Index"] = [i for i in subindexes]
+        for index in taxonomy[theme].keys():
+            taxonomy[theme][index].append("-Enter New Subindex")
+
+    taxonomy["-Enter New Theme"] = {i: subindexes for i in indexes}
+    taxonomy["-Enter New Theme"]["-Enter New Index"] = [i for i in subindexes]
+
+    return taxonomy
 
 
 # Function to generate json file for URL and top suggested themes, indexes and subindexes
@@ -187,17 +219,16 @@ def display_aggrid_by_theme(df_collection, current_theme_index):
         load_state = False
 
         selected_rows = []
-            
+
         if current_theme in grid_responses:
-            st.write("Loading from cache")
             load_state = True
             df = grid_responses[current_theme]["data"].copy()
-            selected_rows = copy.deepcopy(grid_responses[current_theme]["selected_rows"])
+            selected_rows = copy.deepcopy(
+                grid_responses[current_theme]["selected_rows"])
 
         current_response = display_aggrid(df, load_state, selected_rows)
 
         if st.form_submit_button("Confirm"):
-
 
             grid_responses[current_theme] = current_response
 
@@ -213,21 +244,22 @@ def display_aggrid_by_theme(df_collection, current_theme_index):
                 grid_responses_validation = {}
 
             grid_responses_validation[current_theme] = valid_submission
-            utils.cache_object(grid_responses_validation, "grid_responses_validation")
+            utils.cache_object(grid_responses_validation,
+                               "grid_responses_validation")
 
             if valid_submission:
                 st.success(
                     f"Article Labels Confirmed for {current_theme}!",
                     icon="✅",
                 )
-                st.experimental_rerun() 
+                st.experimental_rerun()
 
             else:
                 st.warning(
                     f"Please enter blank fields that require new inputs!",
                     icon="⚠️",
                 )
-                st.experimental_rerun() 
+                st.experimental_rerun()
         elif (
             load_state
             and utils.check_session_state_key("grid_responses_validation")
@@ -248,7 +280,6 @@ def display_aggrid_by_theme(df_collection, current_theme_index):
                 f"Please enter blank fields that require new inputs!",
                 icon="⚠️",
             )
-        
 
     # Buttons
     nav_buttons(current_theme_index, n_themes)
@@ -325,11 +356,14 @@ def validate_current_response(current_response):
     incomplete_subindex = []
     for row in current_response["selected_rows"]:
         if row["theme"] == "-Enter New Theme" and row["new theme"] == "":
-            incomplete_theme.append(row["_selectedRowNodeInfo"]["nodeRowIndex"])
+            incomplete_theme.append(
+                row["_selectedRowNodeInfo"]["nodeRowIndex"])
         if row["index"] == "-Enter New Index" and row["new index"] == "":
-            incomplete_index.append(row["_selectedRowNodeInfo"]["nodeRowIndex"])
+            incomplete_index.append(
+                row["_selectedRowNodeInfo"]["nodeRowIndex"])
         if row["subindex"] == "-Enter New Subindex" and row["new subindex"] == "":
-            incomplete_subindex.append(row["_selectedRowNodeInfo"]["nodeRowIndex"])
+            incomplete_subindex.append(
+                row["_selectedRowNodeInfo"]["nodeRowIndex"])
 
     if len(incomplete_theme) or len(incomplete_index) or len(incomplete_subindex):
         return False
@@ -377,11 +411,11 @@ def display_aggrid(df, load_state, selected_rows):
         "facebook_interactions",
         "domain",
         "theme",
-        # "new theme",
+        "new theme",
         "index",
-        # "new index",
+        "new index",
         "subindex",
-        # "new subindex",
+        "new subindex",
         "suggested_label",
         # "suggested_themes",
         # "suggested_indexes",
@@ -408,11 +442,11 @@ def display_aggrid(df, load_state, selected_rows):
 
     # gb.configure_column("suggested_labels", width=500, cellRenderer=tooltipjs)
 
-    labeljs = JsCode (
+    labeljs = JsCode(
         """
         function(params) {
         const predictedLabels = params.data.suggested_labels;
-        // predictedLabels.indexOf("-Enter New Label") === -1 ? predictedLabels.push("-Enter New Label") : null;
+        predictedLabels.indexOf("-Enter New Label") === -1 ? predictedLabels.push("-Enter New Label") : null;
             return {
                 values: predictedLabels,
                 popupPosition: "under",
@@ -423,7 +457,6 @@ def display_aggrid(df, load_state, selected_rows):
         """
     )
 
-    
     gb.configure_column(
         "suggested_label",
         editable=True,
@@ -484,7 +517,7 @@ def display_aggrid(df, load_state, selected_rows):
         const theme = params.data.theme;
         const index = params.data.index;
         const subindexes = params.data.taxonomy[theme][index];
-        //subindexes.indexOf("-Enter New Subindex") === -1 ? subindexes.push("-Enter New Subindex") : null;
+        // subindexes.indexOf("-Enter New Subindex") === -1 ? subindexes.push("-Enter New Subindex") : null;
             return {
                 values: subindexes,
                 popupPosition: "under",
@@ -504,8 +537,6 @@ def display_aggrid(df, load_state, selected_rows):
     gb.configure_column("new theme", editable=True)
     gb.configure_column("new index", editable=True)
     gb.configure_column("new subindex", editable=True)
-
-
 
     # Pagination
 
@@ -547,4 +578,3 @@ def display_aggrid(df, load_state, selected_rows):
     )
 
     return grid_response
-
