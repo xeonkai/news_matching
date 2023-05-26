@@ -32,12 +32,12 @@ def process_table(df):
     df["suggested_themes"] = df["suggested_themes"].apply(
         lambda x: list(dict.fromkeys(x))
     )
-    # df["theme"] = df["Predicted_Theme_Chains"].apply(
-    #     lambda x: [convert_chain_to_list(chain)[0]
-    #                for chain in list(x.keys())][0]
-    # )
+    df["theme_ref"] = df["Predicted_Theme_Chains"].apply(
+        lambda x: [convert_chain_to_list(chain)[0]
+                   for chain in list(x.keys())][0]
+    )
     df["theme"] = ""
-    
+
     df["theme_prob"] = df["Predicted_Theme_Chains"].apply(
         lambda x: list(x.values())[0])
 
@@ -48,11 +48,11 @@ def process_table(df):
     df["suggested_indexes"] = df["suggested_indexes"].apply(
         lambda x: list(dict.fromkeys(x))
     )
-    # df["index"] = df["Predicted_Theme_Chains"].apply(
-    #     lambda x: [convert_chain_to_list(chain)[1]
-    #                for chain in list(x.keys())][0]
-    # )
-    
+    df["index_ref"] = df["Predicted_Theme_Chains"].apply(
+        lambda x: [convert_chain_to_list(chain)[1]
+                   for chain in list(x.keys())][0]
+    )
+
     df["index"] = ""
 
     df["index_prob"] = df["Predicted_Theme_Chains"].apply(
@@ -65,12 +65,12 @@ def process_table(df):
     df["suggested_subindexes"] = df["suggested_subindexes"].apply(
         lambda x: list(dict.fromkeys(x))
     )
-    # df["subindex"] = df["Predicted_Theme_Chains"].apply(
-    #     lambda x: [convert_chain_to_list(chain)[2]
-    #                for chain in list(x.keys())][0]
-    # )
+    df["subindex_ref"] = df["Predicted_Theme_Chains"].apply(
+        lambda x: [convert_chain_to_list(chain)[2]
+                   for chain in list(x.keys())][0]
+    )
     df["subindex"] = ""
-    
+
     df["subindex_prob"] = df["Predicted_Theme_Chains"].apply(
         lambda x: list(x.values())[0]
     )
@@ -123,7 +123,7 @@ def slice_table(df):
     top_themes = get_top_themes(df)
     df_collection = {}
     for theme in top_themes:
-        df_slice = df[df["theme"] == theme]
+        df_slice = df[df["theme_ref"] == theme]
         df_slice = df_slice.sort_values(
             by=["index", "subindex", "index_prob"], ascending=[True, True, False]
         )
@@ -134,13 +134,13 @@ def slice_table(df):
 # Function to get top themes based on facebook interactions
 @st.cache_data
 def get_top_themes(df):
-    df_sum = df.groupby(["theme"]).agg({"facebook_interactions": "sum"})
+    df_sum = df.groupby(["theme_ref"]).agg({"facebook_interactions": "sum"})
 
     df_sum = df_sum.sort_values(
         by=["facebook_interactions"], ascending=False
     ).reset_index()
 
-    top_themes = df_sum["theme"].unique()
+    top_themes = df_sum["theme_ref"].unique()
 
     return top_themes
 
@@ -151,9 +151,9 @@ def display_stats(df, title=True, show_themes=True, show_theme_count=True):
         st.subheader("Overall Summary Statistics")
 
     n_articles = df.shape[0]
-    n_themes = len(df["theme"].unique())
-    n_index = len(df["index"].unique())
-    n_subindex = len(df["subindex"].unique())
+    n_themes = len(df["theme_ref"].unique())
+    n_index = len(df["index_ref"].unique())
+    n_subindex = len(df["subindex_ref"].unique())
     n_fb_interactions = df["facebook_interactions"].sum()
 
     col1, col2, col3, col4, col5 = st.columns(5)
