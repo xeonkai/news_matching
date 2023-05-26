@@ -349,7 +349,12 @@ def validate_current_response(current_response):
     incomplete_theme = []
     incomplete_index = []
     incomplete_subindex = []
+    incomplete_label = []
+
     for row in current_response["selected_rows"]:
+        if row["suggested_label"] == "-Enter New Label" and (row["theme"] == "" or row["index"] == "" or row["subindex"] == ""):
+            incomplete_label.append(
+                row["_selectedRowNodeInfo"]["nodeRowIndex"])
         if row["theme"] == "-Enter New Theme" and row["new theme"] == "":
             incomplete_theme.append(
                 row["_selectedRowNodeInfo"]["nodeRowIndex"])
@@ -360,7 +365,7 @@ def validate_current_response(current_response):
             incomplete_subindex.append(
                 row["_selectedRowNodeInfo"]["nodeRowIndex"])
 
-    if len(incomplete_theme) or len(incomplete_index) or len(incomplete_subindex):
+    if len(incomplete_label) or len(incomplete_theme) or len(incomplete_index) or len(incomplete_subindex):
         return False
     else:
         return True
@@ -470,9 +475,19 @@ def display_aggrid(df, load_state, selected_rows):
         """
     )
 
+    editableCelljs = JsCode(
+        """
+        function(params) {
+        const label = params.data.suggested_label;
+        var editable_cell = label == "-Enter New Label";
+        return editable_cell;
+        }
+        """
+    )
+
     gb.configure_column(
         "theme",
-        editable=True,
+        editable=editableCelljs,
         cellEditor="agRichSelectCellEditor",
         cellEditorParams=themejs,
     )
@@ -495,7 +510,7 @@ def display_aggrid(df, load_state, selected_rows):
 
     gb.configure_column(
         "index",
-        editable=True,
+        editable=editableCelljs,
         cellEditor="agRichSelectCellEditor",
         cellEditorParams=indexesjs,
     )
@@ -518,14 +533,44 @@ def display_aggrid(df, load_state, selected_rows):
 
     gb.configure_column(
         "subindex",
-        editable=True,
+        editable=editableCelljs,
         cellEditor="agRichSelectCellEditor",
         cellEditorParams=subindexesjs,
     )
 
-    gb.configure_column("new theme", editable=True)
-    gb.configure_column("new index", editable=True)
-    gb.configure_column("new subindex", editable=True)
+    newThemejs = JsCode(
+        """
+        function(params) {
+        const theme = params.data.theme;
+        var editable_cell = theme == "-Enter New Theme";
+        return editable_cell;
+        }
+        """
+    )
+    gb.configure_column("new theme", editable=newThemejs,)
+
+    newIndexjs = JsCode(
+        """
+        function(params) {
+        const index = params.data.index;
+        var editable_cell = index == "-Enter New Index";
+        return editable_cell;
+        }
+        """
+    )
+
+    gb.configure_column("new index", editable=newIndexjs)
+
+    newSubindexjs = JsCode(
+        """
+        function(params) {
+        const subindex = params.data.subindex;
+        var editable_cell = subindex == "-Enter New Subindex";
+        return editable_cell;
+        }
+        """
+    )
+    gb.configure_column("new subindex", editable=newSubindexjs)
 
     # Pagination
 
@@ -560,7 +605,7 @@ def display_aggrid(df, load_state, selected_rows):
     grid_response = AgGrid(
         df,
         gridOptions=gridOptions,
-        update_mode=GridUpdateMode.MODEL_CHANGED,
+        update_mode=GridUpdateMode.MODEL_CHANGED | GridUpdateMode.VALUE_CHANGED,
         columns_auto_size_mode=ColumnsAutoSizeMode.FIT_ALL_COLUMNS_TO_VIEW,
         allow_unsafe_jscode=True,
     )
