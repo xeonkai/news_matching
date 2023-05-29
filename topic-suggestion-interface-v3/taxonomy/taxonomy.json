@@ -1,232 +1,158 @@
 {
-    "Fruits" : {
-        "Apple" : [
+    "Fruits" : [
             "Apple Juice",
             "Apple Pie",
             "Apple Sauce",
-            "Apple Turnover"
-        ],
-        "Banana" : [
+            "Apple Turnover",
             "Banana Bread",
             "Banana Pie",
             "Banana Pudding",
-            "Banana Split"
-        ],
-        "Cherry" : [
+            "Banana Split",
             "Cherry Pie",
             "Cherry Tart",
             "Cherry Turnover",
-            "Cherry Yogurt"
-        ],
-        "Durian" : [
+            "Cherry Yogurt",
             "Durian Bread",
             "Durian Pie",
             "Durian Pudding",
-            "Durian Split"
-        ],
-        "Eggplant" : [
+            "Durian Split",
             "Eggplant Bread",
             "Eggplant Pie",
             "Eggplant Pudding",
-            "Eggplant Split"
-        ],
-        "Fig" : [
+            "Eggplant Split",
             "Fig Bread",
             "Fig Pie",
             "Fig Pudding",
-            "Fig Split"
-        ],
-        "Guava" : [
+            "Fig Split",
             "Guava Bread",
             "Guava Pie",
             "Guava Pudding",
             "Guava Split"
-        ]
-    },
-    "Gems" : {
-        "Amber" : [
+        ],
+    "Gems" : [
             "Amber Bracelet",
             "Amber Earrings",
             "Amber Necklace",
-            "Amber Ring"
-        ],
-        "Beryl" : [
+            "Amber Ring",
             "Beryl Bracelet",
             "Beryl Earrings",
             "Beryl Necklace",
-            "Beryl Ring"
-        ],
-        "Citrine" : [
+            "Beryl Ring",
             "Citrine Bracelet",
             "Citrine Earrings",
             "Citrine Necklace",
-            "Citrine Ring"
-        ],
-        "Diamond" : [
+            "Citrine Ring",
             "Diamond Bracelet",
             "Diamond Earrings",
             "Diamond Necklace",
-            "Diamond Ring"
-        ],
-        "Emerald" : [
+            "Diamond Ring",
             "Emerald Bracelet",
             "Emerald Earrings",
             "Emerald Necklace",
-            "Emerald Ring"
-        ],
-        "Fluorite" : [
+            "Emerald Ring",
             "Fluorite Bracelet",
             "Fluorite Earrings",
             "Fluorite Necklace",
-            "Fluorite Ring"
-        ],
-        "Garnet" : [
+            "Fluorite Ring",
             "Garnet Bracelet",
             "Garnet Earrings",
             "Garnet Necklace",
-            "Garnet Ring"
-        ],
-        "Hematite" : [
+            "Garnet Ring",
             "Hematite Bracelet",
             "Hematite Earrings",
             "Hematite Necklace",
-            "Hematite Ring"
-        ],
-        "Jade" : [
+            "Hematite Ring",
             "Jade Bracelet",
             "Jade Earrings",
             "Jade Necklace",
-            "Jade Ring"
-        ],
-        "Kunzite" : [
+            "Jade Ring",
             "Kunzite Bracelet",
             "Kunzite Earrings",
             "Kunzite Necklace",
             "Kunzite Ring"
-        ]
-    },
-    "Animals" : {
-        "Ant" : [
+        ],
+    "Animals" : [
             "Ant Farm",
             "Ant Hill",
             "Ant Nest",
-            "Ant Queen"
-        ],
-        "Bat" : [
+            "Ant Queen",
             "Bat Cave",
             "Bat Colony",
             "Bat Nest",
-            "Bat Queen"
-        ],
-        "Cow" : [
+            "Bat Queen",
             "Cow Barn",
             "Cow Herd",
             "Cow Pasture",
-            "Cow Queen"
-        ],
-        "Dog" : [
+            "Cow Queen",
             "Dog Barn",
             "Dog Kennel",
             "Dog Pound",
-            "Dog Queen"
-        ],
-        "Emu" : [
+            "Dog Queen",
             "Emu Barn",
             "Emu Herd",
             "Emu Pasture",
-            "Emu Queen"
-        ],
-        "Fox" : [
+            "Emu Queen",
             "Fox Barn",
             "Fox Den",
             "Fox Pasture",
-            "Fox Queen"
-        ],
-        "Giraffe" : [
+            "Fox Queen",
             "Giraffe Barn",
             "Giraffe Herd",
             "Giraffe Pasture",
-            "Giraffe Queen"
-        ],
-        "Horse" : [
+            "Giraffe Queen",
             "Horse Barn",
             "Horse Herd",
             "Horse Pasture",
-            "Horse Queen"
-        ],
-        "Jaguar" : [
+            "Horse Queen",
             "Jaguar Barn",
             "Jaguar Den",
             "Jaguar Pasture",
-            "Jaguar Queen"
-        ],
-        "Koi" : [
+            "Jaguar Queen",
             "Koi Barn",
             "Koi Pond",
             "Koi Pasture",
             "Koi Queen"
-        ]
-    },
-    "Cars" : {
-        "Acura" : [
+        ],
+    "Cars" : [
             "Acura CL",
             "Acura ILX",
             "Acura Integra",
-            "Acura Legend"
-        ],
-        "BMW" : [
+            "Acura Legend",
             "BMW 3 Series",
             "BMW 5 Series",
             "BMW 7 Series",
-            "BMW M3"
-        ],
-        "Chevrolet" : [
+            "BMW M3",
             "Chevrolet Camaro",
             "Chevrolet Corvette",
             "Chevrolet Impala",
-            "Chevrolet Malibu"
-        ],
-        "Dodge" : [
+            "Chevrolet Malibu",
             "Dodge Challenger",
             "Dodge Charger",
             "Dodge Dart",
-            "Dodge Viper"
-        ],
-        "Eagle" : [
+            "Dodge Viper",
             "Eagle Medallion",
             "Eagle Premier",
             "Eagle Summit",
-            "Eagle Talon"
-        ],
-        "Ferrari" : [
+            "Eagle Talon",
             "Ferrari 458",
             "Ferrari 488",
             "Ferrari 599",
-            "Ferrari California"
-        ],
-        "GMC" : [
+            "Ferrari California",
             "GMC Acadia",
             "GMC Canyon",
             "GMC Envoy",
-            "GMC Yukon"
-        ],
-        "Honda" : [
+            "GMC Yukon",
             "Honda Accord",
             "Honda Civic",
             "Honda CR-V",
-            "Honda Fit"
-        ],
-        "Infiniti" : [
+            "Honda Fit",
             "Infiniti G",
             "Infiniti I",
             "Infiniti J",
-            "Infiniti Q"
-        ],
-        "Jaguar" : [
+            "Infiniti Q",
             "Jaguar E-Type",
             "Jaguar F-Type",
             "Jaguar S-Type",
             "Jaguar X-Type"
         ]
-    }
 }

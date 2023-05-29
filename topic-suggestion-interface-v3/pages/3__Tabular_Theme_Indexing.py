@@ -36,6 +36,8 @@ def run():
                 "csv_file_with_predicted_labels"
             )
 
+            # st.dataframe(uploaded_data_with_themes)
+
             table_collection = slice_table(
                 process_table(uploaded_data_with_themes))
 

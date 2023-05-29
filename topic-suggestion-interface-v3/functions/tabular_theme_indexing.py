@@ -25,31 +25,31 @@ def process_table(df):
         lambda x: x[0]
     )
 
-    df["suggested_themes"] = df["Predicted_Theme_Chains"].apply(
-        lambda x: [convert_chain_to_list(chain)[0]
-                   for chain in list(x.keys())[:5]]
-    )
-    df["suggested_themes"] = df["suggested_themes"].apply(
-        lambda x: list(dict.fromkeys(x))
-    )
-    df["theme_ref"] = df["Predicted_Theme_Chains"].apply(
-        lambda x: [convert_chain_to_list(chain)[0]
-                   for chain in list(x.keys())][0]
-    )
-    df["theme"] = ""
+    # df["suggested_themes"] = df["Predicted_Theme_Chains"].apply(
+    #     lambda x: [convert_chain_to_list(chain)[0]
+    #                for chain in list(x.keys())[:5]]
+    # )
+    # df["suggested_themes"] = df["suggested_themes"].apply(
+    #     lambda x: list(dict.fromkeys(x))
+    # )
+    # df["theme_ref"] = df["Predicted_Theme_Chains"].apply(
+    #     lambda x: [convert_chain_to_list(chain)[0]
+    #                for chain in list(x.keys())][0]
+    # )
+    # df["theme"] = ""
 
-    df["theme_prob"] = df["Predicted_Theme_Chains"].apply(
-        lambda x: list(x.values())[0])
+    # df["theme_prob"] = df["Predicted_Theme_Chains"].apply(
+    #     lambda x: list(x.values())[0])
 
     df["suggested_indexes"] = df["Predicted_Theme_Chains"].apply(
-        lambda x: [convert_chain_to_list(chain)[1]
+        lambda x: [convert_chain_to_list(chain)[0]
                    for chain in list(x.keys())[:5]]
     )
     df["suggested_indexes"] = df["suggested_indexes"].apply(
         lambda x: list(dict.fromkeys(x))
     )
     df["index_ref"] = df["Predicted_Theme_Chains"].apply(
-        lambda x: [convert_chain_to_list(chain)[1]
+        lambda x: [convert_chain_to_list(chain)[0]
                    for chain in list(x.keys())][0]
     )
 
@@ -59,14 +59,14 @@ def process_table(df):
         lambda x: list(x.values())[0])
 
     df["suggested_subindexes"] = df["Predicted_Theme_Chains"].apply(
-        lambda x: [convert_chain_to_list(chain)[2]
+        lambda x: [convert_chain_to_list(chain)[1]
                    for chain in list(x.keys())[:5]]
     )
     df["suggested_subindexes"] = df["suggested_subindexes"].apply(
         lambda x: list(dict.fromkeys(x))
     )
     df["subindex_ref"] = df["Predicted_Theme_Chains"].apply(
-        lambda x: [convert_chain_to_list(chain)[2]
+        lambda x: [convert_chain_to_list(chain)[1]
                    for chain in list(x.keys())][0]
     )
     df["subindex"] = ""
@@ -84,37 +84,75 @@ def process_table(df):
     # st.write(df)
     return df
 
-
-# Function to modify taxonomy to include options to select new theme, index and subindex
 def modify_taxonomy(taxonomy):
     # st.write(taxonomy)
     taxonomy = copy.deepcopy(taxonomy)
-    themes = list(taxonomy.keys())
-    indexes = list(set(chain.from_iterable(
-        [list(taxonomy[theme].keys()) for theme in themes])))
+    indexes = list(taxonomy.keys())
     subindexes = list(set(chain.from_iterable(
-        [taxonomy[theme][index] for theme in themes for index in indexes if index in taxonomy[theme].keys()]))) + ["-Enter New Subindex"]
+        [list(taxonomy[index]) for index in indexes])))
+    # subindexes = list(set(chain.from_iterable(
+    #     [taxonomy[theme][index] for theme in themes for index in indexes if index in taxonomy[theme].keys()]))) + ["-Enter New Subindex"]
 
-    for theme in themes:
-        taxonomy[theme]["-Enter New Index"] = [i for i in subindexes]
-        for index in taxonomy[theme].keys():
-            if "-Enter New Subindex" not in taxonomy[theme][index]:
-                taxonomy[theme][index].append("-Enter New Subindex")
+    # for index in indexes:
+    #     taxonomy[index]["-Enter New Index"] = [i for i in subindexes]
+    #     for index in taxonomy[theme].keys():
+    #         if "-Enter New Subindex" not in taxonomy[theme][index]:
+    #             taxonomy[theme][index].append("-Enter New Subindex")
 
     # unpack taxonomy by indexes
-    unpacked_taxonomy = {}
-    for theme in themes:
-        for index in taxonomy[theme].keys():
-            if index not in unpacked_taxonomy.keys():
-                unpacked_taxonomy[index] = taxonomy[theme][index]
-            else:
-                unpacked_taxonomy[index] = list(
-                    set(unpacked_taxonomy[index] + taxonomy[theme][index]))
+    # unpacked_taxonomy = {}
+    # for index in indexes:
+    #     for index in taxonomy[index]:
+    #         if index not in unpacked_taxonomy.keys():
+    #             unpacked_taxonomy[index] = taxonomy[index]
+    #         else:
+    #             unpacked_taxonomy[index] = list(
+    #                 set(unpacked_taxonomy[index] + taxonomy[index][index]))
 
-    taxonomy["-Enter New Theme"] = {i: unpacked_taxonomy[i] for i in indexes}
-    taxonomy["-Enter New Theme"]["-Enter New Index"] = [i for i in subindexes]
+    for index in indexes:
+        taxonomy[index].append("-Enter New Subindex")
+
+    unpacked_taxonomy = []
+    for index in indexes:
+        for subindex in taxonomy[index]:
+            if subindex not in unpacked_taxonomy:
+                unpacked_taxonomy.append(subindex)
+
+    taxonomy["-Enter New Index"] = unpacked_taxonomy # + ["-Enter New Subindex"]
+    # taxonomy["-Enter New Theme"]["-Enter New Index"] = [i for i in subindexes]
 
     return taxonomy
+
+# Function to modify taxonomy to include options to select new theme, index and subindex
+# def modify_taxonomy(taxonomy):
+#     # st.write(taxonomy)
+#     taxonomy = copy.deepcopy(taxonomy)
+#     themes = list(taxonomy.keys())
+#     indexes = list(set(chain.from_iterable(
+#         [list(taxonomy[theme].keys()) for theme in themes])))
+#     subindexes = list(set(chain.from_iterable(
+#         [taxonomy[theme][index] for theme in themes for index in indexes if index in taxonomy[theme].keys()]))) + ["-Enter New Subindex"]
+
+#     for theme in themes:
+#         taxonomy[theme]["-Enter New Index"] = [i for i in subindexes]
+#         for index in taxonomy[theme].keys():
+#             if "-Enter New Subindex" not in taxonomy[theme][index]:
+#                 taxonomy[theme][index].append("-Enter New Subindex")
+
+#     # unpack taxonomy by indexes
+#     unpacked_taxonomy = {}
+#     for theme in themes:
+#         for index in taxonomy[theme].keys():
+#             if index not in unpacked_taxonomy.keys():
+#                 unpacked_taxonomy[index] = taxonomy[theme][index]
+#             else:
+#                 unpacked_taxonomy[index] = list(
+#                     set(unpacked_taxonomy[index] + taxonomy[theme][index]))
+
+#     taxonomy["-Enter New Theme"] = {i: unpacked_taxonomy[i] for i in indexes}
+#     taxonomy["-Enter New Theme"]["-Enter New Index"] = [i for i in subindexes]
+
+#     return taxonomy
 
 
 # Function to slice table based on top theme and sort by top_index
@@ -123,7 +161,7 @@ def slice_table(df):
     top_themes = get_top_themes(df)
     df_collection = {}
     for theme in top_themes:
-        df_slice = df[df["theme_ref"] == theme]
+        df_slice = df[df["index_ref"] == theme]
         df_slice = df_slice.sort_values(
             by=["index", "subindex", "index_prob"], ascending=[True, True, False]
         )
@@ -134,13 +172,13 @@ def slice_table(df):
 # Function to get top themes based on facebook interactions
 @st.cache_data
 def get_top_themes(df):
-    df_sum = df.groupby(["theme_ref"]).agg({"facebook_interactions": "sum"})
+    df_sum = df.groupby(["index_ref"]).agg({"facebook_interactions": "sum"})
 
     df_sum = df_sum.sort_values(
         by=["facebook_interactions"], ascending=False
     ).reset_index()
 
-    top_themes = df_sum["theme_ref"].unique()
+    top_themes = df_sum["index_ref"].unique()
 
     return top_themes
 
@@ -151,7 +189,7 @@ def display_stats(df, title=True, show_themes=True, show_theme_count=True):
         st.subheader("Overall Summary Statistics")
 
     n_articles = df.shape[0]
-    n_themes = len(df["theme_ref"].unique())
+    # n_themes = len(df["theme_ref"].unique())
     n_index = len(df["index_ref"].unique())
     n_subindex = len(df["subindex_ref"].unique())
     n_fb_interactions = df["facebook_interactions"].sum()
@@ -165,13 +203,13 @@ def display_stats(df, title=True, show_themes=True, show_theme_count=True):
         st.metric(label="Total Facebook Interactions", value=n_fb_interactions)
 
     if show_theme_count:
-        with col3:
-            st.metric(label="Total themes", value=n_themes)
+        # with col3:
+        #     st.metric(label="Total themes", value=n_themes)
 
-        with col4:
+        with col3:
             st.metric(label="Total Index", value=n_index)
 
-        with col5:
+        with col4:
             st.metric(label="Total Subindex", value=n_subindex)
 
     else:
@@ -346,18 +384,18 @@ def table_pagination_menu():
 # Function to validate current response of aggrid table
 def validate_current_response(current_response):
     # st.write(current_response["selected_rows"])
-    incomplete_theme = []
+    # incomplete_theme = []
     incomplete_index = []
     incomplete_subindex = []
     incomplete_label = []
 
     for row in current_response["selected_rows"]:
-        if row["suggested_label"] == "-Enter New Label" and (row["theme"] == "" or row["index"] == "" or row["subindex"] == ""):
+        if row["suggested_label"] == "-Enter New Label" and (row["index"] == "" or row["subindex"] == ""):
             incomplete_label.append(
                 row["_selectedRowNodeInfo"]["nodeRowIndex"])
-        if row["theme"] == "-Enter New Theme" and row["new theme"] == "":
-            incomplete_theme.append(
-                row["_selectedRowNodeInfo"]["nodeRowIndex"])
+        # if row["theme"] == "-Enter New Theme" and row["new theme"] == "":
+        #     incomplete_theme.append(
+        #         row["_selectedRowNodeInfo"]["nodeRowIndex"])
         if row["index"] == "-Enter New Index" and row["new index"] == "":
             incomplete_index.append(
                 row["_selectedRowNodeInfo"]["nodeRowIndex"])
@@ -365,7 +403,7 @@ def validate_current_response(current_response):
             incomplete_subindex.append(
                 row["_selectedRowNodeInfo"]["nodeRowIndex"])
 
-    if len(incomplete_label) or len(incomplete_theme) or len(incomplete_index) or len(incomplete_subindex):
+    if len(incomplete_label)  or len(incomplete_index) or len(incomplete_subindex):
         return False
     else:
         return True
@@ -376,16 +414,16 @@ def validate_current_response(current_response):
 def display_aggrid(df, load_state, selected_rows):
     # Initialising columns for new input
     if not load_state:
-        df["new theme"] = ""
+        # df["new theme"] = ""
         df["new index"] = ""
         df["new subindex"] = ""
         cols = df.columns.tolist()
         cols = cols[1:] + cols[:1]
         df = df[cols]
     else:
-        df["suggested_themes"] = df["suggested_themes"].apply(
-            lambda x: ast.literal_eval(x) if type(x) == str else x
-        )
+        # df["suggested_themes"] = df["suggested_themes"].apply(
+        #     lambda x: ast.literal_eval(x) if type(x) == str else x
+        # )
         df["suggested_indexes"] = df["suggested_indexes"].apply(
             lambda x: ast.literal_eval(x) if type(x) == str else x
         )
@@ -403,8 +441,8 @@ def display_aggrid(df, load_state, selected_rows):
         "headline",
         "facebook_interactions",
         "domain",
-        "theme",
-        "new theme",
+        # "theme",
+        # "new theme",
         "index",
         "new index",
         "subindex",
@@ -464,14 +502,13 @@ def display_aggrid(df, load_state, selected_rows):
         width=900,
     )
 
-    themejs = JsCode(
+    indexesjs = JsCode(
         """
         function(params) {
-        const themes = Object.keys(params.data.taxonomy);
-        // themes.indexOf("-Enter New Theme") === -1 ? themes.push("-Enter New Theme") : null;
+        const indexes = Object.keys(params.data.taxonomy);
             return {
                 value: "",
-                values: themes.sort(),
+                values: indexes.sort(),
                 popupPosition: "under",
                 cellHeight: 30,
             }
@@ -490,21 +527,21 @@ def display_aggrid(df, load_state, selected_rows):
         """
     )
 
-    gb.configure_column(
-        "theme",
-        editable=editableCelljs,
-        cellEditor="agRichSelectCellEditor",
-        cellEditorParams=themejs,
-    )
+    # gb.configure_column(
+    #     "theme",
+    #     editable=editableCelljs,
+    #     cellEditor="agRichSelectCellEditor",
+    #     cellEditorParams=themejs,
+    # )
 
-    indexesjs = JsCode(
+    subindexesjs = JsCode(
         """
         function(params) {
-        const theme = params.data.theme;
-        const indexes = Object.keys(params.data.taxonomy[theme]);
+        const index = params.data.index;
+        const subindexes = params.data.taxonomy[index];
         // indexes.indexOf("-Enter New Index") === -1 ? indexes.push("-Enter New Index") : null;
             return {
-                values: indexes.sort(),
+                values: subindexes.sort(),
                 popupPosition: "under",
                 cellHeight: 30,
             }
@@ -520,21 +557,21 @@ def display_aggrid(df, load_state, selected_rows):
         cellEditorParams=indexesjs,
     )
 
-    subindexesjs = JsCode(
-        """
-        function(params) {
-        const theme = params.data.theme;
-        const index = params.data.index;
-        const subindexes = params.data.taxonomy[theme][index];
-        // subindexes.indexOf("-Enter New Subindex") === -1 ? subindexes.push("-Enter New Subindex") : null;
-            return {
-                values: subindexes.sort(),
-                popupPosition: "under",
-                cellHeight: 30,
-            }
-        }
-        """
-    )
+    # subindexesjs = JsCode(
+    #     """
+    #     function(params) {
+    #     const theme = params.data.theme;
+    #     const index = params.data.index;
+    #     const subindexes = params.data.taxonomy[theme][index];
+    #     // subindexes.indexOf("-Enter New Subindex") === -1 ? subindexes.push("-Enter New Subindex") : null;
+    #         return {
+    #             values: subindexes.sort(),
+    #             popupPosition: "under",
+    #             cellHeight: 30,
+    #         }
+    #     }
+    #     """
+    # )
 
     gb.configure_column(
         "subindex",
@@ -543,16 +580,16 @@ def display_aggrid(df, load_state, selected_rows):
         cellEditorParams=subindexesjs,
     )
 
-    newThemejs = JsCode(
-        """
-        function(params) {
-        const theme = params.data.theme;
-        var editable_cell = theme == "-Enter New Theme";
-        return editable_cell;
-        }
-        """
-    )
-    gb.configure_column("new theme", editable=newThemejs,)
+    # newThemejs = JsCode(
+    #     """
+    #     function(params) {
+    #     const theme = params.data.theme;
+    #     var editable_cell = theme == "-Enter New Theme";
+    #     return editable_cell;
+    #     }
+    #     """
+    # )
+    # gb.configure_column("new theme", editable=newThemejs,)
 
     newIndexjs = JsCode(
         """

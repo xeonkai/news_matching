@@ -34,12 +34,20 @@ def reformat_taxonomy(taxonomy):
     return new_taxonomy
 
 
+# def generate_label_chains(taxonomy):
+#     output = []
+#     for theme, indexes in taxonomy.items():
+#         for index, subindexes in indexes.items():
+#             for subindex in subindexes:
+#                 output.append(f"{theme} > {index} > {subindex}")
+#     return output
+
+
 def generate_label_chains(taxonomy):
     output = []
     for theme, indexes in taxonomy.items():
-        for index, subindexes in indexes.items():
-            for subindex in subindexes:
-                output.append(f"{theme} > {index} > {subindex}")
+        for index in indexes:
+            output.append(f"{theme} > {index}")
     return output
 
 
