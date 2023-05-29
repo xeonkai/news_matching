@@ -8,8 +8,8 @@ from functions.taxonomy_reader import convert_chain_to_list
 def consolidate_grid_responses(grid_responses, columns):
     consolidated_df = pd.DataFrame()
 
-    for theme in grid_responses:
-        sub_df = pd.DataFrame(grid_responses[theme]["selected_rows"])
+    for index in grid_responses:
+        sub_df = pd.DataFrame(grid_responses[index]["selected_rows"])
         consolidated_df = pd.concat([consolidated_df, sub_df])
 
     consolidated_columns = consolidated_df.columns.tolist()

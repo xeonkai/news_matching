@@ -3,15 +3,15 @@ import utils.design_format as format
 import utils.utils as utils
 
 st.set_page_config(
-    page_title="Theme Suggestion Interface Demo", page_icon="📰", layout="wide"
+    page_title="Index Suggestion Interface Demo", page_icon="📰", layout="wide"
 )
 
-st.title("🖥️ Theme Suggestion Interface Demo")
+st.title("🖥️ Index Suggestion Interface Demo")
 format.horizontal_line()
 st.subheader("Welcome!")
 format.align_text(
     """
-    This is a demo of the Theme Suggestion Interface. Upload a CSV file of the news daily scans below to begin.
+    This is a demo of the Index Suggestion Interface. Upload a CSV file of the news daily scans below to begin.
     """,
     "justify",
 )
