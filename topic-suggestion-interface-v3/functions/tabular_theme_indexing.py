@@ -424,10 +424,16 @@ def display_aggrid(df, load_state, selected_rows):
         aggFunc="count",
         filterable=False,
         sortable=False,
+        # suppressMenu=True,
     )
 
     # Configure individual columns
-    gb.configure_column("headline", headerCheckboxSelection=True, width=1200)
+    headlinejs = JsCode(
+        """ function(params) {return `<a href=${params.data.link} target="_blank" style="text-decoration: none; color: white"> ${params.data.headline} </a>`} """
+    )
+
+    gb.configure_column("headline", headerCheckboxSelection=True,
+                        width=1200, cellRenderer=headlinejs)
 
     # tooltipjs = JsCode(
     #     """ function(params) { return '<span title="' + params.value + '">'+params.value+'</span>';  }; """
@@ -456,7 +462,6 @@ def display_aggrid(df, load_state, selected_rows):
         cellEditor="agRichSelectCellEditor",
         cellEditorParams=labeljs,
         width=900,
-
     )
 
     themejs = JsCode(
