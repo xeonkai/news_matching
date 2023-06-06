@@ -14,14 +14,14 @@ from streamlit_extras.dataframe_explorer import dataframe_explorer
 import utils.design_format as format
 import utils.utils as utils
 
-st.set_page_config(page_title="Index Model Simulator",
+st.set_page_config(page_title="Theme Model Simulator",
                    page_icon="📰", layout="wide")
 
-st.title("🔮 Index Model Simulator")
+st.title("🔮 Theme Model Simulator")
 format.horizontal_line()
 format.align_text(
     """
-    In this page, you can run the index model simulator. For the sake of this demo, we will randomly assign each article to indexes with their associated probabilties.
+    In this page, you can run the index model simulator. For the sake of this demo, we will randomly assign each article to themes and indexes with their associated probabilties.
     """,
     "justify",
 )
@@ -48,7 +48,7 @@ def run_index_model_simulator(taxonomy_chains, k=5):
     utils.cache_object(uploaded_data_with_indexs,
                        "csv_file_with_predicted_labels")
     utils.customDisppearingMsg(
-        "Running Index Model Simulator", wait=3, type_="info")
+        "Running Theme Model Simulator", wait=3, type_="info")
 
 
 def run():
@@ -64,18 +64,18 @@ def run():
         st.subheader("Previewing the Taxonomy")
 
         taxonomy_chains_df = pd.DataFrame(pd.DataFrame(taxonomy_chains, columns=["Chain"]).apply(
-            lambda x: convert_chain_to_list(x[0]), axis=1).to_list(), columns=["Index", "Subindex"])
+            lambda x: convert_chain_to_list(x[0]), axis=1).to_list(), columns=["Theme", "Index"])
         taxonomy_chains_df_explorer = dataframe_explorer(taxonomy_chains_df)
         st.dataframe(taxonomy_chains_df_explorer, use_container_width=True)
 
-        with st.form("Inde Model Simulator Form"):
+        with st.form("Theme Model Simulator Form"):
             k = st.number_input(
                 "Top-K predictions for each article",
                 min_value=1,
                 max_value=999,
                 value=5,
             )
-            if st.form_submit_button("Run Index Model Simulator"):
+            if st.form_submit_button("Run Theme Model Simulator"):
                 run_index_model_simulator(taxonomy_chains, k)
 
         if utils.check_session_state_key("csv_file_with_predicted_labels"):

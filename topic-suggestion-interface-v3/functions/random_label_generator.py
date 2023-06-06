@@ -56,7 +56,7 @@ def assign_index_chain_to_dataframe(df, index_chains, k, seed=None):
         np.random.seed(seed)
 
     # For each row, generate a distribution of themes
-    df["Predicted_Index_Chains"] = df.apply(
+    df["Predicted_Chains"] = df.apply(
         lambda x: extract_top_k_labels(
             random_label_generator(index_chains, seed), k),
         axis=1,
