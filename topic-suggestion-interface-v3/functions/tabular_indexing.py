@@ -18,7 +18,12 @@ def process_table(df):
     k = utils.get_cached_object("K")
 
     df["suggested_labels"] = df["Predicted_Chains"].apply(
-        lambda x: [chain for chain in list(x.keys())[:k]]
+        # lambda x: [chain for chain in list(x.keys())[:k]]
+        # Sort labels based on probabilities - Saving as parquet loses sort info
+        lambda d: [
+            label
+            for label, score in sorted(d.items(), key=lambda x: x[1], reverse=True)
+        ]
     )
 
     df["suggested_label"] = df["suggested_labels"].apply(

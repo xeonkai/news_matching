@@ -74,9 +74,13 @@ def run():
                 max_value=max_date,
             )
 
-            start_time = st.time_input("Start time on first selected day", value=datetime.time(0, 0))
+            start_time = st.time_input(
+                "Start time on first selected day", value=datetime.time(0, 0)
+            )
 
-            end_time = st.time_input("End time on last selected day", value=datetime.time(23, 59))
+            end_time = st.time_input(
+                "End time on last selected day", value=datetime.time(23, 59)
+            )
 
             # combine date and time
             start_date = datetime.datetime.combine(date_range[0], start_time)
@@ -119,7 +123,7 @@ def run():
             f"FROM read_parquet('{utils.PROCESSED_DATA_DIR}/*.parquet', filename=true) "
             f"WHERE domain NOT IN {tuple(domain_filter) if domain_filter else ('NULL',)} "
             f"AND facebook_interactions >= {min_engagement} "
-            f"AND published BETWEEN '{date_range[0]}' AND '{date_range[1] + datetime.timedelta(days=1)}' "
+            f"AND published BETWEEN '{date_range[0]}' AND '{date_range[1]}' "
             f"ORDER BY facebook_interactions DESC   "
             # f"{f'LIMIT {limit}' if limit else ''} "
         )
@@ -128,6 +132,7 @@ def run():
         # TODO: Move page to indexer page, materialize only when needed
         results_filtered_df = results_filtered.to_df()
         st.session_state["csv_file_filtered"] = results_filtered_df
+        st.session_state["csv_file_with_predicted_labels"] = results_filtered_df
 
         # Update metrics on filtered data
         nrows_metric.metric(label="Number of Rows", value=results_filtered_df.shape[0])
