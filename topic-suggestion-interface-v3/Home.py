@@ -21,8 +21,8 @@ format.horizontal_line()
 
 def run():
     embedding_model = st.cache_resource(utils.load_embedding_model)()
-    file_handler = utils.FileHandler(
-        utils.RAW_DATA_DIR, utils.PROCESSED_DATA_DIR)
+    classification_model = st.cache_resource(utils.load_classification_model)()
+    file_handler = utils.FileHandler(utils.RAW_DATA_DIR, utils.PROCESSED_DATA_DIR)
 
     st.subheader("Uploaded files")
     files_table = st.empty()
@@ -70,11 +70,10 @@ def run():
                     try:
                         # Processed file first for schema validation
                         file_handler.write_processed_parquet(
-                            daily_news, embedding_model
+                            daily_news, embedding_model, classification_model
                         )
                         # Raw file if processing ok
                         file_handler.write_csv(daily_news)
-                        # TODO: Do label classification on upload, re-use embeddings
 
                         num_uploaded_files += 1
                         progress_bar.progress(

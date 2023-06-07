@@ -3,9 +3,12 @@ import pandas as pd
 import time
 import json
 from sentence_transformers import SentenceTransformer
+from setfit import SetFitModel
+import numpy as np
 import pyarrow as pa
 import pyarrow.parquet as pq
 import datetime
+import os
 from pathlib import Path
 
 RAW_DATA_DIR = Path("data", "raw")
@@ -152,16 +155,16 @@ def load_embedding_model() -> SentenceTransformer:
     return model
 
 
-def embed_df(df: pd.DataFrame, model: SentenceTransformer, column: str) -> pa.Table:
-    embeddings = model.encode(df[column])
-    embedded_table = pa.Table.from_pandas(df, preserve_index=False).append_column(
-        "vector",
-        pa.FixedSizeListArray.from_arrays(
-            embeddings.ravel(),
-            list_size=embeddings.shape[-1],
-        ),
-    )
-    return embedded_table
+def load_classification_model(model_path=None) -> SetFitModel:
+    data_folder = Path("trained_models")
+    data_folder_date_sorted = sorted(data_folder.iterdir(), key=os.path.getmtime)
+    latest_model_path = str(data_folder_date_sorted[-1])
+
+    if model_path is None:
+        model_path = latest_model_path
+
+    model = SetFitModel.from_pretrained(model_path)
+    return model
 
 
 class FileHandler:
@@ -195,26 +198,65 @@ class FileHandler:
                 parse_dates=["Published"],
             )
             .assign(
-                timestamp=lambda df: df["Published"].astype('int64') // 10**9,
+                timestamp=lambda df: df["Published"].astype("int64") // 10**9,
                 source=source,
             )
             .rename(lambda col_name: col_name.lower().replace(" ", "_"), axis="columns")
         )
         return df
 
+    @staticmethod
+    def label_df(df: pd.DataFrame, model: SetFitModel, column: str) -> pd.DataFrame:
+        y_score = model.predict_proba(df[column])
+
+        label_order = np.argsort(y_score, axis=1, kind="stable").numpy()[:, ::-1]
+        label_scores_df = pd.DataFrame(y_score, columns=model.model_head.classes_)
+
+        sorted_label_list = []
+        sorted_scores_list = []
+        sorted_label_dict_list = []
+        for (idx, row) in label_scores_df.iterrows():
+            sorted_label = row.iloc[label_order[idx]]
+            sorted_label_dict = sorted_label.to_dict()
+            sorted_label_dict_list.append(sorted_label_dict)
+        #     sorted_label_list.append(sorted_label.index.to_list())
+        #     sorted_scores_list.append(sorted_label.to_list())
+
+        # labelled_df = df.assign(
+        #     predicted_indexes=sorted_label_list, prediction_prob=sorted_scores_list
+        # )
+
+        labelled_df = df.assign(Predicted_Chains=sorted_label_dict_list)
+        return labelled_df
+
+    @staticmethod
+    def embed_df(df: pd.DataFrame, model: SentenceTransformer, column: str) -> pa.Table:
+        embeddings = model.encode(df[column])
+        # Pyarrow table keeps schema
+        embedded_table = pa.Table.from_pandas(df, preserve_index=False).append_column(
+            "vector",
+            pa.FixedSizeListArray.from_arrays(
+                embeddings.ravel(),
+                list_size=embeddings.shape[-1],
+            ),
+        )
+        return embedded_table
+
     def write_csv(self, file):
         filepath = self.raw_data_dir / file.name
         filepath.write_bytes(file.getbuffer())
         return filepath
 
-    def write_processed_parquet(self, file, embedding_model):
-        df = self.preprocess_daily_scan(file, source=file.name)
-        embedded_table = embed_df(df, embedding_model, column="headline")
+    def write_processed_parquet(self, file, embedding_model, classification_model):
+        processed_table = (
+            self.preprocess_daily_scan(file, source=file.name)
+            .pipe(self.label_df, model=classification_model, column="headline")
+            .pipe(self.embed_df, model=embedding_model, column="headline")
+        )
         # Save processed data
-        filepath = self.processed_data_dir / \
-            file.name.replace(".csv", ".parquet")
+        filepath = self.processed_data_dir / file.name.replace(".csv", ".parquet")
         pq.write_table(
-            embedded_table,
+            processed_table,
             filepath,
         )
         return filepath

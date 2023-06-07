@@ -102,6 +102,7 @@ def run():
             "domain",
             "facebook_interactions",
             "vector",
+            "Predicted_Chains",
         )
 
         query = (
@@ -120,8 +121,7 @@ def run():
         st.session_state["csv_file_filtered"] = results_filtered_df
 
         # Update metrics on filtered data
-        nrows_metric.metric(label="Number of Rows",
-                            value=results_filtered_df.shape[0])
+        nrows_metric.metric(label="Number of Rows", value=results_filtered_df.shape[0])
 
         st.write(
             results_filtered.limit(
