@@ -10,7 +10,7 @@ st.title("📊 Download Indexed Data")
 format.horizontal_line()
 format.align_text(
     """
-    In this page, you can download the indexed data that has been labelled with the guided theme indexing tool.
+    In this page, you can download the indexed data that has been labelled with the guided indexing tool.
     """,
     "justify",
 )
@@ -51,7 +51,7 @@ def run():
                 )
             else:
                 utils.customDisppearingMsg(
-                    "No articles have been labelled yet. Please do so in the Tabular Theme Indexing page!",
+                    "No articles have been labelled yet. Please do so in the Tabular Index Indexing page!",
                     wait=-1,
                     type_="warning",
                     icon="⚠️",
@@ -59,7 +59,7 @@ def run():
 
         else:
             utils.customDisppearingMsg(
-                "Please label the dataset first using the Guided Theme Indexing page first!",
+                "Please label the dataset first using the Guided Index Indexing page first!",
                 wait=-1,
                 type_="warning",
                 icon="⚠️",

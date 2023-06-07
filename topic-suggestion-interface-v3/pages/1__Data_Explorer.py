@@ -74,6 +74,15 @@ def run():
                 max_value=max_date,
             )
 
+            start_time = st.time_input("Start time on first selected day", value=datetime.time(0, 0))
+
+            end_time = st.time_input("End time on last selected day", value=datetime.time(23, 59))
+
+            # combine date and time
+            start_date = datetime.datetime.combine(date_range[0], start_time)
+            end_date = datetime.datetime.combine(date_range[1], end_time)
+            date_range = (start_date, end_date)
+
             # selection-based filter for article domains to be removed
             domain_filter = st.multiselect(
                 label="Article domains to exclude",

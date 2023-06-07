@@ -27,38 +27,38 @@ def extract_top_k_labels(labels_with_probabilities, k):
 
 
 # Given a dataframe, assign a list of themes sorted by random probabilities to each row and return the dataframe with the theme column appended.
-def assign_labels_to_dataframe(df, themes, indexes, subindexes, k, seed=None):
+def assign_labels_to_dataframe(df, indexes, subindexes, k, seed=None):
     if seed:
         # Set np seed for reproducibility
         np.random.seed(seed)
 
     # For each row, generate a distribution of themes
-    df["Predicted_Themes"] = df.apply(
-        lambda x: extract_top_k_labels(random_label_generator(themes, seed), k), axis=1
-    )
     df["Predicted_Indexes"] = df.apply(
         lambda x: extract_top_k_labels(random_label_generator(indexes, seed), k), axis=1
     )
-    df["Predicted_SubIndexes"] = df.apply(
-        lambda x: extract_top_k_labels(
-            random_label_generator(subindexes, seed), k),
-        axis=1,
+    df["Predicted_Subindexes"] = df.apply(
+        lambda x: extract_top_k_labels(random_label_generator(subindexes, seed), k), axis=1
     )
+    # df["Predicted_SubIndexes"] = df.apply(
+    #     lambda x: extract_top_k_labels(
+    #         random_label_generator(subindexes, seed), k),
+    #     axis=1,
+    # )
 
     return df
 
 
 # Given a dataframe, assign a list of predicted theme chains sorted by random probabilities to each row and return the dataframe with the theme column appended.
-def assign_theme_chain_to_dataframe(df, theme_chains, k, seed=None):
+def assign_index_chain_to_dataframe(df, index_chains, k, seed=None):
     # st.dataframe(theme_chains)
     if seed:
         # Set np seed for reproducibility
         np.random.seed(seed)
 
     # For each row, generate a distribution of themes
-    df["Predicted_Theme_Chains"] = df.apply(
+    df["Predicted_Chains"] = df.apply(
         lambda x: extract_top_k_labels(
-            random_label_generator(theme_chains, seed), k),
+            random_label_generator(index_chains, seed), k),
         axis=1,
     )
 

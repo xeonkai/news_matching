@@ -20,21 +20,21 @@ def consolidate_grid_responses(grid_responses, columns):
         if row[columns.index("suggested_label")] != "-Enter New Label":
             chain_list = convert_chain_to_list(
                 row[columns.index("suggested_label")])
+            # row[columns.index("theme")] = chain_list[0]
             row[columns.index("theme")] = chain_list[0]
             row[columns.index("index")] = chain_list[1]
-            row[columns.index("subindex")] = chain_list[2]
 
         elif row[columns.index("suggested_label")] == "-Enter New Label":
+            # if row[columns.index("theme")] == "-Enter New Theme" and row[columns.index("new theme")] != "":
+            #     row.replace(row[columns.index("theme")],
+            #                 row[columns.index("new theme")], inplace=True)
             if row[columns.index("theme")] == "-Enter New Theme" and row[columns.index("new theme")] != "":
                 row.replace(row[columns.index("theme")],
                             row[columns.index("new theme")], inplace=True)
             if row[columns.index("index")] == "-Enter New Index" and row[columns.index("new index")] != "":
-                row.replace(row[columns.index("index")],
-                            row[columns.index("new index")], inplace=True)
-            if row[columns.index("subindex")] == "-Enter New Subindex" and row[columns.index("new subindex")] != "":
                 row.replace(
-                    row[columns.index("subindex")], row[columns.index(
-                        "new subindex")], inplace=True
+                    row[columns.index("index")], row[columns.index(
+                        "new index")], inplace=True
                 )
 
         return row
@@ -44,21 +44,21 @@ def consolidate_grid_responses(grid_responses, columns):
 
     # Filtering out rows without new theme/index/subindex
 
+    # consolidated_df = consolidated_df[consolidated_df["theme"]
+    #                                   != "-Enter New Theme"]
     consolidated_df = consolidated_df[consolidated_df["theme"]
                                       != "-Enter New Theme"]
-    consolidated_df = consolidated_df[consolidated_df["index"]
-                                      != "-Enter New Index"]
     consolidated_df = consolidated_df[
-        consolidated_df["subindex"] != "-Enter New Subindex"
+        consolidated_df["index"] != "-Enter New Index"
     ]
 
     # Filtering out blank theme/index/subindex
+    # consolidated_df = consolidated_df[consolidated_df["theme"]
+    #                                   != ""]
     consolidated_df = consolidated_df[consolidated_df["theme"]
                                       != ""]
-    consolidated_df = consolidated_df[consolidated_df["index"]
-                                      != ""]
     consolidated_df = consolidated_df[
-        consolidated_df["subindex"] != ""
+        consolidated_df["index"] != ""
     ]
 
     # selecting relevent columns

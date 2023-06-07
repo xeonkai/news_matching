@@ -9,37 +9,45 @@ def read_taxonomy():
 
 
 def process_taxonomy(taxonomy):
-    for theme in taxonomy.keys():
-        for index in taxonomy[theme].keys():
-            taxonomy[theme][index].append("NA")
+    for index in taxonomy.keys():
+        for index in taxonomy[index].keys():
+            taxonomy[index][index].append("NA")
     return taxonomy
 
 
-def reformat_taxonomy(taxonomy):
-    themes = taxonomy["themes"]
-    indexes = taxonomy["indexes"]
-    subindexes = taxonomy["subindexes"]
+# def reformat_taxonomy(taxonomy):
+#     themes = taxonomy["themes"]
+#     indexes = taxonomy["indexes"]
+#     subindexes = taxonomy["subindexes"]
 
-    new_taxonomy = {}
+#     new_taxonomy = {}
 
-    for theme in themes:
-        new_taxonomy[theme] = {}
-        # seed(42)
-        for index in sample(indexes, 5):
-            new_taxonomy[theme][index] = []
-            # seed(42)
-            new_taxonomy[theme][index].extend(sample(subindexes, 5))
-            new_taxonomy[theme][index].extend(["NA"])
+#     for theme in themes:
+#         new_taxonomy[theme] = {}
+#         # seed(42)
+#         for index in sample(indexes, 5):
+#             new_taxonomy[theme][index] = []
+#             # seed(42)
+#             new_taxonomy[theme][index].extend(sample(subindexes, 5))
+#             new_taxonomy[theme][index].extend(["NA"])
 
-    return new_taxonomy
+#     return new_taxonomy
+
+
+# def generate_label_chains(taxonomy):
+#     output = []
+#     for theme, indexes in taxonomy.items():
+#         for index, subindexes in indexes.items():
+#             for subindex in subindexes:
+#                 output.append(f"{theme} > {index} > {subindex}")
+#     return output
 
 
 def generate_label_chains(taxonomy):
     output = []
-    for theme, indexes in taxonomy.items():
-        for index, subindexes in indexes.items():
-            for subindex in subindexes:
-                output.append(f"{theme} > {index} > {subindex}")
+    for indexes, subindexes in taxonomy.items():
+        for subindex in subindexes:
+            output.append(f"{indexes} > {subindex}")
     return output
 
 
