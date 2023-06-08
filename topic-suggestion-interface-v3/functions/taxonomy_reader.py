@@ -3,7 +3,8 @@ from random import sample, seed
 
 
 def read_taxonomy():
-    with open("topic-suggestion-interface-v3/taxonomy/taxonomy.json") as json_file:
+    # with open("topic-suggestion-interface-v3/taxonomy/taxonomy.json") as json_file:
+    with open("topic-suggestion-interface-v3/taxonomy/taxonomy_testing.json") as json_file:
         data = json.load(json_file)
         return data
 
