@@ -16,9 +16,12 @@ from itertools import chain
 def process_table(df):
     k = 5
 
-    df["suggested_label"] = df["suggested_labels"].apply(lambda x: x[0])
+    # st.write(df)
 
-    df["subindex"] = ""
+    df["Predicted_theme_and_index"] = df["suggested_labels"].apply(lambda x: x[0])
+
+    df["suggested_labels"] = df["suggested_labels"].apply(lambda x: x[:k])
+
 
     df["suggested_themes"] = df["suggested_labels"].apply(
         lambda chain_list: [convert_chain_to_list(chain)[0] for chain in chain_list][:k]
@@ -42,6 +45,9 @@ def process_table(df):
 
     df["taxonomy"] = df["suggested_labels"].apply(lambda x: taxonomy)
 
+    df["subindex"] = ""
+
+
     # st.write(df)
     return df
 
@@ -54,8 +60,8 @@ def modify_taxonomy(taxonomy):
         set(chain.from_iterable([list(taxonomy[theme]) for theme in themes]))
     )
 
-    for theme in themes:
-        taxonomy[theme].append("-Enter New Index")
+    # for theme in themes:
+    #     taxonomy[theme].append("-Enter New Index")
 
     unpacked_taxonomy = []
     for theme in themes:
@@ -63,7 +69,7 @@ def modify_taxonomy(taxonomy):
             if index not in unpacked_taxonomy:
                 unpacked_taxonomy.append(index)
 
-    taxonomy["-Enter New Theme"] = unpacked_taxonomy  # + ["-Enter New Subindex"]
+    # taxonomy["-Enter New Theme"] = unpacked_taxonomy  # + ["-Enter New Subindex"]
     # taxonomy["-Enter New Index"]["-Enter New Index"] = [i for i in subindexes]
 
     return taxonomy
@@ -335,7 +341,7 @@ def validate_current_response(current_response):
     incomplete_label = []
 
     for row in current_response["selected_rows"]:
-        if row["suggested_label"] == "-Enter New Label" and (
+        if row["Predicted_theme_and_index"] == "-Enter New Label" and (
             row["theme"] == "" or row["index"] == ""
         ):
             incomplete_label.append(row["_selectedRowNodeInfo"]["nodeRowIndex"])
@@ -359,8 +365,8 @@ def display_aggrid(df, load_state, selected_rows):
     # Initialising columns for new input
     if not load_state:
         # df["new index"] = ""
-        df["new theme"] = ""
-        df["new index"] = ""
+        # df["new theme"] = ""
+        # df["new index"] = ""
         cols = df.columns.tolist()
         cols = cols[1:] + cols[:1]
         df = df[cols]
@@ -381,6 +387,11 @@ def display_aggrid(df, load_state, selected_rows):
             lambda x: ast.literal_eval(x) if type(x) == str else x
         )
 
+    
+    # df = df.rename(
+    #     columns={"suggested_label": "Predicted_theme_and_index"}
+    # )
+    
     columns_to_show = [
         "headline",
         "facebook_interactions",
@@ -388,15 +399,17 @@ def display_aggrid(df, load_state, selected_rows):
         # "index",
         # "new index",
         "theme",
-        "new theme",
+        # "new theme",
         "index",
-        "new index",
-        "suggested_label",
+        # "new index",
+        # "suggested_label",
+        "Predicted_theme_and_index",
         "subindex"
         # "suggested_indexes",
         # "suggested_indexes",
         # "suggested_subindexes",
     ]
+
 
     gb = GridOptionsBuilder.from_dataframe(df)
 
@@ -441,7 +454,7 @@ def display_aggrid(df, load_state, selected_rows):
     )
 
     gb.configure_column(
-        "suggested_label",
+        "Predicted_theme_and_index",
         editable=True,
         cellEditor="agRichSelectCellEditor",
         cellEditorParams=labeljs,
@@ -466,7 +479,7 @@ def display_aggrid(df, load_state, selected_rows):
     editableCelljs = JsCode(
         """
         function(params) {
-        const label = params.data.suggested_label;
+        const label = params.data.Predicted_theme_and_index;
         var editable_cell = label == "-Enter New Label";
         return editable_cell;
         }
@@ -537,28 +550,28 @@ def display_aggrid(df, load_state, selected_rows):
     # )
     # gb.configure_column("new index", editable=newIndexjs,)
 
-    newThemejs = JsCode(
-        """
-        function(params) {
-        const theme = params.data.theme;
-        var editable_cell = theme == "-Enter New Theme";
-        return editable_cell;
-        }
-        """
-    )
+    # newThemejs = JsCode(
+    #     """
+    #     function(params) {
+    #     const theme = params.data.theme;
+    #     var editable_cell = theme == "-Enter New Theme";
+    #     return editable_cell;
+    #     }
+    #     """
+    # )
 
-    gb.configure_column("new theme", editable=newThemejs)
+    # gb.configure_column("new theme", editable=newThemejs)
 
-    newIndexjs = JsCode(
-        """
-        function(params) {
-        const index = params.data.index;
-        var editable_cell = index == "-Enter New Index";
-        return editable_cell;
-        }
-        """
-    )
-    gb.configure_column("new index", editable=newIndexjs)
+    # newIndexjs = JsCode(
+    #     """
+    #     function(params) {
+    #     const index = params.data.index;
+    #     var editable_cell = index == "-Enter New Index";
+    #     return editable_cell;
+    #     }
+    #     """
+    # )
+    # gb.configure_column("new index", editable=newIndexjs)
 
     gb.configure_column("subindex", editable=True)
 

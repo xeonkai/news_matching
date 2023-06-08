@@ -17,14 +17,14 @@ def consolidate_grid_responses(grid_responses, columns):
     def row_processer(row, columns):
 
         # by label
-        if row[columns.index("suggested_label")] != "-Enter New Label":
+        if row[columns.index("Predicted_theme_and_index")] != "-Enter New Label":
             chain_list = convert_chain_to_list(
-                row[columns.index("suggested_label")])
+                row[columns.index("Predicted_theme_and_index")])
             # row[columns.index("theme")] = chain_list[0]
             row[columns.index("theme")] = chain_list[0]
             row[columns.index("index")] = chain_list[1]
 
-        elif row[columns.index("suggested_label")] == "-Enter New Label":
+        elif row[columns.index("Predicted_theme_and_index")] == "-Enter New Label":
             # if row[columns.index("theme")] == "-Enter New Theme" and row[columns.index("new theme")] != "":
             #     row.replace(row[columns.index("theme")],
             #                 row[columns.index("new theme")], inplace=True)

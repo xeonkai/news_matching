@@ -29,12 +29,12 @@ format.align_text(
 format.horizontal_line()
 
 
-k = st.number_input(
-    "Top-K predictions for each article",
-    min_value=1,
-    max_value=999,
-    value=5,
-)
+# k = st.number_input(
+#     "Top-K predictions for each article",
+#     min_value=1,
+#     max_value=999,
+#     value=5,
+# )
 
 def run():
     if utils.check_session_state_key("csv_file_with_predicted_labels"):
@@ -42,9 +42,8 @@ def run():
             "csv_file_with_predicted_labels"
         )
 
-
-        table_collection = slice_table(
-            process_table(uploaded_data_with_indexes))
+        uploaded_data_with_indexes = process_table(uploaded_data_with_indexes)
+        table_collection = slice_table(uploaded_data_with_indexes)
 
         display_stats(uploaded_data_with_indexes)
 
