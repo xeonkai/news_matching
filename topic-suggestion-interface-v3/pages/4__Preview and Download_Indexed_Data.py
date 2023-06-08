@@ -19,11 +19,11 @@ format.horizontal_line()
 
 
 def run():
-    if utils.check_session_state_key("csv_file_filtered"):
+    if utils.check_session_state_key("csv_file_with_predicted_labels"):
         if utils.check_session_state_key("grid_responses"):
             st.subheader("Labelled Articles")
             grid_responses = utils.get_cached_object("grid_responses")
-            csv_file = utils.get_cached_object("csv_file_filtered")
+            csv_file = utils.get_cached_object("csv_file_with_predicted_labels")
 
             selected_rows = [
                 grid_response["selected_rows"]
