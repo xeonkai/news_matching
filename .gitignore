@@ -69,3 +69,4 @@ cython_debug/
 
 # cached huggingface models
 cached_models
+trained_models
