@@ -14,12 +14,9 @@ from itertools import chain
 
 @st.cache_data
 def process_table(df):
-
     k = 5
 
-    df["suggested_label"] = df["suggested_labels"].apply(
-        lambda x: x[0]
-    )
+    df["suggested_label"] = df["suggested_labels"].apply(lambda x: x[0])
 
     df["subindex"] = ""
 
@@ -41,7 +38,6 @@ def process_table(df):
 
     df["index_prob"] = df["suggested_labels_score"].str[0]
 
-
     taxonomy = modify_taxonomy(utils.get_cached_object("taxonomy"))
 
     df["taxonomy"] = df["suggested_labels"].apply(lambda x: taxonomy)
@@ -49,12 +45,14 @@ def process_table(df):
     # st.write(df)
     return df
 
+
 def modify_taxonomy(taxonomy):
     # st.write(taxonomy)
     taxonomy = copy.deepcopy(taxonomy)
     themes = list(taxonomy.keys())
-    indexes = list(set(chain.from_iterable(
-        [list(taxonomy[theme]) for theme in themes])))
+    indexes = list(
+        set(chain.from_iterable([list(taxonomy[theme]) for theme in themes]))
+    )
 
     for theme in themes:
         taxonomy[theme].append("-Enter New Index")
@@ -65,10 +63,11 @@ def modify_taxonomy(taxonomy):
             if index not in unpacked_taxonomy:
                 unpacked_taxonomy.append(index)
 
-    taxonomy["-Enter New Theme"] = unpacked_taxonomy # + ["-Enter New Subindex"]
+    taxonomy["-Enter New Theme"] = unpacked_taxonomy  # + ["-Enter New Subindex"]
     # taxonomy["-Enter New Index"]["-Enter New Index"] = [i for i in subindexes]
 
     return taxonomy
+
 
 # Function to modify taxonomy to include options to select new index, index and subindex
 # def modify_taxonomy(taxonomy):
@@ -175,7 +174,7 @@ def display_stats(df, title=True, show_themes=True, show_theme_count=True):
 # Function to display aggrid by indexes
 # @st.cache_resource(experimental_allow_widgets=True, show_spinner=False)
 def display_aggrid_by_theme(df_collection, current_theme_index):
-    st.write(st.session_state)
+    # st.write(st.session_state)
     current_theme = list(df_collection.keys())[current_theme_index]
     n_themes = len(df_collection.keys())
     df = df_collection[current_theme]
@@ -205,12 +204,12 @@ def display_aggrid_by_theme(df_collection, current_theme_index):
             load_state = True
             df = grid_responses[current_theme]["data"].copy()
             selected_rows = copy.deepcopy(
-                grid_responses[current_theme]["selected_rows"])
+                grid_responses[current_theme]["selected_rows"]
+            )
 
         current_response = display_aggrid(df, load_state, selected_rows)
 
         if st.form_submit_button("Confirm"):
-
             grid_responses[current_theme] = current_response
 
             utils.cache_object(grid_responses, "grid_responses")
@@ -225,8 +224,7 @@ def display_aggrid_by_theme(df_collection, current_theme_index):
                 grid_responses_validation = {}
 
             grid_responses_validation[current_theme] = valid_submission
-            utils.cache_object(grid_responses_validation,
-                               "grid_responses_validation")
+            utils.cache_object(grid_responses_validation, "grid_responses_validation")
 
             if valid_submission:
                 st.success(
@@ -337,20 +335,19 @@ def validate_current_response(current_response):
     incomplete_label = []
 
     for row in current_response["selected_rows"]:
-        if row["suggested_label"] == "-Enter New Label" and (row["theme"] == "" or row["index"] == ""):
-            incomplete_label.append(
-                row["_selectedRowNodeInfo"]["nodeRowIndex"])
+        if row["suggested_label"] == "-Enter New Label" and (
+            row["theme"] == "" or row["index"] == ""
+        ):
+            incomplete_label.append(row["_selectedRowNodeInfo"]["nodeRowIndex"])
         # if row["index"] == "-Enter New Index" and row["new index"] == "":
         #     incomplete_index.append(
         #         row["_selectedRowNodeInfo"]["nodeRowIndex"])
         if row["theme"] == "-Enter New Theme" and row["new theme"] == "":
-            incomplete_theme.append(
-                row["_selectedRowNodeInfo"]["nodeRowIndex"])
+            incomplete_theme.append(row["_selectedRowNodeInfo"]["nodeRowIndex"])
         if row["index"] == "-Enter New Index" and row["new index"] == "":
-            incomplete_index.append(
-                row["_selectedRowNodeInfo"]["nodeRowIndex"])
+            incomplete_index.append(row["_selectedRowNodeInfo"]["nodeRowIndex"])
 
-    if len(incomplete_label)  or len(incomplete_theme) or len(incomplete_index):
+    if len(incomplete_label) or len(incomplete_theme) or len(incomplete_index):
         return False
     else:
         return True
@@ -418,8 +415,9 @@ def display_aggrid(df, load_state, selected_rows):
         """function(params) {return `<a href=${params.data.link} target="_blank" style="text-decoration: none; color: white"> ${params.data.headline} </a>`}"""
     )
 
-    gb.configure_column("headline", headerCheckboxSelection=True,
-                        width=1200, cellRenderer=headlinejs)
+    gb.configure_column(
+        "headline", headerCheckboxSelection=True, width=1200, cellRenderer=headlinejs
+    )
 
     # tooltipjs = JsCode(
     #     """ function(params) { return '<span title="' + params.value + '">'+params.value+'</span>';  }; """
