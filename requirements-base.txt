@@ -1,0 +1,14 @@
+streamlit
+pandas<2 # st-aggrid bug
+numpy
+scikit-learn    
+setfit
+sentence-transformers
+duckdb
+pyarrow
+streamlit
+streamlit-aggrid==0.3.3
+streamlit-extras
+# Dev optional
+watchdog
+black
