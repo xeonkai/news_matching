@@ -29,41 +29,40 @@ format.align_text(
 format.horizontal_line()
 
 
+k = st.number_input(
+    "Top-K predictions for each article",
+    min_value=1,
+    max_value=999,
+    value=5,
+)
+
 def run():
-    if utils.check_session_state_key("csv_file_filtered"):
-        if utils.check_session_state_key("csv_file_with_predicted_labels"):
-            uploaded_data_with_indexes = utils.get_cached_object(
-                "csv_file_with_predicted_labels"
-            )
+    if utils.check_session_state_key("csv_file_with_predicted_labels"):
+        uploaded_data_with_indexes = utils.get_cached_object(
+            "csv_file_with_predicted_labels"
+        )
 
 
-            table_collection = slice_table(
-                process_table(uploaded_data_with_indexes))
+        table_collection = slice_table(
+            process_table(uploaded_data_with_indexes))
 
-            display_stats(uploaded_data_with_indexes)
+        display_stats(uploaded_data_with_indexes)
 
-            if utils.check_session_state_key("current_theme_index"):
-                current_index_index = utils.get_cached_object(
-                    "current_theme_index")
-            else:
-                current_index_index = 0
-                utils.cache_object(current_index_index, "current_theme_index")
-
-            format.horizontal_line()
-
-            display_aggrid_by_theme(table_collection, current_index_index)
-
-            format.horizontal_line()
+        if utils.check_session_state_key("current_theme_index"):
+            current_index_index = utils.get_cached_object(
+                "current_theme_index")
         else:
-            utils.customDisppearingMsg(
-                "Please run the Theme Model Simulator first!",
-                wait=-1,
-                type_="warning",
-                icon="⚠️",
-            )
+            current_index_index = 0
+            utils.cache_object(current_index_index, "current_theme_index")
 
+        format.horizontal_line()
+
+        display_aggrid_by_theme(table_collection, current_index_index)
+
+        format.horizontal_line()
     else:
         utils.no_file_uploaded()
+    
 
 
 if __name__ == "__main__":

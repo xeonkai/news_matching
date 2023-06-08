@@ -214,19 +214,16 @@ class FileHandler:
 
         sorted_label_list = []
         sorted_scores_list = []
-        sorted_label_dict_list = []
         for (idx, row) in label_scores_df.iterrows():
             sorted_label = row.iloc[label_order[idx]]
-            sorted_label_dict = sorted_label.to_dict()
-            sorted_label_dict_list.append(sorted_label_dict)
-        #     sorted_label_list.append(sorted_label.index.to_list())
-        #     sorted_scores_list.append(sorted_label.to_list())
+            sorted_label_list.append(sorted_label.index.to_list())
+            sorted_scores_list.append(sorted_label.to_list())
 
-        # labelled_df = df.assign(
-        #     predicted_indexes=sorted_label_list, prediction_prob=sorted_scores_list
-        # )
+        labelled_df = df.assign(
+            predicted_indexes=sorted_label_list, prediction_prob=sorted_scores_list
+        )
 
-        labelled_df = df.assign(Predicted_Chains=sorted_label_dict_list)
+        labelled_df = df.assign(suggested_labels=sorted_label_list, suggested_labels_score=sorted_scores_list)
         return labelled_df
 
     @staticmethod

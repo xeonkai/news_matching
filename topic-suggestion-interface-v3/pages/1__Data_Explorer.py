@@ -115,7 +115,8 @@ def run():
             "domain",
             "facebook_interactions",
             "vector",
-            "Predicted_Chains",
+            "suggested_labels",
+            "suggested_labels_score",
         )
 
         query = (
@@ -131,7 +132,6 @@ def run():
 
         # TODO: Move page to indexer page, materialize only when needed
         results_filtered_df = results_filtered.to_df()
-        st.session_state["csv_file_filtered"] = results_filtered_df
         st.session_state["csv_file_with_predicted_labels"] = results_filtered_df
 
         # Update metrics on filtered data

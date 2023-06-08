@@ -15,16 +15,7 @@ from itertools import chain
 @st.cache_data
 def process_table(df):
 
-    k = utils.get_cached_object("K")
-
-    df["suggested_labels"] = df["Predicted_Chains"].apply(
-        # lambda x: [chain for chain in list(x.keys())[:k]]
-        # Sort labels based on probabilities - Saving as parquet loses sort info
-        lambda d: [
-            label
-            for label, score in sorted(d.items(), key=lambda x: x[1], reverse=True)
-        ]
-    )
+    k = 5
 
     df["suggested_label"] = df["suggested_labels"].apply(
         lambda x: x[0]
@@ -32,63 +23,28 @@ def process_table(df):
 
     df["subindex"] = ""
 
-    # df["suggested_indexes"] = df["Predicted_Index_Chains"].apply(
-    #     lambda x: [convert_chain_to_list(chain)[0]
-    #                for chain in list(x.keys())[:5]]
-    # )
-    # df["suggested_indexes"] = df["suggested_indexes"].apply(
-    #     lambda x: list(dict.fromkeys(x))
-    # )
-    # df["index_ref"] = df["Predicted_Index_Chains"].apply(
-    #     lambda x: [convert_chain_to_list(chain)[0]
-    #                for chain in list(x.keys())][0]
-    # )
-    # df["index"] = ""
-
-    # df["index_prob"] = df["Predicted_Index_Chains"].apply(
-    #     lambda x: list(x.values())[0])
-
-    df["suggested_themes"] = df["Predicted_Chains"].apply(
-        lambda x: [convert_chain_to_list(chain)[0]
-                   for chain in list(x.keys())[:5]]
+    df["suggested_themes"] = df["suggested_labels"].apply(
+        lambda chain_list: [convert_chain_to_list(chain)[0] for chain in chain_list][:k]
     )
-    df["suggested_themes"] = df["suggested_themes"].apply(
-        lambda x: list(dict.fromkeys(x))
-    )
-    df["theme_ref"] = df["Predicted_Chains"].apply(
-        lambda x: [convert_chain_to_list(chain)[0]
-                   for chain in list(x.keys())][0]
-    )
+    df["theme_ref"] = df["suggested_themes"].str[0]
 
     df["theme"] = ""
 
-    df["theme_prob"] = df["Predicted_Chains"].apply(
-        lambda x: list(x.values())[0])
+    df["theme_prob"] = df["suggested_labels_score"].str[0]
 
-    df["suggested_indexes"] = df["Predicted_Chains"].apply(
-        lambda x: [convert_chain_to_list(chain)[1]
-                   for chain in list(x.keys())[:5]]
+    df["suggested_indexes"] = df["suggested_labels"].apply(
+        lambda chain_list: [convert_chain_to_list(chain)[1] for chain in chain_list][:k]
     )
-    df["suggested_indexes"] = df["suggested_indexes"].apply(
-        lambda x: list(dict.fromkeys(x))
-    )
-    df["index_ref"] = df["Predicted_Chains"].apply(
-        lambda x: [convert_chain_to_list(chain)[1]
-                   for chain in list(x.keys())][0]
-    )
+    df["index_ref"] = df["suggested_indexes"].str[0]
+
     df["index"] = ""
 
-    df["index_prob"] = df["Predicted_Chains"].apply(
-        lambda x: list(x.values())[0]
-    )
+    df["index_prob"] = df["suggested_labels_score"].str[0]
 
-    
 
     taxonomy = modify_taxonomy(utils.get_cached_object("taxonomy"))
 
-    df["taxonomy"] = df["Predicted_Chains"].apply(
-        lambda x: taxonomy
-    )
+    df["taxonomy"] = df["suggested_labels"].apply(lambda x: taxonomy)
 
     # st.write(df)
     return df
@@ -99,24 +55,6 @@ def modify_taxonomy(taxonomy):
     themes = list(taxonomy.keys())
     indexes = list(set(chain.from_iterable(
         [list(taxonomy[theme]) for theme in themes])))
-    # subindexes = list(set(chain.from_iterable(
-    #     [taxonomy[index][index] for index in indexes for index in indexes if index in taxonomy[index].keys()]))) + ["-Enter New Subindex"]
-
-    # for index in indexes:
-    #     taxonomy[index]["-Enter New Index"] = [i for i in subindexes]
-    #     for index in taxonomy[index].keys():
-    #         if "-Enter New Subindex" not in taxonomy[index][index]:
-    #             taxonomy[index][index].append("-Enter New Subindex")
-
-    # unpack taxonomy by indexes
-    # unpacked_taxonomy = {}
-    # for index in indexes:
-    #     for index in taxonomy[index]:
-    #         if index not in unpacked_taxonomy.keys():
-    #             unpacked_taxonomy[index] = taxonomy[index]
-    #         else:
-    #             unpacked_taxonomy[index] = list(
-    #                 set(unpacked_taxonomy[index] + taxonomy[index][index]))
 
     for theme in themes:
         taxonomy[theme].append("-Enter New Index")
@@ -235,9 +173,9 @@ def display_stats(df, title=True, show_themes=True, show_theme_count=True):
 
 
 # Function to display aggrid by indexes
-@st.cache_resource(experimental_allow_widgets=True, show_spinner=False)
+# @st.cache_resource(experimental_allow_widgets=True, show_spinner=False)
 def display_aggrid_by_theme(df_collection, current_theme_index):
-    # st.write(st.session_state)
+    st.write(st.session_state)
     current_theme = list(df_collection.keys())[current_theme_index]
     n_themes = len(df_collection.keys())
     df = df_collection[current_theme]
@@ -477,7 +415,7 @@ def display_aggrid(df, load_state, selected_rows):
 
     # Configure individual columns
     headlinejs = JsCode(
-        """ function(params) {return `<a href=${params.data.link} target="_blank" style="text-decoration: none; color: white"> ${params.data.headline} </a>`} """
+        """function(params) {return `<a href=${params.data.link} target="_blank" style="text-decoration: none; color: white"> ${params.data.headline} </a>`}"""
     )
 
     gb.configure_column("headline", headerCheckboxSelection=True,
