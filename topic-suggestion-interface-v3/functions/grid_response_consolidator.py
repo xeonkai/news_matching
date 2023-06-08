@@ -62,8 +62,7 @@ def consolidate_grid_responses(grid_responses, columns):
     ]
 
     # selecting relevent columns
-    consolidated_df = consolidated_df[columns.tolist(
-    ) + ["theme", "index", "subindex"]].drop(['vector'], axis=1)
+    consolidated_df = consolidated_df[["headline", "summary", "link", "domain", "facebook_interactions", "theme", "index", "subindex"]]
 
     consolidated_df = consolidated_df.reset_index(drop=True)
 
