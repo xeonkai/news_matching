@@ -23,7 +23,8 @@ def run():
         if utils.check_session_state_key("grid_responses"):
             st.subheader("Labelled Articles")
             grid_responses = utils.get_cached_object("grid_responses")
-            csv_file = utils.get_cached_object("csv_file_with_predicted_labels")
+            csv_file = utils.get_cached_object(
+                "csv_file_with_predicted_labels")
 
             selected_rows = [
                 grid_response["selected_rows"]
@@ -34,7 +35,7 @@ def run():
 
             if len(selected_rows):
                 consolidated_df = consolidate_grid_responses(
-                    grid_responses, csv_file.columns
+                    grid_responses
                 )
                 st.metric(
                     label="Total Labelled Articles", value=consolidated_df.shape[0]

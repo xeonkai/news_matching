@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import time
-import json
 from sentence_transformers import SentenceTransformer
 from setfit import SetFitModel
 import numpy as np
@@ -140,7 +139,7 @@ def no_file_uploaded():
     """
 
     customDisppearingMsg(
-        "No file uploaded yet! Please upload your CSV file in the 'Home' page!",
+        "No data selected yet! Please select the required data from the Data Explorer page!",
         wait=-1,
         type_="warning",
         icon="⚠️",
@@ -157,7 +156,8 @@ def load_embedding_model() -> SentenceTransformer:
 
 def load_classification_model(model_path=None) -> SetFitModel:
     data_folder = Path("trained_models")
-    data_folder_date_sorted = sorted(data_folder.iterdir(), key=os.path.getmtime)
+    data_folder_date_sorted = sorted(
+        data_folder.iterdir(), key=os.path.getmtime)
     latest_model_path = str(data_folder_date_sorted[-1])
 
     if model_path is None:
@@ -209,8 +209,10 @@ class FileHandler:
     def label_df(df: pd.DataFrame, model: SetFitModel, column: str) -> pd.DataFrame:
         y_score = model.predict_proba(df[column])
 
-        label_order = np.argsort(y_score, axis=1, kind="stable").numpy()[:, ::-1]
-        label_scores_df = pd.DataFrame(y_score, columns=model.model_head.classes_)
+        label_order = np.argsort(
+            y_score, axis=1, kind="stable").numpy()[:, ::-1]
+        label_scores_df = pd.DataFrame(
+            y_score, columns=model.model_head.classes_)
 
         sorted_label_list = []
         sorted_scores_list = []
@@ -223,7 +225,8 @@ class FileHandler:
             predicted_indexes=sorted_label_list, prediction_prob=sorted_scores_list
         )
 
-        labelled_df = df.assign(suggested_labels=sorted_label_list, suggested_labels_score=sorted_scores_list)
+        labelled_df = df.assign(
+            suggested_labels=sorted_label_list, suggested_labels_score=sorted_scores_list)
         return labelled_df
 
     @staticmethod
@@ -251,7 +254,8 @@ class FileHandler:
             .pipe(self.embed_df, model=embedding_model, column="headline")
         )
         # Save processed data
-        filepath = self.processed_data_dir / file.name.replace(".csv", ".parquet")
+        filepath = self.processed_data_dir / \
+            file.name.replace(".csv", ".parquet")
         pq.write_table(
             processed_table,
             filepath,

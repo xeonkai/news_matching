@@ -16,7 +16,7 @@ st.title("🔮 Taxonomy Explorer")
 format.horizontal_line()
 format.align_text(
     """
-    In this page, you can run the index model simulator. For the sake of this demo, we will randomly assign each article to themes and indexes with their associated probabilties.
+    In this page, you can explore the taxonomy containing the Theme and Index from the range of data selected. You may filter the table by Theme and Index.
     """,
     "justify",
 )
@@ -29,7 +29,6 @@ def run():
     if utils.check_session_state_key("csv_file_with_predicted_labels"):
         taxonomy = read_taxonomy()
         taxonomy_chains = generate_label_chains(taxonomy)
-
 
         utils.cache_object(taxonomy, "taxonomy")
         st.subheader("Previewing the Taxonomy")

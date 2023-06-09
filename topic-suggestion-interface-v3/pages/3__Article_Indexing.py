@@ -19,8 +19,9 @@ st.title("📝 Article Indexing")
 format.horizontal_line()
 format.align_text(
     """
-    In this page, you can verify if the predicted themes and indexes are correct. 
-    If they are not correct, select "-Enter New.." in the respective drop-down menu, then key in the new Index/Subindex in the corresponding cells on the right.
+    In this page, you can view the themes and indexes predicted for each news article. 
+    If the predicted theme and index are not correct, select "-Enter New Label" in the drop-down menu, then select the correct theme and index from the respective dropdown menus.
+    The subindex column is for the user to enter the subindex of the article. If the article does not have a subindex, leave the column blank.
     Select the rows that you have verified and/or edited using the checkbox on the left, then click on the "Confirm" button to save the changes.
     """,
     "justify",
@@ -28,13 +29,6 @@ format.align_text(
 
 format.horizontal_line()
 
-
-# k = st.number_input(
-#     "Top-K predictions for each article",
-#     min_value=1,
-#     max_value=999,
-#     value=5,
-# )
 
 def run():
     if utils.check_session_state_key("csv_file_with_predicted_labels"):
@@ -61,7 +55,6 @@ def run():
         format.horizontal_line()
     else:
         utils.no_file_uploaded()
-    
 
 
 if __name__ == "__main__":

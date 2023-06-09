@@ -1,17 +1,16 @@
 import streamlit as st
-from streamlit_extras.dataframe_explorer import dataframe_explorer
 import utils.design_format as format
 import utils.utils as utils
 import datetime
 import duckdb
 
-st.set_page_config(page_title="Data Explorer", page_icon="📰", layout="wide")
+st.set_page_config(page_title="Data Selection", page_icon="📰", layout="wide")
 
-st.title("🔎 Data Explorer")
+st.title("🔎 Data Selection")
 format.horizontal_line()
 format.align_text(
     """
-    In this page, you are able to explore the uploaded CSV DataFrame.
+    In this page, you are able to select the data that you would like to work on from the DataBase. You may perform the relevant filtering of the data using the filtering side bar on the left.
     """,
     "justify",
 )
@@ -135,7 +134,8 @@ def run():
         st.session_state["csv_file_with_predicted_labels"] = results_filtered_df
 
         # Update metrics on filtered data
-        nrows_metric.metric(label="Number of Rows", value=results_filtered_df.shape[0])
+        nrows_metric.metric(label="Number of Rows",
+                            value=results_filtered_df.shape[0])
 
         st.write(
             results_filtered.limit(
