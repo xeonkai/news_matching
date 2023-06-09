@@ -160,10 +160,8 @@ def display_stats(df, title=True, show_themes=True, show_theme_count=True):
 
     else:
         with col3:
-            st.metric(label="Total Index", value=n_index)
+            st.metric(label="Total Indexes", value=n_index)
 
-        with col4:
-            st.metric(label="Total Subindex", value=n_index)
 
     if show_themes:
         st.write("")
