@@ -65,3 +65,31 @@ pip freeze > requirements.txt
 # Make sure app is working
 ...
 ```
+
+### Build & run on docker
+
+Install docker if not available
+
+```bash
+# Install docker desktop for windows / mac
+https://www.docker.com/products/docker-desktop/
+
+# For linux server install
+sudo apt-get update && sudo apt-get upgrade
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+sudo groupadd docker
+sudo usermod -aG docker $USER
+# Reboot
+# Linux also need to explicit install compose plugin
+sudo apt-get install docker-compose-plugin
+```
+
+Build and run container
+```bash
+docker compose up --build --detach
+echo http://localhost:8501/
+# Do whatever
+...
+docker compose down
+```
