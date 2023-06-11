@@ -169,7 +169,7 @@ def display_stats(df, title=True, show_themes=True, show_theme_count=True):
         st.markdown(f"Themes present: **{themes}**")
 
 
-@st.cache_resource(experimental_allow_widgets=True, show_spinner=False)
+# @st.cache_resource(experimental_allow_widgets=True, show_spinner=False)
 def display_aggrid_by_theme(df_collection, current_theme_index):
     """Function to display aggrid by theme
 
@@ -379,7 +379,7 @@ def validate_current_response(current_response):
         return True
 
 
-@st.cache_resource(experimental_allow_widgets=True, show_spinner=False)
+# @st.cache_resource(experimental_allow_widgets=True, show_spinner=False)
 def display_aggrid(df, load_state, selected_rows):
     """Function to display aggrid table
     
