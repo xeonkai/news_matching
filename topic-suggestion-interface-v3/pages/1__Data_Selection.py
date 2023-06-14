@@ -90,7 +90,7 @@ def run():
             domain_filter = st.multiselect(
                 label="Article domains to exclude",
                 options=domain_list,
-                default=None,
+                default=[],
             )
 
             max_results = int(
