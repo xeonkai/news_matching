@@ -29,6 +29,12 @@ def process_data(df):
 
     return df
 
+def aggregate_pct_change(df, groupby_col, agg_col, agg_func):
+    df = df.groupby(groupby_col)[agg_col].agg(agg_func).reset_index()
+    df["pct_change"] = df[agg_col].pct_change().fillna(0)
+
+    return df
+
 def filter_data(df, min_interactions, date_range, selected_themes):
     df = df[df["facebook_interactions"] >= min_interactions]
     df = df[df["date"] >= date_range[0]]

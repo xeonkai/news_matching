@@ -2,100 +2,34 @@ import streamlit as st
 import altair as alt
 import pandas as pd
 
-# function to plot altair line chart of time series of sum of facebook interactions by theme
+# abstract function to plot altair line chart for theme
 
-def plot_theme_sum(df):
+def plot_theme_timeseries(df, y, title):
     chart = (
         alt.Chart(df)
         .mark_line(point=True)
         .encode(
             x=alt.X("monthdate(date_extracted):T", title="Date", axis=alt.Axis(labelAngle=-45)),
-            y=alt.Y("sum(facebook_interactions)", title="Sum of Facebook Interactions"),
+            y=alt.Y(y, title=title),
             color=alt.Color("theme", title="Theme"),
-            tooltip=["date_extracted", "theme", "sum(facebook_interactions)"],
+            tooltip=["date_extracted", "theme", y],
         )
         .properties(width=800, height=500)
         .interactive()
     )
     return chart
 
-# function to plot altair line chart of time series of mean of facebook interactions by theme
+# abstraction function to plot altair line chart for index
 
-
-def plot_theme_mean(df):
+def plot_index_timeseries(df, y, title):
     chart = (
         alt.Chart(df)
         .mark_line(point=True)
         .encode(
             x=alt.X("monthdate(date_extracted):T", title="Date", axis=alt.Axis(labelAngle=-45)),
-            y=alt.Y("mean(facebook_interactions)", title="Mean of Facebook Interactions"),
-            color=alt.Color("theme", title="Theme"),
-            tooltip=["date_extracted", "theme", "mean(facebook_interactions)"],
-        )
-        .properties(width=800, height=500)
-        .interactive()
-    )
-    return chart
-
-def plot_theme_count(df):
-    chart = (
-        alt.Chart(df)
-        .mark_line(point=True)
-        .encode(
-            x=alt.X("monthdate(date_extracted):T", title="Date", axis=alt.Axis(labelAngle=-45)),
-            y=alt.Y("count()", title="Number of Articles"),
-            color=alt.Color("theme", title="Theme"),
-            tooltip=["date_extracted", "theme", "count()"],
-        )
-        .properties(width=800, height=500)
-        .interactive()
-    )
-    return chart
-
-
-# function to plot altair line chart of time series of sum of facebook interactions by index
-
-def plot_index_sum(df):
-    chart = (
-        alt.Chart(df)
-        .mark_line(point=True)
-        .encode(
-            x=alt.X("monthdate(date_extracted):T", title="Date", axis=alt.Axis(labelAngle=-45)),
-            y=alt.Y("sum(facebook_interactions)", title="Sum of Facebook Interactions"),
+            y=alt.Y(y, title=title),
             color=alt.Color("index", title="Index"),
-            tooltip=["date_extracted", "index", "sum(facebook_interactions)"],
-        )
-        .properties(width=800, height=500)
-        .interactive()
-    )
-    return chart
-
-# function to plot altair line chart of time series of mean of facebook interactions by index
-
-def plot_index_mean(df):
-    chart = (
-        alt.Chart(df)
-        .mark_line(point=True)
-        .encode(
-            x=alt.X("monthdate(date_extracted):T", title="Date", axis=alt.Axis(labelAngle=-45)),
-            y=alt.Y("mean(facebook_interactions)", title="Mean of Facebook Interactions"),
-            color=alt.Color("index", title="Index"),
-            tooltip=["date_extracted", "index", "mean(facebook_interactions)"],
-        )
-        .properties(width=800, height=500)
-        .interactive()
-    )
-    return chart
-
-def plot_index_count(df):
-    chart = (
-        alt.Chart(df)
-        .mark_line(point=True)
-        .encode(
-            x=alt.X("monthdate(date_extracted):T", title="Date", axis=alt.Axis(labelAngle=-45)),
-            y=alt.Y("count()", title="Number of Articles"),
-            color=alt.Color("index", title="Index"),
-            tooltip=["date_extracted", "index", "count()"],
+            tooltip=["date_extracted", "index", y],
         )
         .properties(width=800, height=500)
         .interactive()
