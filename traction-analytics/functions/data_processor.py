@@ -1,5 +1,6 @@
 import pandas as pd
 import ast
+import streamlit as st
 
 # function to process the uploaded csv data
 
@@ -9,13 +10,22 @@ def process_data(df):
     df["index"] = df["suggested_labels"].apply(lambda x: x[0].split('>')[1].strip())
     df["date"] = df["published"].apply(lambda x: pd.to_datetime(x).date())
     df["time"] = df["published"].apply(lambda x: pd.to_datetime(x).time())
+    df["date_extracted"] = df["date_extracted"].apply(lambda x: pd.to_datetime(x).date())
+    # df["date_extracted"] = pd.to_datetime(df["date_extracted"])
+
+
+    # calculating difference between consecutive rows for each article
+    df["facebook_interactions_abs_change"] = df.groupby("link")["facebook_interactions"].diff().fillna(0)
+
+    # calculating percentage change between consecutive rows for each article
+    df["facebook_interactions_pct_change"] = df.groupby("link")["facebook_interactions"].pct_change().fillna(0)
 
 
     # filtering to only include the relavent columns
-
-    df = df[["published", "date", "time", "headline", "summary", "link", "domain", "facebook_interactions", "theme", "index"]]
+    df = df[["published", "date", "time", "date_extracted", "headline", "summary", "link", "domain", "facebook_interactions","facebook_interactions_abs_change","facebook_interactions_pct_change", "theme", "index"]]
     
-    df = df.sort_values(by=["date", "headline"], ascending=False)
+    # Sorting by headline
+    df = df.sort_values(by=["headline", "published"], ascending=False).reset_index(drop=True)
 
     return df
 

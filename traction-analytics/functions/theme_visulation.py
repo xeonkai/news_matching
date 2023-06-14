@@ -9,10 +9,10 @@ def plot_theme_sum(df):
         alt.Chart(df)
         .mark_line(point=True)
         .encode(
-            x=alt.X("monthdate(date):T", title="Date", axis=alt.Axis(labelAngle=-45)),
+            x=alt.X("monthdate(date_extracted):T", title="Date", axis=alt.Axis(labelAngle=-45)),
             y=alt.Y("sum(facebook_interactions)", title="Sum of Facebook Interactions"),
             color=alt.Color("theme", title="Theme"),
-            tooltip=["date", "theme", "sum(facebook_interactions)"],
+            tooltip=["date_extracted", "theme", "sum(facebook_interactions)"],
         )
         .properties(width=800, height=500)
         .interactive()
@@ -27,10 +27,10 @@ def plot_theme_mean(df):
         alt.Chart(df)
         .mark_line(point=True)
         .encode(
-            x=alt.X("monthdate(date):T", title="Date", axis=alt.Axis(labelAngle=-45)),
+            x=alt.X("monthdate(date_extracted):T", title="Date", axis=alt.Axis(labelAngle=-45)),
             y=alt.Y("mean(facebook_interactions)", title="Mean of Facebook Interactions"),
             color=alt.Color("theme", title="Theme"),
-            tooltip=["date", "theme", "mean(facebook_interactions)"],
+            tooltip=["date_extracted", "theme", "mean(facebook_interactions)"],
         )
         .properties(width=800, height=500)
         .interactive()
@@ -42,10 +42,10 @@ def plot_theme_count(df):
         alt.Chart(df)
         .mark_line(point=True)
         .encode(
-            x=alt.X("monthdate(date):T", title="Date", axis=alt.Axis(labelAngle=-45)),
+            x=alt.X("monthdate(date_extracted):T", title="Date", axis=alt.Axis(labelAngle=-45)),
             y=alt.Y("count()", title="Number of Articles"),
             color=alt.Color("theme", title="Theme"),
-            tooltip=["date", "theme", "count()"],
+            tooltip=["date_extracted", "theme", "count()"],
         )
         .properties(width=800, height=500)
         .interactive()
@@ -60,10 +60,10 @@ def plot_index_sum(df):
         alt.Chart(df)
         .mark_line(point=True)
         .encode(
-            x=alt.X("monthdate(date):T", title="Date", axis=alt.Axis(labelAngle=-45)),
+            x=alt.X("monthdate(date_extracted):T", title="Date", axis=alt.Axis(labelAngle=-45)),
             y=alt.Y("sum(facebook_interactions)", title="Sum of Facebook Interactions"),
             color=alt.Color("index", title="Index"),
-            tooltip=["date", "index", "sum(facebook_interactions)"],
+            tooltip=["date_extracted", "index", "sum(facebook_interactions)"],
         )
         .properties(width=800, height=500)
         .interactive()
@@ -77,10 +77,10 @@ def plot_index_mean(df):
         alt.Chart(df)
         .mark_line(point=True)
         .encode(
-            x=alt.X("monthdate(date):T", title="Date", axis=alt.Axis(labelAngle=-45)),
+            x=alt.X("monthdate(date_extracted):T", title="Date", axis=alt.Axis(labelAngle=-45)),
             y=alt.Y("mean(facebook_interactions)", title="Mean of Facebook Interactions"),
             color=alt.Color("index", title="Index"),
-            tooltip=["date", "index", "mean(facebook_interactions)"],
+            tooltip=["date_extracted", "index", "mean(facebook_interactions)"],
         )
         .properties(width=800, height=500)
         .interactive()
@@ -92,10 +92,10 @@ def plot_index_count(df):
         alt.Chart(df)
         .mark_line(point=True)
         .encode(
-            x=alt.X("monthdate(date):T", title="Date", axis=alt.Axis(labelAngle=-45)),
+            x=alt.X("monthdate(date_extracted):T", title="Date", axis=alt.Axis(labelAngle=-45)),
             y=alt.Y("count()", title="Number of Articles"),
             color=alt.Color("index", title="Index"),
-            tooltip=["date", "index", "count()"],
+            tooltip=["date_extracted", "index", "count()"],
         )
         .properties(width=800, height=500)
         .interactive()
