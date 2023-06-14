@@ -2,7 +2,7 @@ import streamlit as st
 import altair as alt
 
 import functions.data_processor as data_processor
-import functions.theme_visulation as theme_visulation
+import functions.visualisation as visualisation
 
 from streamlit_extras.dataframe_explorer import dataframe_explorer
 import utils.design_format as format
@@ -26,7 +26,7 @@ format.horizontal_line()
 def run_theme_tab(uploaded_data_filtered):
     st.write()
 
-    theme_visulation.show_theme_metrics(uploaded_data_filtered)
+    visualisation.show_theme_metrics(uploaded_data_filtered)
 
     format.horizontal_line()
 
@@ -35,7 +35,7 @@ def run_theme_tab(uploaded_data_filtered):
         st.subheader("Count Analysis")
 
     st.markdown("###### Count of Articles by Theme")
-    theme_count_chart = theme_visulation.plot_theme_timeseries(
+    theme_count_chart = visualisation.plot_theme_timeseries(
         uploaded_data_filtered, "count()", "Number of Articles"
     )
     st.altair_chart(theme_count_chart, use_container_width=True)
@@ -47,7 +47,7 @@ def run_theme_tab(uploaded_data_filtered):
         st.subheader("Mean Analysis")
 
     st.markdown("###### Mean of Facebook Interactions by Theme")
-    theme_mean_chart = theme_visulation.plot_theme_timeseries(
+    theme_mean_chart = visualisation.plot_theme_timeseries(
         uploaded_data_filtered, "mean(facebook_interactions)", "Mean of Facebook Interactions"
     )
     st.altair_chart(theme_mean_chart, use_container_width=True)
@@ -55,7 +55,7 @@ def run_theme_tab(uploaded_data_filtered):
     # altair chart for pct change in mean of interactions
     st.markdown("###### Percent Change in Mean of Facebook Interactions by Theme")
     df_mean_agg = data_processor.aggregate_pct_change(uploaded_data_filtered, ["theme", "date_extracted"], "facebook_interactions", "mean")
-    theme_pct_change_chart = theme_visulation.plot_theme_timeseries(
+    theme_pct_change_chart = visualisation.plot_theme_timeseries(
         df_mean_agg, "pct_change", "Percent Change in Mean of Facebook Interactions"
     )
     st.altair_chart(theme_pct_change_chart, use_container_width=True)
@@ -67,7 +67,7 @@ def run_theme_tab(uploaded_data_filtered):
         st.subheader("Sum Analysis")
 
     st.markdown("###### Sum of Facebook Interactions by Theme")
-    theme_sum_chart = theme_visulation.plot_theme_timeseries(
+    theme_sum_chart = visualisation.plot_theme_timeseries(
         uploaded_data_filtered, "sum(facebook_interactions)", "Sum of Facebook Interactions"
     )
     st.altair_chart(theme_sum_chart, use_container_width=True)
@@ -75,7 +75,7 @@ def run_theme_tab(uploaded_data_filtered):
     # altair chart for pct change in sum of interactions
     st.markdown("###### Percent Change in Sum of Facebook Interactions by Theme")
     df_sum_agg = data_processor.aggregate_pct_change(uploaded_data_filtered, ["theme", "date_extracted"], "facebook_interactions", "sum")
-    theme_pct_change_chart = theme_visulation.plot_theme_timeseries(
+    theme_pct_change_chart = visualisation.plot_theme_timeseries(
         df_sum_agg, "pct_change", "Percent Change in Sum of Facebook Interactions"
     )
     st.altair_chart(theme_pct_change_chart, use_container_width=True)
@@ -98,7 +98,7 @@ def run_index_tab(uploaded_data_filtered):
         uploaded_data_filtered, selected_theme
     )
 
-    theme_visulation.show_index_metrics(theme_data)
+    visualisation.show_index_metrics(theme_data)
 
     format.horizontal_line()
     
@@ -107,7 +107,7 @@ def run_index_tab(uploaded_data_filtered):
         st.subheader("Count Analysis")
 
     st.markdown("###### Count of Articles by Index")
-    index_count_chart = theme_visulation.plot_index_timeseries(
+    index_count_chart = visualisation.plot_index_timeseries(
         theme_data, "count()", "Number of Articles"
     )
 
@@ -120,7 +120,7 @@ def run_index_tab(uploaded_data_filtered):
         st.subheader("Mean Analysis")
 
     st.markdown("###### Mean of Facebook Interactions by Index")
-    index_mean_chart = theme_visulation.plot_index_timeseries(
+    index_mean_chart = visualisation.plot_index_timeseries(
         theme_data, "mean(facebook_interactions)", "Mean of Facebook Interactions"
     )
 
@@ -130,7 +130,7 @@ def run_index_tab(uploaded_data_filtered):
 
     st.markdown("###### Percent Change in Mean of Facebook Interactions by Index")
     df_mean_agg = data_processor.aggregate_pct_change(theme_data, ["index", "date_extracted"], "facebook_interactions", "mean")
-    index_pct_change_chart = theme_visulation.plot_index_timeseries(
+    index_pct_change_chart = visualisation.plot_index_timeseries(
         df_mean_agg, "pct_change", "Percent Change in Mean of Facebook Interactions"
     )
     st.altair_chart(index_pct_change_chart, use_container_width=True)
@@ -141,7 +141,7 @@ def run_index_tab(uploaded_data_filtered):
         st.subheader("Sum Analysis")
 
     st.markdown("###### Sum of Facebook Interactions by Index")
-    index_sum_chart = theme_visulation.plot_index_timeseries(
+    index_sum_chart = visualisation.plot_index_timeseries(
         theme_data, "sum(facebook_interactions)", "Sum of Facebook Interactions"
     )
 
@@ -151,11 +151,11 @@ def run_index_tab(uploaded_data_filtered):
 
     st.markdown("###### Percent Change in Sum of Facebook Interactions by Index")
     df_sum_agg = data_processor.aggregate_pct_change(theme_data, ["index", "date_extracted"], "facebook_interactions", "sum")
-    index_pct_change_chart = theme_visulation.plot_index_timeseries(
+    index_pct_change_chart = visualisation.plot_index_timeseries(
         df_sum_agg, "pct_change", "Percent Change in Sum of Facebook Interactions"
     )
     st.altair_chart(index_pct_change_chart, use_container_width=True)
-    
+
 
 
 def run():

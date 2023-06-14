@@ -9,7 +9,7 @@ def plot_theme_timeseries(df, y, title):
         alt.Chart(df)
         .mark_line(point=True)
         .encode(
-            x=alt.X("monthdate(date_extracted):T", title="Date", axis=alt.Axis(labelAngle=-45)),
+            x=alt.X("monthdate(date_extracted):T", title="Date Extracted", axis=alt.Axis(labelAngle=-45)),
             y=alt.Y(y, title=title),
             color=alt.Color("theme", title="Theme"),
             tooltip=["date_extracted", "theme", y],
@@ -26,7 +26,7 @@ def plot_index_timeseries(df, y, title):
         alt.Chart(df)
         .mark_line(point=True)
         .encode(
-            x=alt.X("monthdate(date_extracted):T", title="Date", axis=alt.Axis(labelAngle=-45)),
+            x=alt.X("monthdate(date_extracted):T", title="Date Extracted", axis=alt.Axis(labelAngle=-45)),
             y=alt.Y(y, title=title),
             color=alt.Color("index", title="Index"),
             tooltip=["date_extracted", "index", y],
