@@ -17,23 +17,15 @@ format.align_text(
 
 format.horizontal_line()
 
-
-def run():
-    # Metrics placeholder
-
-    col1, col2 = st.columns([1, 1])
-    with col1:
-        nrows_metric = st.empty()
-
-    # Get filter bounds
-
+@st.cache_data
+def get_filter_bounds():
     # Maximum interactions in db
     max_fb_interactions = duckdb.sql(
         f"SELECT MAX(facebook_interactions) FROM "
         f"read_parquet('{utils.PROCESSED_DATA_DIR.absolute()}/*.parquet')"
     ).fetchone()[0]
 
-    # Domain list ordered by frequency
+    
     domain_list = [
         domain
         for domain, count in duckdb.sql(
@@ -43,10 +35,23 @@ def run():
             "ORDER BY count DESC"
         ).fetchall()
     ]
+
     min_date, max_date = duckdb.sql(
         f"SELECT MIN(published), MAX(published) "
         f"FROM read_parquet('{utils.PROCESSED_DATA_DIR.absolute()}/*.parquet')"
     ).fetchone()
+
+    return max_fb_interactions, domain_list, min_date, max_date
+
+
+def run():
+    # Metrics placeholder
+
+    col1, col2 = st.columns([1, 1])
+    with col1:
+        nrows_metric = st.empty()
+
+    max_fb_interactions, domain_list, min_date, max_date = get_filter_bounds()
 
     # Filter inputs by user
     with st.sidebar:
