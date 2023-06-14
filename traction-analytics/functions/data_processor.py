@@ -13,6 +13,8 @@ def process_data(df):
     df["date_extracted"] = df["date_extracted"].apply(lambda x: pd.to_datetime(x).date())
     # df["date_extracted"] = pd.to_datetime(df["date_extracted"])
 
+    # Sorting by headline
+    df = df.sort_values(by=["headline", "published", "date_extracted"], ascending=[False, True, True]).reset_index(drop=True)
 
     # calculating difference between consecutive rows for each article
     df["facebook_interactions_abs_change"] = df.groupby("link")["facebook_interactions"].diff().fillna(0)
@@ -24,14 +26,13 @@ def process_data(df):
     # filtering to only include the relavent columns
     df = df[["published", "date", "time", "date_extracted", "headline", "summary", "link", "domain", "facebook_interactions","facebook_interactions_abs_change","facebook_interactions_pct_change", "theme", "index"]]
     
-    # Sorting by headline
-    df = df.sort_values(by=["headline", "published"], ascending=False).reset_index(drop=True)
 
     return df
 
 def aggregate_pct_change(df, groupby_col, agg_col, agg_func):
+    # groub by the groupby_col and aggregate the agg_col by agg_func, then calculate the pct_change
     df = df.groupby(groupby_col)[agg_col].agg(agg_func).reset_index()
-    df["pct_change"] = df[agg_col].pct_change().fillna(0)
+    df["pct_change"] = df.groupby(groupby_col[0])[agg_col].pct_change().fillna(0)
 
     return df
 
