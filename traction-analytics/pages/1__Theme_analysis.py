@@ -56,7 +56,7 @@ def run_theme_tab(uploaded_data_filtered):
     st.markdown("###### Percent Change in Mean of Facebook Interactions by Theme")
     df_mean_agg = data_processor.aggregate_pct_change(uploaded_data_filtered, ["theme", "date_extracted"], "facebook_interactions", "mean")
     theme_pct_change_chart = visualisation.plot_theme_timeseries(
-        df_mean_agg, "pct_change", "Percent Change in Mean of Facebook Interactions"
+        df_mean_agg, "pct_change", "Percent Change in Mean of Facebook Interactions %"
     )
     st.altair_chart(theme_pct_change_chart, use_container_width=True)
 
@@ -76,7 +76,7 @@ def run_theme_tab(uploaded_data_filtered):
     st.markdown("###### Percent Change in Sum of Facebook Interactions by Theme")
     df_sum_agg = data_processor.aggregate_pct_change(uploaded_data_filtered, ["theme", "date_extracted"], "facebook_interactions", "sum")
     theme_pct_change_chart = visualisation.plot_theme_timeseries(
-        df_sum_agg, "pct_change", "Percent Change in Sum of Facebook Interactions"
+        df_sum_agg, "pct_change", "Percent Change in Sum of Facebook Interactions %"
     )
     st.altair_chart(theme_pct_change_chart, use_container_width=True)
 
@@ -131,7 +131,7 @@ def run_index_tab(uploaded_data_filtered):
     st.markdown("###### Percent Change in Mean of Facebook Interactions by Index")
     df_mean_agg = data_processor.aggregate_pct_change(theme_data, ["index", "date_extracted"], "facebook_interactions", "mean")
     index_pct_change_chart = visualisation.plot_index_timeseries(
-        df_mean_agg, "pct_change", "Percent Change in Mean of Facebook Interactions"
+        df_mean_agg, "pct_change", "Percent Change in Mean of Facebook Interactions %"
     )
     st.altair_chart(index_pct_change_chart, use_container_width=True)
 
@@ -152,7 +152,7 @@ def run_index_tab(uploaded_data_filtered):
     st.markdown("###### Percent Change in Sum of Facebook Interactions by Index")
     df_sum_agg = data_processor.aggregate_pct_change(theme_data, ["index", "date_extracted"], "facebook_interactions", "sum")
     index_pct_change_chart = visualisation.plot_index_timeseries(
-        df_sum_agg, "pct_change", "Percent Change in Sum of Facebook Interactions"
+        df_sum_agg, "pct_change", "Percent Change in Sum of Facebook Interactions %"
     )
     st.altair_chart(index_pct_change_chart, use_container_width=True)
 
