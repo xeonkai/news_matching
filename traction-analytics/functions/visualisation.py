@@ -5,30 +5,35 @@ import pandas as pd
 # abstract function to plot altair line chart for theme
 
 def plot_theme_timeseries(df, y, title):
+    unique_themes = sorted(df["theme"].unique().tolist())
     chart = (
         alt.Chart(df)
         .mark_line(point=True)
         .encode(
             x=alt.X("monthdate(date_extracted):T", title="Date Extracted", axis=alt.Axis(labelAngle=-45)),
             y=alt.Y(y, title=title),
-            color=alt.Color("theme", title="Theme"),
+            color=alt.Color("theme", title="Theme").scale(domain=unique_themes,scheme="category20"),
             tooltip=["date_extracted", "theme", y],
         )
         .properties(width=800, height=500)
         .interactive()
     )
+
     return chart
+
+
 
 # abstraction function to plot altair line chart for index
 
 def plot_index_timeseries(df, y, title):
+    unique_indexes = sorted(df["index"].unique().tolist())
     chart = (
         alt.Chart(df)
         .mark_line(point=True)
         .encode(
             x=alt.X("monthdate(date_extracted):T", title="Date Extracted", axis=alt.Axis(labelAngle=-45)),
             y=alt.Y(y, title=title),
-            color=alt.Color("index", title="Index"),
+            color=alt.Color("index", title="Index").scale(domain=unique_indexes,scheme="category20"),
             tooltip=["date_extracted", "index", y],
         )
         .properties(width=800, height=500)
