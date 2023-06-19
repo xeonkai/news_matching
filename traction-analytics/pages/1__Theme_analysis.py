@@ -60,6 +60,14 @@ def run_theme_tab(uploaded_data_filtered):
     )
     st.altair_chart(theme_pct_change_chart, use_container_width=True)
 
+    # altair chart for abs change in mean of interactions
+    st.markdown("###### Absolute Change in Mean of Facebook Interactions by Theme")
+    df_mean_agg = data_processor.aggregate_pct_change(uploaded_data_filtered, ["theme", "date_extracted"], "facebook_interactions", "mean")
+    theme_abs_change_chart = visualisation.plot_theme_timeseries(
+        df_mean_agg, "abs_change", "Absolute Change in Mean of Facebook Interactions %"
+    )
+    st.altair_chart(theme_abs_change_chart, use_container_width=True)
+
     format.horizontal_line()
 
     col1, col2, col3 = st.columns([2,1,2])
@@ -80,7 +88,13 @@ def run_theme_tab(uploaded_data_filtered):
     )
     st.altair_chart(theme_pct_change_chart, use_container_width=True)
 
-
+    # altair chart for abs change in sum of interactions
+    st.markdown("###### Absolute Change in Sum of Facebook Interactions by Theme")
+    df_sum_agg = data_processor.aggregate_pct_change(uploaded_data_filtered, ["theme", "date_extracted"], "facebook_interactions", "sum")
+    theme_abs_change_chart = visualisation.plot_theme_timeseries(
+        df_sum_agg, "abs_change", "Absolute Change in Sum of Facebook Interactions %"
+    )
+    st.altair_chart(theme_abs_change_chart, use_container_width=True)
 
 
 
@@ -135,6 +149,15 @@ def run_index_tab(uploaded_data_filtered):
     )
     st.altair_chart(index_pct_change_chart, use_container_width=True)
 
+    # abs change of mean
+
+    st.markdown("###### Absolute Change in Mean of Facebook Interactions by Index")
+    df_mean_agg = data_processor.aggregate_pct_change(theme_data, ["index", "date_extracted"], "facebook_interactions", "mean")
+    index_abs_change_chart = visualisation.plot_index_timeseries(
+        df_mean_agg, "abs_change", "Absolute Change in Mean of Facebook Interactions %"
+    )
+    st.altair_chart(index_abs_change_chart, use_container_width=True)
+
     format.horizontal_line()
     col1, col2, col3 = st.columns([2,1,2])
     with col2:
@@ -155,6 +178,15 @@ def run_index_tab(uploaded_data_filtered):
         df_sum_agg, "pct_change", "Percent Change in Sum of Facebook Interactions %"
     )
     st.altair_chart(index_pct_change_chart, use_container_width=True)
+
+    # abs change of sum
+
+    st.markdown("###### Absolute Change in Sum of Facebook Interactions by Index")
+    df_sum_agg = data_processor.aggregate_pct_change(theme_data, ["index", "date_extracted"], "facebook_interactions", "sum")
+    index_abs_change_chart = visualisation.plot_index_timeseries(
+        df_sum_agg, "abs_change", "Absolute Change in Sum of Facebook Interactions %"
+    )
+    st.altair_chart(index_abs_change_chart, use_container_width=True)
 
 
 
@@ -182,7 +214,7 @@ def run():
                     "Minimum Number of Facebook Interactions per article",
                     min_value=0,
                     max_value=10000,
-                    value=1000,
+                    value=500,
                 )
                 date_range = st.date_input(
                     "Date range of articles",

@@ -33,6 +33,7 @@ def aggregate_pct_change(df, groupby_col, agg_col, agg_func):
     # groub by the groupby_col and aggregate the agg_col by agg_func, then calculate the pct_change
     df = df.groupby(groupby_col)[agg_col].agg(agg_func).reset_index()
     df["pct_change"] = df.groupby(groupby_col[0])[agg_col].pct_change().fillna(0) * 100
+    df["abs_change"] = df.groupby(groupby_col[0])[agg_col].diff().fillna(0)
     # st.write(df)
 
     return df
