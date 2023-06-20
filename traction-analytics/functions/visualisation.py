@@ -6,6 +6,19 @@ import pandas as pd
 
 def plot_theme_timeseries(df, y, title):
     unique_themes = sorted(df["theme"].unique().tolist())
+    labels = [theme + ' ' for theme in unique_themes]
+
+    input_dropdown = alt.binding_select(
+        # Add the empty selection which shows all when clicked
+        options=unique_themes + [None],
+        labels=labels + ['All'],
+        name='Choose Theme: '
+    )
+    selection = alt.selection_point(
+        fields=['theme'],
+        bind=input_dropdown,
+    )
+
     chart = (
         alt.Chart(df)
         .mark_line(point=True)
@@ -17,6 +30,10 @@ def plot_theme_timeseries(df, y, title):
         )
         .properties(width=800, height=500)
         .interactive()
+    ).add_params(
+        selection
+    ).transform_filter(
+        selection
     )
 
     return chart
@@ -27,6 +44,18 @@ def plot_theme_timeseries(df, y, title):
 
 def plot_index_timeseries(df, y, title):
     unique_indexes = sorted(df["index"].unique().tolist())
+    labels = [theme + ' ' for theme in unique_indexes]
+
+    input_dropdown = alt.binding_select(
+        # Add the empty selection which shows all when clicked
+        options=unique_indexes + [None],
+        labels=labels + ['All'],
+        name='Choose Index: '
+    )
+    selection = alt.selection_point(
+        fields=['index'],
+        bind=input_dropdown,
+    )
     chart = (
         alt.Chart(df)
         .mark_line(point=True)
@@ -38,6 +67,10 @@ def plot_index_timeseries(df, y, title):
         )
         .properties(width=800, height=500)
         .interactive()
+    ).add_params(
+        selection
+    ).transform_filter(
+        selection
     )
     return chart
 
@@ -81,4 +114,19 @@ def show_index_metrics(df):
     with col4:
         st.metric(label="Mean of Facebook Interactions", value='{0:,.2f}'.format(mean_interactions))
 
-    
+
+# function to show dataframe of articles that exceed the threshold
+
+def show_articles_exceeding_threshold(df_agg, df, criteria, threshold):
+    df_mean_threshold = df_agg[df_agg[criteria] > threshold]
+    df_mean_filtered = df[df["theme"].isin(df_mean_threshold["theme"].unique())]
+    df_mean_filtered = df_mean_filtered[df_mean_filtered["date_extracted"].isin(df_mean_threshold["date_extracted"].unique())][["published", "headline", "theme", "facebook_interactions"]].drop_duplicates(subset=["published", "headline", "theme"])
+    df_mean_filtered = df_mean_filtered.sort_values(by=["theme", "facebook_interactions"], ascending=[True, False]).reset_index(drop=True)
+    st.dataframe(df_mean_filtered, height=400)
+
+def show_articles_exceeding_threshold_index(df_agg, df, criteria, threshold):
+    df_mean_threshold = df_agg[df_agg[criteria] > threshold]
+    df_mean_filtered = df[df["index"].isin(df_mean_threshold["index"].unique())]
+    df_mean_filtered = df_mean_filtered[df_mean_filtered["date_extracted"].isin(df_mean_threshold["date_extracted"].unique())][["published", "headline", "index", "facebook_interactions"]].drop_duplicates(subset=["published", "headline", "index"])
+    df_mean_filtered = df_mean_filtered.sort_values(by=["index", "facebook_interactions"], ascending=[True, False]).reset_index(drop=True)
+    st.dataframe(df_mean_filtered, height=400)

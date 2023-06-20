@@ -38,12 +38,13 @@ def aggregate_pct_change(df, groupby_col, agg_col, agg_func):
 
     return df
 
-def filter_data(df, min_interactions, date_range, selected_themes):
+def filter_data(df, min_interactions, date_range, selected_themes, selected_index):
     df = df[df["facebook_interactions"] >= min_interactions]
     df = df[df["date"] >= date_range[0]]
     df = df[df["date"] <= date_range[1]]
 
     df = df[~df["theme"].isin(selected_themes)]
+    df = df[~df["index"].isin(selected_index)]
 
     return df
 
