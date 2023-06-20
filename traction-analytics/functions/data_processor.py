@@ -53,3 +53,11 @@ def filter_data_by_theme(df, theme):
 
     return df
 
+def make_clickable(text, link):
+    return f'<a target="_blank" href="{link}">{text}</a>'
+
+def make_clickable_df(df):
+    df = df.copy()
+    cols = list(df.columns)
+    df["headline"] = df.apply(lambda x: make_clickable(x[cols.index("headline")], x[cols.index("link")]), axis=1)
+    return df
