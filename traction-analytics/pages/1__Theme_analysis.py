@@ -9,7 +9,12 @@ import utils.design_format as format
 import utils.utils as utils
 import datetime
 
-st.set_page_config(page_title="Theme and Index Analysis", page_icon="📰", layout="wide")
+st.set_page_config(
+    page_title="Theme and Index Analysis",
+    page_icon="📰",
+    layout="wide",
+    initial_sidebar_state="collapsed",
+)
 
 st.title("🖥️ Theme and Index Analysis")
 format.horizontal_line()
@@ -23,6 +28,7 @@ format.align_text(
 format.horizontal_line()
 
 
+# @st.cache_resource(experimental_allow_widgets=True)
 def run_theme_tab(uploaded_data_filtered):
     st.write()
 
@@ -33,8 +39,7 @@ def run_theme_tab(uploaded_data_filtered):
     tab1, tab2, tab3 = st.tabs(["Count Analysis", "Mean Analysis", "Sum Analysis"])
 
     with tab1:
-
-        col1, col2, col3 = st.columns([2,1,2])
+        col1, col2, col3 = st.columns([2, 1, 2])
         with col2:
             st.subheader("Count Analysis")
 
@@ -46,37 +51,82 @@ def run_theme_tab(uploaded_data_filtered):
 
         format.horizontal_line()
 
-
-    with tab2: 
-        col1, col2, col3 = st.columns([2,1,2])
+    with tab2:
+        col1, col2, col3 = st.columns([2, 1, 2])
         with col2:
             st.subheader("Mean Analysis")
 
-        col1, col2 = st.columns([2,1])
+        col1, col2 = st.columns([2, 1])
         with col1:
             st.markdown("###### Mean of Facebook Interactions by Theme")
             theme_mean_chart = visualisation.plot_theme_timeseries(
-                uploaded_data_filtered, "mean(facebook_interactions)", "Mean of Facebook Interactions"
+                uploaded_data_filtered,
+                "mean(facebook_interactions)",
+                "Mean of Facebook Interactions",
             )
             st.altair_chart(theme_mean_chart, use_container_width=True)
 
         with col2:
-            df_mean = uploaded_data_filtered.groupby(["theme", "date_extracted"])["facebook_interactions"].mean().sort_values(ascending=False).reset_index()
-            threshold = st.slider("Mean number of Facebook Interaction Threshold", min_value=0, max_value=int(df_mean.facebook_interactions.max()), value=1000, step=100)
-            visualisation.show_articles_exceeding_threshold_theme(df_mean, uploaded_data_filtered, "facebook_interactions", threshold)
+            df_mean = (
+                uploaded_data_filtered.groupby(["theme", "date_extracted"])[
+                    "facebook_interactions"
+                ]
+                .mean()
+                .sort_values(ascending=False)
+                .reset_index()
+            )
+            with st.form("threshold_form_mean"):
+                col1, col2 = st.columns([2, 1])
+                threshold = st.slider(
+                    "Mean number of Facebook Interaction Threshold",
+                    min_value=0,
+                    max_value=int(df_mean.facebook_interactions.max()),
+                    value=1000,
+                    step=100,
+                )
+                submit_threshold = st.form_submit_button(
+                    "View Articles Exceeding Threshold",
+                    on_click=visualisation.show_articles_exceeding_threshold_theme(
+                        df_mean,
+                        uploaded_data_filtered,
+                        "facebook_interactions",
+                        threshold,
+                    ),
+                )
 
         # altair chart for pct change in mean of interactions
-        col1, col2 = st.columns([2,1])
+        col1, col2 = st.columns([2, 1])
         with col1:
-            st.markdown("###### Percent Change in Mean of Facebook Interactions by Theme")
-            df_mean_agg = data_processor.aggregate_pct_change(uploaded_data_filtered, ["theme", "date_extracted"], "facebook_interactions", "mean")
+            st.markdown(
+                "###### Percent Change in Mean of Facebook Interactions by Theme"
+            )
+            df_mean_agg = data_processor.aggregate_pct_change(
+                uploaded_data_filtered,
+                ["theme", "date_extracted"],
+                "facebook_interactions",
+                "mean",
+            )
             theme_pct_change_chart = visualisation.plot_theme_timeseries(
-                df_mean_agg, "pct_change", "Percent Change in Mean of Facebook Interactions %"
+                df_mean_agg,
+                "pct_change",
+                "Percent Change in Mean of Facebook Interactions %",
             )
             st.altair_chart(theme_pct_change_chart, use_container_width=True)
         with col2:
-            threshold = st.slider("Percent Change Threshold", min_value=0, max_value=int(df_mean_agg["pct_change"].max()), value=50, step=10)
-            visualisation.show_articles_exceeding_threshold_theme(df_mean_agg, uploaded_data_filtered, "pct_change", threshold)
+            with st.form("threshold_form_mean_pct_change"):
+                threshold = st.slider(
+                    "Percent Change Threshold",
+                    min_value=0,
+                    max_value=int(df_mean_agg["pct_change"].max()),
+                    value=50,
+                    step=10,
+                )
+                submit_threshold = st.form_submit_button(
+                    "View Articles Exceeding Threshold",
+                    on_click=visualisation.show_articles_exceeding_threshold_theme(
+                        df_mean_agg, uploaded_data_filtered, "pct_change", threshold
+                    ),
+                )
 
         # # altair chart for abs change in mean of interactions
         # st.markdown("###### Absolute Change in Mean of Facebook Interactions by Theme")
@@ -89,34 +139,78 @@ def run_theme_tab(uploaded_data_filtered):
         format.horizontal_line()
 
     with tab3:
-
-        col1, col2, col3 = st.columns([2,1,2])
+        col1, col2, col3 = st.columns([2, 1, 2])
         with col2:
             st.subheader("Sum Analysis")
-        col1, col2 = st.columns([2,1])
+        col1, col2 = st.columns([2, 1])
         with col1:
             st.markdown("###### Sum of Facebook Interactions by Theme")
             theme_sum_chart = visualisation.plot_theme_timeseries(
-                uploaded_data_filtered, "sum(facebook_interactions)", "Sum of Facebook Interactions"
+                uploaded_data_filtered,
+                "sum(facebook_interactions)",
+                "Sum of Facebook Interactions",
             )
             st.altair_chart(theme_sum_chart, use_container_width=True)
         with col2:
-            df_sum = uploaded_data_filtered.groupby(["theme", "date_extracted"])["facebook_interactions"].sum().sort_values(ascending=False).reset_index()
-            threshold = st.slider("Sum of Facebook Interaction Threshold", min_value=0, max_value=int(df_sum.facebook_interactions.max()), value=1000, step=100)
-            visualisation.show_articles_exceeding_threshold_theme(df_sum, uploaded_data_filtered, "facebook_interactions", threshold)
+            df_sum = (
+                uploaded_data_filtered.groupby(["theme", "date_extracted"])[
+                    "facebook_interactions"
+                ]
+                .sum()
+                .sort_values(ascending=False)
+                .reset_index()
+            )
+            with st.form("threshold_form_sum"):
+                threshold = st.slider(
+                    "Sum of Facebook Interaction Threshold",
+                    min_value=0,
+                    max_value=int(df_sum.facebook_interactions.max()),
+                    value=1000,
+                    step=100,
+                )
+                submit_threshold_sum = st.form_submit_button(
+                    "View Articles Exceeding Threshold",
+                    on_click=visualisation.show_articles_exceeding_threshold_theme(
+                        df_sum,
+                        uploaded_data_filtered,
+                        "facebook_interactions",
+                        threshold,
+                    ),
+                )
 
         # altair chart for pct change in sum of interactions
-        col1, col2 = st.columns([2,1])
+        col1, col2 = st.columns([2, 1])
         with col1:
-            st.markdown("###### Percent Change in Sum of Facebook Interactions by Theme")
-            df_sum_agg = data_processor.aggregate_pct_change(uploaded_data_filtered, ["theme", "date_extracted"], "facebook_interactions", "sum")
+            st.markdown(
+                "###### Percent Change in Sum of Facebook Interactions by Theme"
+            )
+            df_sum_agg = data_processor.aggregate_pct_change(
+                uploaded_data_filtered,
+                ["theme", "date_extracted"],
+                "facebook_interactions",
+                "sum",
+            )
             theme_pct_change_chart = visualisation.plot_theme_timeseries(
-                df_sum_agg, "pct_change", "Percent Change in Sum of Facebook Interactions %"
+                df_sum_agg,
+                "pct_change",
+                "Percent Change in Sum of Facebook Interactions %",
             )
             st.altair_chart(theme_pct_change_chart, use_container_width=True)
         with col2:
-            threshold = st.slider("Percent Change Threshold", min_value=0, max_value=int(df_sum_agg["pct_change"].max()), value=50, step=10)
-            visualisation.show_articles_exceeding_threshold_theme(df_sum_agg, uploaded_data_filtered, "pct_change", threshold)
+            with st.form("threshold_form_sum_pct_change"):
+                threshold = st.slider(
+                    "Percent Change Threshold",
+                    min_value=0,
+                    max_value=int(df_sum_agg["pct_change"].max()),
+                    value=50,
+                    step=10,
+                )
+                submit_threshold_sum_pct = st.form_submit_button(
+                    "View Articles Exceeding Threshold",
+                    on_click=visualisation.show_articles_exceeding_threshold_theme(
+                        df_sum_agg, uploaded_data_filtered, "pct_change", threshold
+                    ),
+                )
 
     # # altair chart for abs change in sum of interactions
     # st.markdown("###### Absolute Change in Sum of Facebook Interactions by Theme")
@@ -125,7 +219,6 @@ def run_theme_tab(uploaded_data_filtered):
     #     df_sum_agg, "abs_change", "Absolute Change in Sum of Facebook Interactions %"
     # )
     # st.altair_chart(theme_abs_change_chart, use_container_width=True)
-
 
 
 def run_index_tab(uploaded_data_filtered):
@@ -149,7 +242,7 @@ def run_index_tab(uploaded_data_filtered):
     tab1, tab2, tab3 = st.tabs(["Count Analysis", "Mean Analysis", "Sum Analysis"])
 
     with tab1:
-        col1, col2, col3 = st.columns([2,1,2])
+        col1, col2, col3 = st.columns([2, 1, 2])
         with col2:
             st.subheader("Count Analysis")
 
@@ -161,39 +254,75 @@ def run_index_tab(uploaded_data_filtered):
         st.altair_chart(index_count_chart, use_container_width=True)
 
         format.horizontal_line()
-    
-    with tab2:
 
-        col1, col2, col3 = st.columns([2,1,2])
+    with tab2:
+        col1, col2, col3 = st.columns([2, 1, 2])
         with col2:
             st.subheader("Mean Analysis")
 
-        col1, col2 = st.columns([2,1])
+        col1, col2 = st.columns([2, 1])
         with col1:
             st.markdown("###### Mean of Facebook Interactions by Index")
             index_mean_chart = visualisation.plot_index_timeseries(
-                theme_data, "mean(facebook_interactions)", "Mean of Facebook Interactions"
+                theme_data,
+                "mean(facebook_interactions)",
+                "Mean of Facebook Interactions",
             )
 
             st.altair_chart(index_mean_chart, use_container_width=True)
         with col2:
-            df_mean = theme_data.groupby(["index", "date_extracted"])["facebook_interactions"].mean().sort_values(ascending=False).reset_index()
-            threshold = st.slider("Mean of Facebook Interaction Threshold", min_value=0, max_value=int(df_mean.facebook_interactions.max()), value=100, step=10)
-            visualisation.show_articles_exceeding_threshold_index(df_mean, theme_data, "facebook_interactions", threshold)
+            df_mean = (
+                theme_data.groupby(["index", "date_extracted"])["facebook_interactions"]
+                .mean()
+                .sort_values(ascending=False)
+                .reset_index()
+            )
+            with st.form("threshold_form_mean_index"):
+                threshold = st.slider(
+                    "Mean of Facebook Interaction Threshold",
+                    min_value=0,
+                    max_value=int(theme_data["facebook_interactions"].max()),
+                    value=100,
+                    step=10,
+                )
+                submit_threshold_mean = st.form_submit_button(
+                    "View Articles Exceeding Threshold",
+                    on_click=visualisation.show_articles_exceeding_threshold_index(
+                        df_mean, theme_data, "facebook_interactions", threshold
+                    ),
+                )
 
         # pct change of mean
 
-        col1, col2 = st.columns([2,1])
+        col1, col2 = st.columns([2, 1])
         with col1:
-            st.markdown("###### Percent Change in Mean of Facebook Interactions by Index")
-            df_mean_agg = data_processor.aggregate_pct_change(theme_data, ["index", "date_extracted"], "facebook_interactions", "mean")
+            st.markdown(
+                "###### Percent Change in Mean of Facebook Interactions by Index"
+            )
+            df_mean_agg = data_processor.aggregate_pct_change(
+                theme_data, ["index", "date_extracted"], "facebook_interactions", "mean"
+            )
             index_pct_change_chart = visualisation.plot_index_timeseries(
-                df_mean_agg, "pct_change", "Percent Change in Mean of Facebook Interactions %"
+                df_mean_agg,
+                "pct_change",
+                "Percent Change in Mean of Facebook Interactions %",
             )
             st.altair_chart(index_pct_change_chart, use_container_width=True)
         with col2:
-            threshold = st.slider("Percent Change Threshold", min_value=0, max_value=int(df_mean_agg["pct_change"].max()), value=50, step=10)
-            visualisation.show_articles_exceeding_threshold_index(df_mean_agg, theme_data, "pct_change", threshold)
+            with st.form("threshold_form_pct_change_index"):
+                threshold = st.slider(
+                    "Percent Change Threshold",
+                    min_value=0,
+                    max_value=int(df_mean_agg["pct_change"].max()),
+                    value=50,
+                    step=10,
+                )
+                submit_threshold_pct_change = st.form_submit_button(
+                    "View Articles Exceeding Threshold",
+                    on_click=visualisation.show_articles_exceeding_threshold_index(
+                        df_mean_agg, theme_data, "pct_change", threshold
+                    ),
+                )
 
         # # abs change of mean
 
@@ -205,13 +334,13 @@ def run_index_tab(uploaded_data_filtered):
         # st.altair_chart(index_abs_change_chart, use_container_width=True)
 
         format.horizontal_line()
-    
+
     with tab3:
-        col1, col2, col3 = st.columns([2,1,2])
+        col1, col2, col3 = st.columns([2, 1, 2])
         with col2:
             st.subheader("Sum Analysis")
 
-        col1, col2 = st.columns([2,1])
+        col1, col2 = st.columns([2, 1])
         with col1:
             st.markdown("###### Sum of Facebook Interactions by Index")
             index_sum_chart = visualisation.plot_index_timeseries(
@@ -220,23 +349,58 @@ def run_index_tab(uploaded_data_filtered):
 
             st.altair_chart(index_sum_chart, use_container_width=True)
         with col2:
-            df_sum = theme_data.groupby(["index", "date_extracted"])["facebook_interactions"].sum().sort_values(ascending=False).reset_index()
-            threshold = st.slider("Sum of Facebook Interaction Threshold", min_value=0, max_value=int(df_sum.facebook_interactions.max()), value=1000, step=100)
-            visualisation.show_articles_exceeding_threshold_index(df_sum, theme_data, "facebook_interactions", threshold)
+            df_sum = (
+                theme_data.groupby(["index", "date_extracted"])["facebook_interactions"]
+                .sum()
+                .sort_values(ascending=False)
+                .reset_index()
+            )
+            with st.form("threshold_form_sum_index"):
+                threshold = st.slider(
+                    "Sum of Facebook Interaction Threshold",
+                    min_value=0,
+                    max_value=int(df_sum.facebook_interactions.max()),
+                    value=1000,
+                    step=100,
+                )
+                submit_threshold_sum = st.form_submit_button(
+                    "View Articles Exceeding Threshold",
+                    on_click=visualisation.show_articles_exceeding_threshold_index(
+                        df_sum, theme_data, "facebook_interactions", threshold
+                    ),
+                )
 
         # pct change of sum
 
-        col1, col2 = st.columns([2,1])
+        col1, col2 = st.columns([2, 1])
         with col1:
-            st.markdown("###### Percent Change in Sum of Facebook Interactions by Index")
-            df_sum_agg = data_processor.aggregate_pct_change(theme_data, ["index", "date_extracted"], "facebook_interactions", "sum")
+            st.markdown(
+                "###### Percent Change in Sum of Facebook Interactions by Index"
+            )
+            df_sum_agg = data_processor.aggregate_pct_change(
+                theme_data, ["index", "date_extracted"], "facebook_interactions", "sum"
+            )
             index_pct_change_chart = visualisation.plot_index_timeseries(
-                df_sum_agg, "pct_change", "Percent Change in Sum of Facebook Interactions %"
+                df_sum_agg,
+                "pct_change",
+                "Percent Change in Sum of Facebook Interactions %",
             )
             st.altair_chart(index_pct_change_chart, use_container_width=True)
         with col2:
-            threshold = st.slider("Percent Change Threshold", min_value=0, max_value=int(df_sum_agg["pct_change"].max()), value=50, step=10)
-            visualisation.show_articles_exceeding_threshold_index(df_sum_agg, theme_data, "pct_change", threshold)
+            with st.form("threshold_form_pct_change_sum_index"):
+                threshold = st.slider(
+                    "Percent Change Threshold",
+                    min_value=0,
+                    max_value=int(df_sum_agg["pct_change"].max()),
+                    value=50,
+                    step=10,
+                )
+                submit_threshold_pct_change = st.form_submit_button(
+                    "View Articles Exceeding Threshold",
+                    on_click=visualisation.show_articles_exceeding_threshold_index(
+                        df_sum_agg, theme_data, "pct_change", threshold
+                    ),
+                )
 
         # # abs change of sum
 
@@ -246,7 +410,6 @@ def run_index_tab(uploaded_data_filtered):
         #     df_sum_agg, "abs_change", "Absolute Change in Sum of Facebook Interactions %"
         # )
         # st.altair_chart(index_abs_change_chart, use_container_width=True)
-
 
 
 def run():
@@ -303,7 +466,9 @@ def run():
             uploaded_data, min_interactions, date_range, selected_themes, selected_index
         )
 
-        st.altair_chart(visualisation.plot_heatmap(uploaded_data_filtered))
+        st.altair_chart(
+            visualisation.plot_heatmap(uploaded_data_filtered), use_container_width=True
+        )
 
         tab1, tab2 = st.tabs(["Theme Analysis", "Index Analysis"])
 

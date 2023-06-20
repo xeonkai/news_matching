@@ -4,30 +4,56 @@ import streamlit as st
 
 # function to process the uploaded csv data
 
+
 def process_data(df):
-    df["suggested_labels"] = df["suggested_labels"].apply(lambda x: ast.literal_eval(x) if isinstance(x, str) else x)
-    df["theme"] = df["suggested_labels"].apply(lambda x: x[0].split('>')[0].strip())
-    df["index"] = df["suggested_labels"].apply(lambda x: x[0].split('>')[1].strip())
+    df["suggested_labels"] = df["suggested_labels"].apply(
+        lambda x: ast.literal_eval(x) if isinstance(x, str) else x
+    )
+    df["theme"] = df["suggested_labels"].apply(lambda x: x[0].split(">")[0].strip())
+    df["index"] = df["suggested_labels"].apply(lambda x: x[0].split(">")[1].strip())
     df["date"] = df["published"].apply(lambda x: pd.to_datetime(x).date())
     df["time"] = df["published"].apply(lambda x: pd.to_datetime(x).time())
-    df["date_extracted"] = df["date_extracted"].apply(lambda x: pd.to_datetime(x).date())
+    df["date_extracted"] = df["date_extracted"].apply(
+        lambda x: pd.to_datetime(x).date()
+    )
     # df["date_extracted"] = pd.to_datetime(df["date_extracted"])
 
     # Sorting by headline
-    df = df.sort_values(by=["headline", "published", "date_extracted"], ascending=[False, True, True]).reset_index(drop=True)
+    df = df.sort_values(
+        by=["headline", "published", "date_extracted"], ascending=[False, True, True]
+    ).reset_index(drop=True)
 
     # calculating difference between consecutive rows for each article
-    df["facebook_interactions_abs_change"] = df.groupby("link")["facebook_interactions"].diff().fillna(0)
+    df["facebook_interactions_abs_change"] = (
+        df.groupby("link")["facebook_interactions"].diff().fillna(0)
+    )
 
     # calculating percentage change between consecutive rows for each article
-    df["facebook_interactions_pct_change"] = df.groupby("link")["facebook_interactions"].pct_change().fillna(0)
-
+    df["facebook_interactions_pct_change"] = (
+        df.groupby("link")["facebook_interactions"].pct_change().fillna(0)
+    )
 
     # filtering to only include the relavent columns
-    df = df[["published", "date", "time", "date_extracted", "headline", "summary", "link", "domain", "facebook_interactions","facebook_interactions_abs_change","facebook_interactions_pct_change", "theme", "index"]]
-    
+    df = df[
+        [
+            "published",
+            "date",
+            "time",
+            "date_extracted",
+            "headline",
+            "summary",
+            "link",
+            "domain",
+            "facebook_interactions",
+            "facebook_interactions_abs_change",
+            "facebook_interactions_pct_change",
+            "theme",
+            "index",
+        ]
+    ]
 
     return df
+
 
 def aggregate_pct_change(df, groupby_col, agg_col, agg_func):
     # groub by the groupby_col and aggregate the agg_col by agg_func, then calculate the pct_change
@@ -37,6 +63,7 @@ def aggregate_pct_change(df, groupby_col, agg_col, agg_func):
     # st.write(df)
 
     return df
+
 
 def filter_data(df, min_interactions, date_range, selected_themes, selected_index):
     df = df[df["facebook_interactions"] >= min_interactions]
@@ -48,16 +75,22 @@ def filter_data(df, min_interactions, date_range, selected_themes, selected_inde
 
     return df
 
+
 def filter_data_by_theme(df, theme):
     df = df[df["theme"] == theme]
 
     return df
 
+
 def make_clickable(text, link):
     return f'<a target="_blank" href="{link}">{text}</a>'
+
 
 def make_clickable_df(df):
     df = df.copy()
     cols = list(df.columns)
-    df["headline"] = df.apply(lambda x: make_clickable(x[cols.index("headline")], x[cols.index("link")]), axis=1)
+    df["headline"] = df.apply(
+        lambda x: make_clickable(x[cols.index("headline")], x[cols.index("link")]),
+        axis=1,
+    )
     return df
