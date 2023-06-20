@@ -1,5 +1,6 @@
 import pandas as pd
 from functions.taxonomy_reader import convert_chain_to_list
+import io
 
 
 def row_processer(row, columns):
