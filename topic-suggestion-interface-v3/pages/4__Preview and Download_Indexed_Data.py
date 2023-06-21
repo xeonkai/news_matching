@@ -1,7 +1,7 @@
 import streamlit as st
 import utils.design_format as format
 import utils.utils as utils
-from functions.grid_response_consolidator import consolidate_grid_responses
+from functions.grid_response_consolidator import consolidate_grid_responses, extract_unlabelled_articles
 import io
 import pandas as pd
 
@@ -36,6 +36,7 @@ def run():
                 selected_rows) else selected_rows
 
             if len(selected_rows):
+                # st.write(grid_responses['general']['data'])
                 consolidated_df = consolidate_grid_responses(
                     grid_responses
                 )
@@ -44,6 +45,11 @@ def run():
                 )
 
                 st.dataframe(consolidated_df, use_container_width=True)
+
+                unlabelled_articles = extract_unlabelled_articles(
+                    consolidated_df, csv_file
+                )
+                # st.write(unlabelled_articles)
 
                 # pivot table of count of each theme and index
                 st.subheader("Count of each theme and index")
@@ -60,6 +66,9 @@ def run():
                     )
                     df_pivot.to_excel(
                         writer, sheet_name="Theme and Index Count", index=False
+                    )
+                    unlabelled_articles.to_excel(
+                        writer, sheet_name="Unlabelled Articles", index=False
                     )
                 buffer.seek(0)
 
