@@ -84,7 +84,7 @@ def run_theme_tab(uploaded_data_filtered):
                     value=1000,
                     step=100,
                 )
-                submit_threshold = st.form_submit_button(
+                st.form_submit_button(
                     "View Articles Exceeding Threshold",
                     on_click=visualisation.show_articles_exceeding_threshold_theme(
                         df_mean,
@@ -281,7 +281,7 @@ def run_index_tab(uploaded_data_filtered):
                 threshold = st.slider(
                     "Mean of Facebook Interaction Threshold",
                     min_value=0,
-                    max_value=int(theme_data["facebook_interactions"].max()),
+                    max_value=int(df_mean["facebook_interactions"].max()),
                     value=100,
                     step=10,
                 )

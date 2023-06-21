@@ -3,7 +3,8 @@ import altair as alt
 import pandas as pd
 from st_aggrid import AgGrid, GridUpdateMode, ColumnsAutoSizeMode, JsCode
 from st_aggrid.grid_options_builder import GridOptionsBuilder
-import random 
+import random
+import io 
 
 # abstract function to plot altair line chart for theme
 
@@ -205,8 +206,15 @@ def show_articles_exceeding_threshold_theme(df_agg, df, criteria, threshold):
         by=["theme", "facebook_interactions"], ascending=[True, False]
     ).reset_index(drop=True)
     # st.dataframe(df_mean_filtered, height=400)
-    display_aggrid_theme(df_mean_filtered)
+    display_aggrid(df_mean_filtered, theme=True)
 
+def to_excel(df):
+    output = io.BytesIO()
+    writer = pd.ExcelWriter(output, engine="xlsxwriter")
+    df.to_excel(writer, sheet_name="Sheet1")
+    writer.save()
+    processed_data = output.getvalue()
+    return processed_data
 
 def show_articles_exceeding_threshold_index(df_agg, df, criteria, threshold):
     df_mean_threshold = df_agg[df_agg[criteria] >= threshold]
@@ -222,17 +230,33 @@ def show_articles_exceeding_threshold_index(df_agg, df, criteria, threshold):
     df_mean_filtered = df_mean_filtered.sort_values(
         by=["index", "facebook_interactions"], ascending=[True, False]
     ).reset_index(drop=True)
-    display_aggrid_index(df_mean_filtered)
+    response = display_aggrid(df_mean_filtered, theme=False)
+
+    # st.download_button(
+    #     "Download as excel",
+    #     data=to_excel(response["data"]),
+    #     file_name="output.xlsx",
+    #     mime="application/vnd.ms-excel",
+    # )
     # st.dataframe(df_mean_filtered, height=400)
 
+
 @st.cache_resource(experimental_allow_widgets=True)
-def display_aggrid_theme(df):
-    columns_to_show = [
-        "published",
-        "headline",
-        "theme",
-        "facebook_interactions",
-    ]
+def display_aggrid(df, theme=True):
+    if theme:
+        columns_to_show = [
+            "published",
+            "headline",
+            "theme",
+            "facebook_interactions",
+        ]
+    else:
+        columns_to_show = [
+            "published",
+            "headline",
+            "index",
+            "facebook_interactions",
+        ]
     gb = GridOptionsBuilder.from_dataframe(df)
 
     gb.configure_default_column(
@@ -240,26 +264,32 @@ def display_aggrid_theme(df):
         value=True,
         enableRowGroup=False,
         aggFunc="count",
-        filterable=False,
-        sortable=False,
-        suppressMenu=True,
+        filterable=True,
+        sortable=True,
+        suppressMenu=False,
     )
 
     headlinejs = JsCode(
-        """function(params) {return `<a href=${params.data.link} target="_blank" style="text-decoration: none; color: white"> ${params.data.headline} </a>`}"""
+        """function(params) {return `<a href=${params.data.link} target="_blank" style="text-decoration: none; color: white"> <span title="${params.data.headline}"> ${params.data.headline} </span> </a>`}; """
     )
 
-    gb.configure_column(
-        "headline", width=600, cellRenderer=headlinejs
-    )
+    tooltipjs = JsCode(
+        """ function(params) { return '<span title="' + params.value + '">'+params.value+'</span>';  }; """
+    )  # if using with cellRenderer
 
     gb.configure_column(
-        "theme", width=100
+        "headline", width=600, cellRenderer=headlinejs,
     )
 
-    gb.configure_column(
-        "facebook_interactions", width=90
-    )
+    if theme:
+        gb.configure_column("theme", width=100, cellRenderer=tooltipjs)
+    else:
+        gb.configure_column("index", width=100, cellRenderer=tooltipjs)
+
+    gb.configure_column("facebook_interactions", width=90, cellRenderer=tooltipjs)
+
+    gb.configure_column("published", width=150, cellRenderer=tooltipjs)
+
 
     gridOptions = gb.build()
 
@@ -272,64 +302,10 @@ def display_aggrid_theme(df):
         df,
         height=400,
         gridOptions=gridOptions,
-        update_mode=GridUpdateMode.MODEL_CHANGED | GridUpdateMode.VALUE_CHANGED,
-        # columns_auto_size_mode=ColumnsAutoSizeMode.FIT_CONTENTS,
+        update_mode=GridUpdateMode.MODEL_CHANGED,
+        columns_auto_size_mode=ColumnsAutoSizeMode.FIT_ALL_COLUMNS_TO_VIEW,
         allow_unsafe_jscode=True,
-        key=random.randint(0, 1000000000),
-    )
-    return grid_response
-
-@st.cache_resource(experimental_allow_widgets=True)
-def display_aggrid_index(df):
-    columns_to_show = [
-        "published",
-        "headline",
-        "index",
-        "facebook_interactions",
-    ]
-    gb = GridOptionsBuilder.from_dataframe(df)
-
-    gb.configure_default_column(
-        groupable=False,
-        value=True,
-        enableRowGroup=False,
-        aggFunc="count",
-        filterable=False,
-        sortable=False,
-        suppressMenu=True,
-        key=random.randint(0, 1000000000),
-
-    )
-
-    headlinejs = JsCode(
-        """function(params) {return `<a href=${params.data.link} target="_blank" style="text-decoration: none; color: white"> ${params.data.headline} </a>`}"""
-    )
-
-    gb.configure_column(
-        "headline", width=600, cellRenderer=headlinejs
-    )
-
-    gb.configure_column(
-        "index", width=100
-    )
-
-    gb.configure_column(
-        "facebook_interactions", width=90
-    )
-
-    gridOptions = gb.build()
-
-    columns_to_hide = [i for i in df.columns if i not in columns_to_show]
-    column_defs = gridOptions["columnDefs"]
-    for col in column_defs:
-        if col["headerName"] in columns_to_hide:
-            col["hide"] = True
-    grid_response = AgGrid(
-        df,
-        height=400,
-        gridOptions=gridOptions,
-        update_mode=GridUpdateMode.MODEL_CHANGED | GridUpdateMode.VALUE_CHANGED,
-        # columns_auto_size_mode=ColumnsAutoSizeMode.FIT_CONTENTS,
-        allow_unsafe_jscode=True,
+        fit_columns_on_grid_load=True,
+        key=random.randint(0, 10000000),
     )
     return grid_response
