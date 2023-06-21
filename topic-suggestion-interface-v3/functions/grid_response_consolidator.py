@@ -67,3 +67,30 @@ def consolidate_grid_responses(grid_responses):
     consolidated_df = consolidated_df.reset_index(drop=True)
 
     return consolidated_df
+
+
+def extract_unlabelled_articles(labelled_df, all_data_df):
+    unlabelled_articles = pd.DataFrame()
+
+    # get rows from all_data_df that are not in labelled_df based on link using apply
+    unlabelled_articles = all_data_df[
+        ~all_data_df["link"].isin(labelled_df["link"])
+    ]
+
+    unlabelled_articles = unlabelled_articles.reset_index(drop=True)
+
+    unlabelled_articles["theme"]  = ""
+    unlabelled_articles["index"]  = ""
+    unlabelled_articles["subindex"]  = ""
+
+    unlabelled_articles = unlabelled_articles[["headline", "summary", "link",
+                                                  "domain", "facebook_interactions", "theme", "index", "subindex"]]
+
+    # sort by facebook interactions
+
+    unlabelled_articles = unlabelled_articles.sort_values(
+        by=["facebook_interactions"], ascending=False
+    )   
+
+    return unlabelled_articles
+
