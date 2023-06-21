@@ -12,18 +12,9 @@ import io
 def plot_theme_timeseries(df, y, title):
     unique_themes = sorted(df["theme"].unique().tolist())
     labels = [theme + " " for theme in unique_themes]
-
-    input_dropdown = alt.binding_select(
-        # Add the empty selection which shows all when clicked
-        options=unique_themes + [None],
-        labels=labels + ["All"],
-        name="Choose Theme: ",
-    )
-    selection = alt.selection_point(
-        fields=["theme"],
-        bind=input_dropdown,
-    )
-
+    
+    selection = alt.selection_point(fields=['theme'], bind='legend')
+    
     chart = (
         (
             alt.Chart(df)
@@ -57,16 +48,19 @@ def plot_index_timeseries(df, y, title):
     unique_indexes = sorted(df["index"].unique().tolist())
     labels = [theme + " " for theme in unique_indexes]
 
-    input_dropdown = alt.binding_select(
-        # Add the empty selection which shows all when clicked
-        options=unique_indexes + [None],
-        labels=labels + ["All"],
-        name="Choose Index: ",
-    )
-    selection = alt.selection_point(
-        fields=["index"],
-        bind=input_dropdown,
-    )
+    # input_dropdown = alt.binding_select(
+    #     # Add the empty selection which shows all when clicked
+    #     options=unique_indexes + [None],
+    #     labels=labels + ["All"],
+    #     name="Choose Index: ",
+    # )
+    # selection = alt.selection_point(
+    #     fields=["index"],
+    #     bind=input_dropdown,
+    # )
+
+    selection = alt.selection_point(fields=['index'], bind='legend')
+
     chart = (
         (
             alt.Chart(df)

@@ -79,13 +79,13 @@ def run():
                 )
 
                 selected_themes = st.multiselect(
-                    "Select Themes to Exclude",
+                    "Select Themes to Include",
                     options=sorted(uploaded_data["theme"].unique().tolist()),
                     default=["general"],
                 )
 
                 selected_index = st.multiselect(
-                    "Select Index to Exclude",
+                    "Select Index to Include",
                     options=sorted(uploaded_data["index"].unique().tolist()),
                     default=["others"],
                 )
