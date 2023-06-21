@@ -2,6 +2,8 @@ import streamlit as st
 import utils.design_format as format
 import utils.utils as utils
 from functions.grid_response_consolidator import consolidate_grid_responses
+import io
+import pandas as pd
 
 st.set_page_config(page_title="Download Indexed Data",
                    page_icon="📰", layout="wide")
@@ -43,13 +45,32 @@ def run():
 
                 st.dataframe(consolidated_df, use_container_width=True)
 
-                # download button for labelled articles
+                # pivot table of count of each theme and index
+                st.subheader("Count of each theme and index")
+                df_pivot = consolidated_df.groupby(
+                    ["theme", "index"]).size().reset_index(name="count")
+                st.dataframe(df_pivot, use_container_width=True)
+
+                buffer = io.BytesIO()
+
+                # build excel workbook with 2 sheets - consolidated_df and df_pivot
+                with pd.ExcelWriter(buffer) as writer:
+                    consolidated_df.to_excel(
+                        writer, sheet_name="Labelled Articles", index=False
+                    )
+                    df_pivot.to_excel(
+                        writer, sheet_name="Theme and Index Count", index=False
+                    )
+                buffer.seek(0)
+
+                # download button for excel file
                 st.download_button(
-                    label="Download Labelled Articles as CSV",
-                    data=utils.convert_df(consolidated_df),
-                    file_name="Labelled_Articles.csv",
-                    mime="text/csv",
+                    label="Download Labelled Articles as Excel File",
+                    data=buffer,
+                    file_name="Labelled_Articles.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 )
+
             else:
                 utils.customDisppearingMsg(
                     "No articles have been labelled yet. Please do so in the Tabular Index Indexing page!",
