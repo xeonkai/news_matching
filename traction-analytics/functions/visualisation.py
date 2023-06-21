@@ -113,12 +113,87 @@ def plot_heatmap(df):
             ),
             tooltip=["date_extracted", "theme_index", "mean(facebook_interactions)"],
         )
-        .properties(width=1600, height=700)
+        .properties(width=1600)
     ).configure_axis(
         labelLimit=500,
     )
 
     return chart
+
+
+def plot_theme_heatmap(df):
+
+    chart = (
+        alt.Chart(df)
+        .mark_rect()
+        .encode(
+            x=alt.X(
+                "monthdate(date_extracted):T",
+                title="Date Extracted",
+                axis=alt.Axis(labelAngle=-45),
+            ),
+            y=alt.Y("theme", title="Theme"),
+            color=alt.Color(
+                "mean(facebook_interactions)", title="Mean Facebook Interactions"
+            ),
+            tooltip=["date_extracted", "theme", "mean(facebook_interactions)"],
+        )
+        .properties(width=1600)
+    ).configure_axis(
+        labelLimit=500,
+    )
+
+    return chart
+
+def plot_index_heatmap(df):
+
+    chart = (
+        alt.Chart(df)
+        .mark_rect()
+        .encode(
+            x=alt.X(
+                "monthdate(date_extracted):T",
+                title="Date Extracted",
+                axis=alt.Axis(labelAngle=-45),
+            ),
+            y=alt.Y("index", title="Index"),
+            color=alt.Color(
+                "mean(facebook_interactions)", title="Mean Facebook Interactions"
+            ),
+            tooltip=["date_extracted", "index", "mean(facebook_interactions)"],
+        )
+        .properties(width=1600)
+    ).configure_axis(
+        labelLimit=500,
+    )
+
+    return chart
+
+def show_summary_metrics(df):
+    n_themes = df["theme"].nunique()
+    n_indexes = df["index"].nunique()
+    n_articles = df.shape[0]
+    sum_interactions = df["facebook_interactions"].sum()
+    mean_interactions = round(df["facebook_interactions"].mean(), 2)
+
+    col1, col2, col3, col4, col5 = st.columns(5)
+
+    with col1:
+        st.metric(label="Number of Themes", value="{0:,}".format(n_themes))
+    with col2:
+        st.metric(label="Number of Indexes", value="{0:,}".format(n_indexes))
+    with col3:
+        st.metric(label="Number of Articles", value="{0:,}".format(n_articles))
+    with col4:
+        st.metric(
+            label="Sum of Facebook Interactions", value="{0:,}".format(sum_interactions)
+        )
+    with col5:
+        st.metric(
+            label="Mean of Facebook Interactions",
+            value="{0:,.2f}".format(mean_interactions),
+        )
+    
 
 
 # function to show key theme level metrics of the dataframe
