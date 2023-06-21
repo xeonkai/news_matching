@@ -78,14 +78,20 @@ def run():
                     max_value=max_date,
                 )
 
+                aggregate_by = st.selectbox(
+                    "Aggregate by",
+                    options=["day", "week", "month"],
+                    index=0,
+                )
+
                 selected_themes = st.multiselect(
-                    "Select Themes to Include",
+                    "Select Themes to Exclude",
                     options=sorted(uploaded_data["theme"].unique().tolist()),
                     default=["general"],
                 )
 
                 selected_index = st.multiselect(
-                    "Select Index to Include",
+                    "Select Index to Excliude",
                     options=sorted(uploaded_data["index"].unique().tolist()),
                     default=["others"],
                 )
@@ -95,8 +101,8 @@ def run():
         uploaded_data_filtered = data_processor.filter_data(
             uploaded_data, min_interactions, date_range, selected_themes, selected_index
         )
-
-
+        if submit_button:
+            utils.cache_object(aggregate_by, "aggregate_by")
 
         tab1, tab2, tab3 = st.tabs(["Summary Analysis", "Theme Analysis", "Index Analysis"])
 

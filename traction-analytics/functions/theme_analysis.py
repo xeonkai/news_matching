@@ -11,6 +11,7 @@ import datetime
 
 
 def run_theme_tab(uploaded_data_filtered):
+
     st.write()
 
     visualisation.show_theme_metrics(uploaded_data_filtered)

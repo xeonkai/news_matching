@@ -5,6 +5,8 @@ from st_aggrid import AgGrid, GridUpdateMode, ColumnsAutoSizeMode, JsCode
 from st_aggrid.grid_options_builder import GridOptionsBuilder
 import random
 import io 
+import utils.utils as utils
+
 
 # abstract function to plot altair line chart for theme
 
@@ -14,7 +16,13 @@ def plot_theme_timeseries(df, y, title):
     labels = [theme + " " for theme in unique_themes]
     
     selection = alt.selection_point(fields=['theme'], bind='legend')
-    
+
+    if utils.check_session_state_key("aggregate_by"):
+        agg_by = utils.get_cached_object("aggregate_by")
+    else:
+        agg_by = "day"
+
+
     chart = (
         (
             alt.Chart(df)
@@ -32,12 +40,11 @@ def plot_theme_timeseries(df, y, title):
                 tooltip=["date_extracted", "theme", y],
             )
             .properties(width=800, height=600)
-            .interactive()
         )
         .add_params(selection)
         .transform_filter(selection)
     )
-
+    
     return chart
 
 
@@ -48,18 +55,14 @@ def plot_index_timeseries(df, y, title):
     unique_indexes = sorted(df["index"].unique().tolist())
     labels = [theme + " " for theme in unique_indexes]
 
-    # input_dropdown = alt.binding_select(
-    #     # Add the empty selection which shows all when clicked
-    #     options=unique_indexes + [None],
-    #     labels=labels + ["All"],
-    #     name="Choose Index: ",
-    # )
-    # selection = alt.selection_point(
-    #     fields=["index"],
-    #     bind=input_dropdown,
-    # )
-
     selection = alt.selection_point(fields=['index'], bind='legend')
+
+    
+    if utils.check_session_state_key("aggregate_by"):
+        agg_by = utils.get_cached_object("aggregate_by")
+    else:
+        agg_by = "day"
+        
 
     chart = (
         (
@@ -78,7 +81,6 @@ def plot_index_timeseries(df, y, title):
                 tooltip=["date_extracted", "index", y],
             )
             .properties(width=800, height=600)
-            .interactive()
         )
         .add_params(selection)
         .transform_filter(selection)
@@ -91,6 +93,12 @@ def plot_index_timeseries(df, y, title):
 
 def plot_heatmap(df):
     df["theme_index"] = df["theme"] + " > " + df["index"]
+
+    if utils.check_session_state_key("aggregate_by"):
+        agg_by = utils.get_cached_object("aggregate_by")
+    else:
+        agg_by = "day"
+    
 
     chart = (
         alt.Chart(df)
@@ -116,6 +124,12 @@ def plot_heatmap(df):
 
 
 def plot_theme_heatmap(df):
+
+    if utils.check_session_state_key("aggregate_by"):
+        agg_by = utils.get_cached_object("aggregate_by")
+    else:
+        agg_by = "day"
+    
 
     chart = (
         alt.Chart(df)
