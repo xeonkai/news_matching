@@ -17,12 +17,6 @@ def plot_theme_timeseries(df, y, title):
     
     selection = alt.selection_point(fields=['theme'], bind='legend')
 
-    if utils.check_session_state_key("aggregate_by"):
-        agg_by = utils.get_cached_object("aggregate_by")
-    else:
-        agg_by = "day"
-
-
     chart = (
         (
             alt.Chart(df)
@@ -56,13 +50,6 @@ def plot_index_timeseries(df, y, title):
     labels = [theme + " " for theme in unique_indexes]
 
     selection = alt.selection_point(fields=['index'], bind='legend')
-
-    
-    if utils.check_session_state_key("aggregate_by"):
-        agg_by = utils.get_cached_object("aggregate_by")
-    else:
-        agg_by = "day"
-        
 
     chart = (
         (
@@ -124,12 +111,6 @@ def plot_heatmap(df):
 
 
 def plot_theme_heatmap(df):
-
-    if utils.check_session_state_key("aggregate_by"):
-        agg_by = utils.get_cached_object("aggregate_by")
-    else:
-        agg_by = "day"
-    
 
     chart = (
         alt.Chart(df)
@@ -314,14 +295,6 @@ def show_articles_exceeding_threshold_index(df_agg, df, criteria, threshold):
         by=["index", "facebook_interactions"], ascending=[True, False]
     ).reset_index(drop=True)
     response = display_aggrid(df_mean_filtered, theme=False)
-
-    # st.download_button(
-    #     "Download as excel",
-    #     data=to_excel(response["data"]),
-    #     file_name="output.xlsx",
-    #     mime="application/vnd.ms-excel",
-    # )
-    # st.dataframe(df_mean_filtered, height=400)
 
 
 @st.cache_resource(experimental_allow_widgets=True)

@@ -101,6 +101,12 @@ def run():
         uploaded_data_filtered = data_processor.filter_data(
             uploaded_data, min_interactions, date_range, selected_themes, selected_index
         )
+
+        if aggregate_by == "week":
+            uploaded_data_filtered = data_processor.adjust_time_period_for_agg(uploaded_data_filtered, "W")
+        elif aggregate_by == "month":
+            uploaded_data_filtered = data_processor.adjust_time_period_for_agg(uploaded_data_filtered, "M")
+            
         if submit_button:
             utils.cache_object(aggregate_by, "aggregate_by")
 
