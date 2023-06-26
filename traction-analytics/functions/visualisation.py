@@ -1,6 +1,8 @@
 import streamlit as st
 import altair as alt
 import pandas as pd
+import numpy as np
+from plotly_calplot import calplot
 from st_aggrid import AgGrid, GridUpdateMode, ColumnsAutoSizeMode, JsCode
 from st_aggrid.grid_options_builder import GridOptionsBuilder
 import random
@@ -157,6 +159,44 @@ def plot_index_heatmap(df):
     )
 
     return chart
+
+# Function to plot calplot for theme
+def plot_theme_calplot(df):
+    # df[df['theme'] == theme]
+    # # aggregate facebook_interactions by day
+    df = df.groupby(['date_extracted']).agg({'facebook_interactions': 'mean'}).reset_index()
+
+    # convert date_extracted to datetime
+    df['date_extracted'] = pd.to_datetime(df['date_extracted'])
+
+    fig = calplot(df,x='date_extracted',y='facebook_interactions', dark_theme=True, month_lines_color="#fff")
+    fig.update_layout(
+            height=400,
+            paper_bgcolor="#0E1117",
+            plot_bgcolor="#0E1117",
+            )
+    
+    return fig
+
+# Function to plot calplot for index
+def plot_index_calplot(df):
+    # df[df['index'] == index]
+    # # aggregate facebook_interactions by day
+    df = df.groupby(['date_extracted']).agg({'facebook_interactions': 'mean'}).reset_index()
+
+    # convert date_extracted to datetime
+    df['date_extracted'] = pd.to_datetime(df['date_extracted'])
+
+    fig = calplot(df,x='date_extracted',y='facebook_interactions', dark_theme=True, month_lines_color="#fff")
+    fig.update_layout(
+            height=400,
+            paper_bgcolor="#0E1117",
+            plot_bgcolor="#0E1117",
+            )
+    
+    return fig
+    
+
 
 def show_summary_metrics(df):
     n_themes = df["theme"].nunique()

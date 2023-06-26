@@ -27,15 +27,25 @@ def run_index_tab(uploaded_data_filtered):
 
     format.horizontal_line()
 
-    tab1, tab2, tab3, tab4= st.tabs(["Heatmap", "Count Analysis", "Mean Analysis", "Sum Analysis"])
+    tab1, tab2, tab3, tab4, tab5 = st.tabs(["Calendar", "Heatmap", "Count Analysis", "Mean Analysis", "Sum Analysis"])
+
 
     with tab1:
+
+        selected_index = st.multiselect("Select Index", theme_data["index"].unique()
+                            , default=theme_data["index"].unique()[0])
+        
+        # filter based on selected index
+        theme_data_cal = theme_data[theme_data["index"].isin(selected_index)]
+
+        st.plotly_chart(visualisation.plot_index_calplot(theme_data_cal), use_container_width=True)
+    with tab2:
         st.altair_chart(
             visualisation.plot_index_heatmap(theme_data),
             use_container_width=True,
         )
 
-    with tab2:
+    with tab3:
         col1, col2, col3 = st.columns([2, 1, 2])
         with col2:
             st.subheader("Count Analysis")
@@ -49,7 +59,7 @@ def run_index_tab(uploaded_data_filtered):
 
         format.horizontal_line()
 
-    with tab3:
+    with tab4:
         col1, col2, col3 = st.columns([2, 1, 2])
         with col2:
             st.subheader("Mean Analysis")
@@ -120,7 +130,7 @@ def run_index_tab(uploaded_data_filtered):
 
         format.horizontal_line()
 
-    with tab4:
+    with tab5:
         col1, col2, col3 = st.columns([2, 1, 2])
         with col2:
             st.subheader("Sum Analysis")

@@ -18,15 +18,27 @@ def run_theme_tab(uploaded_data_filtered):
 
     format.horizontal_line()
 
-    tab1, tab2, tab3, tab4 = st.tabs(["Heatmap", "Count Analysis", "Mean Analysis", "Sum Analysis"])
+    tab1, tab2, tab3, tab4, tab5 = st.tabs(["Calendar", "Heatmap", "Count Analysis", "Mean Analysis", "Sum Analysis"])
 
     with tab1:
+
+        selected_theme = st.multiselect("Select Theme", uploaded_data_filtered["theme"].unique()
+                          , default=uploaded_data_filtered["theme"].unique()[0])
+        
+        # filter based on selected theme
+        uploaded_data_filtered_cal = uploaded_data_filtered[uploaded_data_filtered["theme"].isin(selected_theme)]
+
+        st.plotly_chart(visualisation.plot_theme_calplot(uploaded_data_filtered_cal), use_container_width=True)
+
+
+    with tab2:
         st.altair_chart(
             visualisation.plot_theme_heatmap(uploaded_data_filtered),
             use_container_width=True,
         )
+        #visualisation.plot_theme_calplot(uploaded_data_filtered, theme="general")
 
-    with tab2:
+    with tab3:
         col1, col2, col3 = st.columns([2, 1, 2])
         with col2:
             st.subheader("Count Analysis")
@@ -35,11 +47,11 @@ def run_theme_tab(uploaded_data_filtered):
         theme_count_chart = visualisation.plot_theme_timeseries(
             uploaded_data_filtered, "count()", "Number of Articles"
         )
-        st.altair_chart(theme_count_chart, use_container_width=True)
+        st.altair_chart(theme_count_chart, use_container_width=True, theme='streamlit')
 
         format.horizontal_line()
 
-    with tab3:
+    with tab4:
         col1, col2, col3 = st.columns([2, 1, 2])
         with col2:
             st.subheader("Mean Analysis")
@@ -118,7 +130,7 @@ def run_theme_tab(uploaded_data_filtered):
 
         format.horizontal_line()
 
-    with tab4:
+    with tab5:
         col1, col2, col3 = st.columns([2, 1, 2])
         with col2:
             st.subheader("Sum Analysis")
