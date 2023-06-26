@@ -91,7 +91,7 @@ def run():
                 )
 
                 selected_index = st.multiselect(
-                    "Select Index to Excliude",
+                    "Select Index to Exclude",
                     options=sorted(uploaded_data["index"].unique().tolist()),
                     default=["others"],
                 )
