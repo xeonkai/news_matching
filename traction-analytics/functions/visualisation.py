@@ -3,10 +3,11 @@ import altair as alt
 import pandas as pd
 import numpy as np
 from plotly_calplot import calplot
+import plotly.graph_objects as go
 from st_aggrid import AgGrid, GridUpdateMode, ColumnsAutoSizeMode, JsCode
 from st_aggrid.grid_options_builder import GridOptionsBuilder
 import random
-import io 
+import io
 import utils.utils as utils
 
 
@@ -16,8 +17,8 @@ import utils.utils as utils
 def plot_theme_timeseries(df, y, title):
     unique_themes = sorted(df["theme"].unique().tolist())
     labels = [theme + " " for theme in unique_themes]
-    
-    selection = alt.selection_point(fields=['theme'], bind='legend')
+
+    selection = alt.selection_point(fields=["theme"], bind="legend")
 
     chart = (
         (
@@ -40,7 +41,7 @@ def plot_theme_timeseries(df, y, title):
         .add_params(selection)
         .transform_filter(selection)
     )
-    
+
     return chart
 
 
@@ -51,7 +52,7 @@ def plot_index_timeseries(df, y, title):
     unique_indexes = sorted(df["index"].unique().tolist())
     labels = [theme + " " for theme in unique_indexes]
 
-    selection = alt.selection_point(fields=['index'], bind='legend')
+    selection = alt.selection_point(fields=["index"], bind="legend")
 
     chart = (
         (
@@ -87,8 +88,14 @@ def plot_heatmap(df):
         agg_by = utils.get_cached_object("aggregate_by")
     else:
         agg_by = "day"
-    
 
+    df_agg = (
+        df.groupby(["date_extracted", "theme_index"])
+        .agg({"facebook_interactions": "mean"})
+        .reset_index()
+    )
+
+    interval = 3000
     chart = (
         alt.Chart(df)
         .mark_rect()
@@ -100,7 +107,9 @@ def plot_heatmap(df):
             ),
             y=alt.Y("theme_index", title="Theme + Index"),
             color=alt.Color(
-                "mean(facebook_interactions)", title="Mean Facebook Interactions"
+                "mean(facebook_interactions)",
+                title="Mean Facebook Interactions",
+                scale=alt.Scale(scheme="greens")#, bins=alt.BinParams(step=interval), nice=True),
             ),
             tooltip=["date_extracted", "theme_index", "mean(facebook_interactions)"],
         )
@@ -113,7 +122,6 @@ def plot_heatmap(df):
 
 
 def plot_theme_heatmap(df):
-
     chart = (
         alt.Chart(df)
         .mark_rect()
@@ -125,7 +133,9 @@ def plot_theme_heatmap(df):
             ),
             y=alt.Y("theme", title="Theme"),
             color=alt.Color(
-                "mean(facebook_interactions)", title="Mean Facebook Interactions"
+                "mean(facebook_interactions)",
+                title="Mean Facebook Interactions",
+                scale=alt.Scale(scheme="greens"),
             ),
             tooltip=["date_extracted", "theme", "mean(facebook_interactions)"],
         )
@@ -136,8 +146,8 @@ def plot_theme_heatmap(df):
 
     return chart
 
-def plot_index_heatmap(df):
 
+def plot_index_heatmap(df):
     chart = (
         alt.Chart(df)
         .mark_rect()
@@ -149,7 +159,9 @@ def plot_index_heatmap(df):
             ),
             y=alt.Y("index", title="Index"),
             color=alt.Color(
-                "mean(facebook_interactions)", title="Mean Facebook Interactions"
+                "mean(facebook_interactions)",
+                title="Mean Facebook Interactions",
+                scale=alt.Scale(scheme="greens"),
             ),
             tooltip=["date_extracted", "index", "mean(facebook_interactions)"],
         )
@@ -160,42 +172,138 @@ def plot_index_heatmap(df):
 
     return chart
 
+
 # Function to plot calplot for theme
 def plot_theme_calplot(df):
     # df[df['theme'] == theme]
     # # aggregate facebook_interactions by day
-    df = df.groupby(['date_extracted']).agg({'facebook_interactions': 'mean'}).reset_index()
+    df = (
+        df.groupby(["date_extracted"])
+        .agg({"facebook_interactions": "mean"})
+        .reset_index()
+    )
 
     # convert date_extracted to datetime
-    df['date_extracted'] = pd.to_datetime(df['date_extracted'])
+    df["date_extracted"] = pd.to_datetime(df["date_extracted"])
 
-    fig = calplot(df,x='date_extracted',y='facebook_interactions', dark_theme=True, month_lines_color="#fff")
+    fig = calplot(
+        df,
+        x="date_extracted",
+        y="facebook_interactions",
+        dark_theme=True,
+        month_lines_color="#fff",
+    )
     fig.update_layout(
-            height=400,
-            paper_bgcolor="#0E1117",
-            plot_bgcolor="#0E1117",
-            )
-    
+        height=400,
+        paper_bgcolor="#0E1117",
+        plot_bgcolor="#0E1117",
+    )
+
     return fig
+
+
+def show_colour_scale(df):
+    df = (
+        df.groupby(["date_extracted"])
+        .agg({"facebook_interactions": "mean"})
+        .reset_index()
+    )
+    min_y = df["facebook_interactions"].min()
+    max_y = df["facebook_interactions"].max()
+
+    dummy_trace = go.Scatter(
+        y=[min_y, max_y],
+        mode="markers",
+        marker=dict(
+            size=0.0001,
+            color=[min_y, max_y],
+            colorscale="greens",
+            colorbar=dict(
+                thickness=20,
+                x=-1,
+                y=1,
+                title="Mean Facebook Interactions",
+                dtick=500, # adjust here
+            ),
+            showscale=True,
+        ),
+        hoverinfo="none",
+    )
+    layout = dict(xaxis=dict(visible=False), yaxis=dict(visible=False))
+    fig = go.Figure([dummy_trace], layout)
+
+    # disable graph interactivity
+    fig.update_layout(
+        clickmode=None,
+        hovermode=False,
+        dragmode=False,
+        selectdirection=None,
+        modebar=dict(
+            remove=[
+                "zoom2d",
+                "pan2d",
+                "select2d",
+                "lasso2d",
+                "zoomIn2d",
+                "zoomOut2d",
+                "autoScale2d",
+                "resetScale2d",
+                "hoverClosestCartesian",
+                "hoverCompareCartesian",
+                "zoom3d",
+                "pan3d",
+                "orbitRotation",
+                "tableRotation",
+                "handleDrag3d",
+                "resetCameraDefault3d",
+                "resetCameraLastSave3d",
+                "hoverClosest3d",
+                "hoverClosestGl2d",
+                "hoverClosestPie",
+                "toggleHover",
+                "resetViews",
+                "toggleSpikelines",
+                "resetViewMapbox",
+                "toImage",
+            ]
+        ),
+        margin=dict(l=0, r=0, t=0, b=0),
+    )
+
+    # fig.update_layout(
+    #     title=dict(text="Mean Facebook Interactions", font=dict(size=12), automargin=True, yref='paper'),
+    # )
+
+    return fig
+
 
 # Function to plot calplot for index
 def plot_index_calplot(df):
     # df[df['index'] == index]
     # # aggregate facebook_interactions by day
-    df = df.groupby(['date_extracted']).agg({'facebook_interactions': 'mean'}).reset_index()
+    df = (
+        df.groupby(["date_extracted"])
+        .agg({"facebook_interactions": "mean"})
+        .reset_index()
+    )
 
     # convert date_extracted to datetime
-    df['date_extracted'] = pd.to_datetime(df['date_extracted'])
+    df["date_extracted"] = pd.to_datetime(df["date_extracted"])
 
-    fig = calplot(df,x='date_extracted',y='facebook_interactions', dark_theme=True, month_lines_color="#fff")
+    fig = calplot(
+        df,
+        x="date_extracted",
+        y="facebook_interactions",
+        dark_theme=True,
+        month_lines_color="#fff",
+    )
     fig.update_layout(
-            height=400,
-            paper_bgcolor="#0E1117",
-            plot_bgcolor="#0E1117",
-            )
-    
+        height=400,
+        paper_bgcolor="#0E1117",
+        plot_bgcolor="#0E1117",
+    )
+
     return fig
-    
 
 
 def show_summary_metrics(df):
@@ -222,7 +330,6 @@ def show_summary_metrics(df):
             label="Mean of Facebook Interactions",
             value="{0:,.2f}".format(mean_interactions),
         )
-    
 
 
 # function to show key theme level metrics of the dataframe
@@ -312,6 +419,7 @@ def show_articles_exceeding_threshold_theme(df_agg, df, criteria, threshold):
     # st.dataframe(df_mean_filtered, height=400)
     display_aggrid(df_mean_filtered, theme=True)
 
+
 def to_excel(df):
     output = io.BytesIO()
     writer = pd.ExcelWriter(output, engine="xlsxwriter")
@@ -319,6 +427,7 @@ def to_excel(df):
     writer.save()
     processed_data = output.getvalue()
     return processed_data
+
 
 def show_articles_exceeding_threshold_index(df_agg, df, criteria, threshold):
     df_mean_threshold = df_agg[df_agg[criteria] >= threshold]
@@ -374,7 +483,9 @@ def display_aggrid(df, theme=True):
     )  # if using with cellRenderer
 
     gb.configure_column(
-        "headline", width=600, cellRenderer=headlinejs,
+        "headline",
+        width=600,
+        cellRenderer=headlinejs,
     )
 
     if theme:
@@ -385,7 +496,6 @@ def display_aggrid(df, theme=True):
     gb.configure_column("facebook_interactions", width=90, cellRenderer=tooltipjs)
 
     gb.configure_column("published", width=150, cellRenderer=tooltipjs)
-
 
     gridOptions = gb.build()
 

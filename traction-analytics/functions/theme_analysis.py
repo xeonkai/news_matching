@@ -28,7 +28,12 @@ def run_theme_tab(uploaded_data_filtered):
         # filter based on selected theme
         uploaded_data_filtered_cal = uploaded_data_filtered[uploaded_data_filtered["theme"].isin(selected_theme)]
 
-        st.plotly_chart(visualisation.plot_theme_calplot(uploaded_data_filtered_cal), use_container_width=True)
+        subcol1, subcol2 = st.columns([6, 1])
+        with subcol1:
+            # st.markdown("##### Mean Facebook Interactions")
+            st.plotly_chart(visualisation.plot_theme_calplot(uploaded_data_filtered_cal), use_container_width=True)
+        with subcol2:
+            st.plotly_chart(visualisation.show_colour_scale(uploaded_data_filtered_cal), use_container_width=True)
 
 
     with tab2:

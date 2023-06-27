@@ -38,7 +38,12 @@ def run_index_tab(uploaded_data_filtered):
         # filter based on selected index
         theme_data_cal = theme_data[theme_data["index"].isin(selected_index)]
 
-        st.plotly_chart(visualisation.plot_index_calplot(theme_data_cal), use_container_width=True)
+        subcol1, subcol2 = st.columns([10, 1])
+        with subcol1:
+            # st.markdown("##### Mean Facebook Interactions")
+            st.plotly_chart(visualisation.plot_index_calplot(theme_data_cal), use_container_width=True)
+        with subcol2:
+            st.plotly_chart(visualisation.show_colour_scale(theme_data_cal), use_container_width=True)
     with tab2:
         st.altair_chart(
             visualisation.plot_index_heatmap(theme_data),
