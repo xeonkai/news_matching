@@ -57,24 +57,28 @@ def run():
                     ["theme", "index"]).size().reset_index(name="count")
                 st.dataframe(df_pivot, use_container_width=True)
 
+                consolidated_df = pd.concat(
+                    [consolidated_df, unlabelled_articles], ignore_index=True
+                ).reset_index(drop=True)
+
                 buffer = io.BytesIO()
 
                 # build excel workbook with 2 sheets - consolidated_df and df_pivot
                 with pd.ExcelWriter(buffer) as writer:
                     consolidated_df.to_excel(
-                        writer, sheet_name="Labelled Articles", index=False
+                        writer, sheet_name="Articles", index=False
                     )
                     df_pivot.to_excel(
                         writer, sheet_name="Theme and Index Count", index=False
                     )
-                    unlabelled_articles.to_excel(
-                        writer, sheet_name="Unlabelled Articles", index=False
-                    )
+                    # unlabelled_articles.to_excel(
+                    #     writer, sheet_name="Unlabelled Articles", index=False
+                    # )
                 buffer.seek(0)
 
                 # download button for excel file
                 st.download_button(
-                    label="Download Labelled Articles as Excel File",
+                    label="Download Articles as Excel File",
                     data=buffer,
                     file_name="Labelled_Articles.xlsx",
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
