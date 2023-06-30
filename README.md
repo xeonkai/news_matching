@@ -98,7 +98,7 @@ Build and push container
 ```bash
 docker compose build --no-cache
 docker tag news-matching:latest <repo>/news-matching:latest
-docker push yukaichong/news-matching:latest
+docker push <repo>/news-matching:latest
 ```
 
 ```bash
