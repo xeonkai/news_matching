@@ -93,3 +93,15 @@ echo http://localhost:8501/
 ...
 docker compose down
 ```
+
+Build and push container
+```bash
+docker compose build --no-cache
+docker tag news-matching:latest <repo>/news-matching:latest
+docker push yukaichong/news-matching:latest
+```
+
+```bash
+docker compose pull
+docker compose up -d
+```

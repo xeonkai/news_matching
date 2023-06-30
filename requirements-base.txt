@@ -9,6 +9,7 @@ pyarrow>=12.0.0,<13.0.0 # For consistent dataframe representation
 streamlit
 streamlit-aggrid==0.3.3
 streamlit-extras
+openpyxl
 # Dev optional
 watchdog
 black
