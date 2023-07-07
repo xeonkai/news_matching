@@ -1,29 +1,23 @@
 import streamlit as st
-import utils.design_format as format
-import utils.utils as utils
+from utils import core
 
 st.set_page_config(
     page_title="Index Suggestion Interface Demo", page_icon="📰", layout="wide"
 )
 
 st.title("🖥️ Index Suggestion Interface Demo")
-format.horizontal_line()
+st.markdown("""---""")
 st.subheader("Welcome!")
-format.align_text(
+st.markdown(
     """
     This is a demo of the Index Suggestion Interface. Upload a CSV file of the news daily scans below to begin.
-    """,
-    "justify",
+    """
 )
-
-format.horizontal_line()
+st.markdown("""---""")
 
 
 def run():
-    embedding_model = st.cache_resource(utils.load_embedding_model)()
-    classification_model = st.cache_resource(utils.load_classification_model)()
-    file_handler = utils.FileHandler(
-        utils.RAW_DATA_DIR, utils.PROCESSED_DATA_DIR)
+    file_handler = core.FileHandler(core.DATA_DIR)
 
     st.subheader("Uploaded files")
     files_table = st.empty()
@@ -70,9 +64,7 @@ def run():
                 for daily_news in new_files:
                     try:
                         # Processed file first for schema validation
-                        file_handler.write_processed_parquet(
-                            daily_news, embedding_model, classification_model
-                        )
+                        file_handler.write_db(daily_news)
                         # Raw file if processing ok
                         file_handler.write_csv(daily_news)
 
@@ -90,12 +82,7 @@ def run():
                         )
                         st.error(err)
                 if num_uploaded_files == len(new_files):
-                    utils.customDisppearingMsg(
-                        f"{num_uploaded_files} files uploaded successfully!",
-                        wait=10,
-                        type_="success",
-                        icon=None,
-                    )
+                    st.success(f"{num_uploaded_files} files uploaded successfully!")
 
     elif io_mode == "Delete":
         files_to_delete = st.multiselect(
@@ -109,7 +96,7 @@ def run():
     # Update table on each action
     files_table.write(file_handler.list_csv_files_df())
 
-    format.horizontal_line()
+    st.markdown("""---""")
 
 
 if __name__ == "__main__":

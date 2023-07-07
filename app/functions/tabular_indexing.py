@@ -1,7 +1,5 @@
 import streamlit as st
 from functions.taxonomy_reader import convert_chain_to_list
-import utils.utils as utils
-import utils.design_format as format
 from st_aggrid import AgGrid, GridUpdateMode, ColumnsAutoSizeMode, JsCode
 from st_aggrid.grid_options_builder import GridOptionsBuilder
 import ast
@@ -11,7 +9,7 @@ import copy
 
 
 @st.cache_data
-def process_table(df):
+def process_table(df, taxonomy):
     """Function to process dataframe - extract top index, index and subindex
 
     Args:
@@ -23,14 +21,12 @@ def process_table(df):
 
     k = 5
 
-    df["Predicted_theme_and_index"] = df["suggested_labels"].apply(
-        lambda x: x[0])
+    df["Predicted_theme_and_index"] = df["suggested_labels"].apply(lambda x: x[0])
 
     df["suggested_labels"] = df["suggested_labels"].apply(lambda x: x[:k])
 
     df["suggested_themes"] = df["suggested_labels"].apply(
-        lambda chain_list: [convert_chain_to_list(
-            chain)[0] for chain in chain_list][:k]
+        lambda chain_list: [convert_chain_to_list(chain)[0] for chain in chain_list][:k]
     )
     df["theme_ref"] = df["suggested_themes"].str[0]
 
@@ -39,8 +35,7 @@ def process_table(df):
     df["theme_prob"] = df["suggested_labels_score"].str[0]
 
     df["suggested_indexes"] = df["suggested_labels"].apply(
-        lambda chain_list: [convert_chain_to_list(
-            chain)[1] for chain in chain_list][:k]
+        lambda chain_list: [convert_chain_to_list(chain)[1] for chain in chain_list][:k]
     )
     df["index_ref"] = df["suggested_indexes"].str[0]
 
@@ -48,34 +43,11 @@ def process_table(df):
 
     df["index_prob"] = df["suggested_labels_score"].str[0]
 
-    taxonomy = modify_taxonomy(utils.get_cached_object("taxonomy"))
-
     df["taxonomy"] = df["suggested_labels"].apply(lambda x: taxonomy)
 
     df["subindex"] = ""
 
     return df
-
-
-def modify_taxonomy(taxonomy):
-    """Function to modify taxonomy
-
-    Args:
-        taxonomy (dict): Taxonomy
-
-    Returns:
-        dict: Modified taxonomy
-    """
-
-    taxonomy = copy.deepcopy(taxonomy)
-    themes = list(taxonomy.keys())
-    unpacked_taxonomy = []
-    for theme in themes:
-        for index in taxonomy[theme]:
-            if index not in unpacked_taxonomy:
-                unpacked_taxonomy.append(index)
-
-    return taxonomy
 
 
 @st.cache_data
@@ -89,14 +61,24 @@ def slice_table(df):
         dict: Sliced dataframe
     """
 
-    top_themes = get_top_themes(df)
+    df_theme_grouped = df.copy().groupby("theme_ref")
+
+    top_themes = (
+        df_theme_grouped["facebook_interactions"]
+        .sum()
+        .sort_values(ascending=False)
+        .index.tolist()
+    )
+
+    # top_themes = get_top_themes(df)
     df_collection = {}
     for theme in top_themes:
-        df_slice = df[df["theme_ref"] == theme]
-        df_slice = df_slice.sort_values(
+        # df_slice = df[df["theme_ref"] == theme]
+        # df_slice = df_slice.sort_values(by=["facebook_interactions"], ascending=False)
+        # df_collection[theme] = df_slice
+        df_collection[theme] = df_theme_grouped.get_group(theme).sort_values(
             by=["facebook_interactions"], ascending=False
         )
-        df_collection[theme] = df_slice
     return df_collection
 
 
@@ -162,7 +144,6 @@ def display_stats(df, title=True, show_themes=True, show_theme_count=True):
         with col3:
             st.metric(label="Total Indexes", value=n_index)
 
-
     if show_themes:
         st.write("")
         themes = ", ".join(get_top_themes(df))
@@ -193,10 +174,10 @@ def display_aggrid_by_theme(df_collection, current_theme_index):
         table_pagination_menu()
 
     # load grid responses from cache
-    if utils.check_session_state_key("grid_responses"):
-        grid_responses = utils.get_cached_object("grid_responses")
-    else:
+    if "grid_responses" not in st.session_state:
         grid_responses = {}
+    else:
+        grid_responses = st.session_state["grid_responses"]
 
     with st.form("aggrid_form"):
         load_state = False
@@ -215,20 +196,19 @@ def display_aggrid_by_theme(df_collection, current_theme_index):
         if st.form_submit_button("Confirm"):
             grid_responses[current_theme] = current_response
 
-            utils.cache_object(grid_responses, "grid_responses")
+            st.session_state["grid_responses"] = grid_responses
 
             valid_submission = validate_current_response(current_response)
 
-            if utils.check_session_state_key("grid_responses_validation"):
-                grid_responses_validation = utils.get_cached_object(
-                    "grid_responses_validation"
-                )
-            else:
+            if "grid_responses_validation" not in st.session_state:
                 grid_responses_validation = {}
+            else:
+                grid_responses_validation = st.session_state[
+                    "grid_responses_validation"
+                ]
 
             grid_responses_validation[current_theme] = valid_submission
-            utils.cache_object(grid_responses_validation,
-                               "grid_responses_validation")
+            st.session_state["grid_responses_validation"] = grid_responses_validation
 
             if valid_submission:
                 st.success(
@@ -245,9 +225,12 @@ def display_aggrid_by_theme(df_collection, current_theme_index):
                 st.experimental_rerun()
         elif (
             load_state
-            and utils.check_session_state_key("grid_responses_validation")
-            and current_theme in utils.get_cached_object("grid_responses_validation")
-            and utils.get_cached_object("grid_responses_validation")[current_theme]
+            and (
+                "grid_responses_validation"
+                in st.session_state["grid_responses_validation"]
+            )
+            and current_theme in st.session_state["grid_responses_validation"]
+            and st.session_state["grid_responses_validation"][current_theme]
         ):
             st.success(
                 f"Article Labels Confirmed for {current_theme}!",
@@ -255,9 +238,12 @@ def display_aggrid_by_theme(df_collection, current_theme_index):
             )
         elif (
             load_state
-            and utils.check_session_state_key("grid_responses_validation")
-            and current_theme in utils.get_cached_object("grid_responses_validation")
-            and not utils.get_cached_object("grid_responses_validation")[current_theme]
+            and (
+                "grid_responses_validation"
+                in st.session_state["grid_responses_validation"]
+            )
+            and current_theme in st.session_state["grid_responses_validation"]
+            and not st.session_state["grid_responses_validation"][current_theme]
         ):
             st.warning(
                 f"Please enter blank fields that require new inputs!",
@@ -282,15 +268,18 @@ def nav_buttons(current_theme_index, n_themes):
     with b2:
         if st.button("Prev"):
             current_theme_index = max(current_theme_index - 1, 0)
-            utils.cache_object(current_theme_index, "current_theme_index")
+            st.session_state["current_theme_index"] = current_theme_index
             st.experimental_rerun()
     with b3:
-        format.align_text(f"{current_theme_index + 1} of {n_themes}", "left")
+        st.markdown(
+            f'<div style="text-align: left;">{current_theme_index + 1} of {n_themes}</div>',
+            unsafe_allow_html=True,
+        )
 
     with b4:
         if st.button("Next"):
             current_theme_index = min(current_theme_index + 1, n_themes - 1)
-            utils.cache_object(current_theme_index, "current_theme_index")
+            st.session_state["current_theme_index"] = current_theme_index
             st.experimental_rerun()
 
 
@@ -301,7 +290,7 @@ def theme_jumper(df_collection):
         df_collection (dict): Dataframe collection
     """
 
-    current_theme_index = utils.get_cached_object("current_theme_index")
+    current_theme_index = st.session_state["current_theme_index"]
     current_theme = list(df_collection.keys())[current_theme_index]
     theme_list = list(df_collection.keys())
     theme_index = theme_list.index(current_theme)
@@ -315,7 +304,7 @@ def theme_jumper(df_collection):
 
         if st.form_submit_button("Jump"):
             current_theme_index = theme_list.index(theme_index)
-            utils.cache_object(current_theme_index, "current_theme_index")
+            st.session_state["current_theme_index"] = current_theme_index
             st.experimental_rerun()
 
 
@@ -326,8 +315,8 @@ def table_pagination_menu():
         int: Number of articles per page
     """
 
-    if utils.check_session_state_key("n_articles_per_page"):
-        n_articles_per_page = utils.get_cached_object("n_articles_per_page")
+    if "n_articles_per_page" in st.session_state:
+        n_articles_per_page = st.session_state["n_articles_per_page"]
     else:
         n_articles_per_page = 20
 
@@ -341,17 +330,17 @@ def table_pagination_menu():
         )
 
         if st.form_submit_button("Submit"):
-            utils.cache_object(n_articles_per_page, "n_articles_per_page")
+            st.session_state["n_articles_per_page"] = n_articles_per_page
             st.experimental_rerun()
     return
 
 
 def validate_current_response(current_response):
     """Function to validate current response of aggrid table
-    
+
     Args:
         current_response (dict): Current response of aggrid table
-        
+
     Returns:
         bool: True if valid, False otherwise
     """
@@ -364,14 +353,11 @@ def validate_current_response(current_response):
         if row["Predicted_theme_and_index"] == "-Enter New Label" and (
             row["theme"] == "" or row["index"] == ""
         ):
-            incomplete_label.append(
-                row["_selectedRowNodeInfo"]["nodeRowIndex"])
+            incomplete_label.append(row["_selectedRowNodeInfo"]["nodeRowIndex"])
         if row["theme"] == "-Enter New Theme" and row["new theme"] == "":
-            incomplete_theme.append(
-                row["_selectedRowNodeInfo"]["nodeRowIndex"])
+            incomplete_theme.append(row["_selectedRowNodeInfo"]["nodeRowIndex"])
         if row["index"] == "-Enter New Index" and row["new index"] == "":
-            incomplete_index.append(
-                row["_selectedRowNodeInfo"]["nodeRowIndex"])
+            incomplete_index.append(row["_selectedRowNodeInfo"]["nodeRowIndex"])
 
     if len(incomplete_label) or len(incomplete_theme) or len(incomplete_index):
         return False
@@ -382,12 +368,12 @@ def validate_current_response(current_response):
 # @st.cache_resource(experimental_allow_widgets=True, show_spinner=False)
 def display_aggrid(df, load_state, selected_rows):
     """Function to display aggrid table
-    
+
     Args:
         df (pandas.DataFrame): Dataframe to be displayed
         load_state (bool): True if loading from cache, False otherwise
         selected_rows (list): List of selected rows
-        
+
     Returns:
         dict: Current response of aggrid table
     """
@@ -418,7 +404,7 @@ def display_aggrid(df, load_state, selected_rows):
         "theme",
         "index",
         "Predicted_theme_and_index",
-        "subindex"
+        "subindex",
     ]
 
     gb = GridOptionsBuilder.from_dataframe(df)
@@ -523,11 +509,11 @@ def display_aggrid(df, load_state, selected_rows):
 
     # Pagination
 
-    if utils.check_session_state_key("n_articles_per_page"):
-        n_articles_per_page = utils.get_cached_object("n_articles_per_page")
+    if "n_articles_per_page" in st.session_state:
+        n_articles_per_page = st.session_state["n_articles_per_page"]
     else:
         n_articles_per_page = 20
-        utils.cache_object(n_articles_per_page, "n_articles_per_page")
+        st.session_state["n_articles_per_page"] = n_articles_per_page
 
     gb.configure_pagination(
         paginationAutoPageSize=False,
