@@ -254,6 +254,8 @@ class FileHandler:
             .pipe(self.embed_df, model=embedding_model, column="headline")
         )
         # Save processed data
+
+
         filepath = self.processed_data_dir / \
             file.name.replace(".csv", ".parquet")
         pq.write_table(
