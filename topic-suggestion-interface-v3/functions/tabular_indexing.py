@@ -1,5 +1,5 @@
 import streamlit as st
-from functions.taxonomy_reader import convert_chain_to_list
+from functions.taxonomy_reader import convert_chain_to_list, read_taxonomy
 import utils.utils as utils
 import utils.design_format as format
 from st_aggrid import AgGrid, GridUpdateMode, ColumnsAutoSizeMode, JsCode
@@ -48,7 +48,7 @@ def process_table(df):
 
     df["index_prob"] = df["suggested_labels_score"].str[0]
 
-    taxonomy = modify_taxonomy(utils.get_cached_object("taxonomy"))
+    taxonomy = modify_taxonomy(read_taxonomy())
 
     df["taxonomy"] = df["suggested_labels"].apply(lambda x: taxonomy)
 
