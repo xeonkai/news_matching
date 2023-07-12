@@ -430,8 +430,8 @@ def display_aggrid(df, load_state, selected_rows):
 
     gb.configure_column(
         "headline",
-        headerCheckboxSelection=True,
-        headerCheckboxSelectionCurrentPageOnly=True,
+        # headerCheckboxSelection=True,
+        # headerCheckboxSelectionCurrentPageOnly=True,
         width=1200,
         cellRenderer=headlinejs,
     )
