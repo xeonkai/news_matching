@@ -1,1 +1,179 @@
-{"cost of living":["core inflation","electricity tariffs","gst","taxi fares","petrol prices","public transport fares","food prices","support measures","others"],"covid intl":["border reopening","health issues","lockdown","china zero covid","tightening restrictions","easing restrictions","economic impact","case numbers","variants","deaths","others","vaccination"],"covid sg\/mtf press con":["vaccination","deaths","case numbers","variants","economic impact","hospitalisation","travel bubble","side effects","border reopening","circuit breaker","social distancing","safe management measures","others"],"death penalty\/death row":["others","nagaenthran dharmalingam","richard branson"],"education":["others","tertiary education","teachers"],"finance":["crypto","dbs","others","banks"],"food security":["others","chicken supply"],"foreign affairs":["sg-msia border","others","sg-msia hsr project","leaders visit\/meeting","sg leaders visit","us-china-taiwan relations","sg-msia checkpoints","msia politics"],"general":["others","violence","ndr","ndp","new year","pofma","mbs","scams","ge\/general election","cos","russia ukraine war","hari raya","weather","sg flooding","tourism","changi aviation summit","4d\/toto","g20","budget"],"health":["healthcare","food safety","monkeypox","others","dengue"],"housing":["home improvement","housing checks","bto launches","resale prices","rental prices","others","hdb budget","cooling measures","prime location public housing","property taxes","lease buyback","absd"],"jobs and economy":["core inflation","flexible work arrangements","currency","others","layoffs","hiring","gdp","mom labour market report","wages"],"lgbtq issues":["repeal of 377a","others","pink dot"],"manpower":["workplace safety","foreign workers","others","foreign talent"],"national defence":["nsf","others"],"natural disasters":["earthquake","humanitarian aid","landslide"],"parliament":["parliament"],"sports":["sea games","others","local athletes","f1","swimming","football","winter olympics","table tennis","world cup"],"sustainability":["others","recycling"],"technology":["smart nation digital transformation","others","service disruptions","fintech"],"transport":["coe prices","erp rates","changi airport","service disruptions","travel suspension","others","train lines opening","public transport fares"]}
+{
+    "cost of living": [
+        "core inflation",
+        "electricity tariffs",
+        "gst",
+        "taxi fares",
+        "petrol prices",
+        "public transport fares",
+        "food prices",
+        "support measures",
+        "others"
+    ],
+    "covid intl": [
+        "border reopening",
+        "health issues",
+        "lockdown",
+        "china zero covid",
+        "tightening restrictions",
+        "easing restrictions",
+        "economic impact",
+        "case numbers",
+        "variants",
+        "deaths",
+        "others",
+        "vaccination"
+    ],
+    "covid sg\/mtf press con": [
+        "vaccination",
+        "deaths",
+        "case numbers",
+        "variants",
+        "economic impact",
+        "hospitalisation",
+        "travel bubble",
+        "side effects",
+        "border reopening",
+        "circuit breaker",
+        "social distancing",
+        "safe management measures",
+        "others"
+    ],
+    "death penalty\/death row": [
+        "others",
+        "nagaenthran dharmalingam",
+        "richard branson"
+    ],
+    "education": [
+        "others",
+        "tertiary education",
+        "teachers"
+    ],
+    "finance": [
+        "crypto",
+        "dbs",
+        "others",
+        "banks"
+    ],
+    "food security": [
+        "others",
+        "chicken supply"
+    ],
+    "foreign affairs": [
+        "sg-msia border",
+        "others",
+        "sg-msia hsr project",
+        "leaders visit\/meeting",
+        "sg leaders visit",
+        "us-china-taiwan relations",
+        "sg-msia checkpoints",
+        "msia politics"
+    ],
+    "general": [
+        "others",
+        "violence",
+        "ndr",
+        "ndp",
+        "new year",
+        "pofma",
+        "mbs",
+        "scams",
+        "ge\/general election",
+        "cos",
+        "russia ukraine war",
+        "hari raya",
+        "weather",
+        "sg flooding",
+        "tourism",
+        "changi aviation summit",
+        "4d\/toto",
+        "g20",
+        "budget"
+    ],
+    "health": [
+        "healthcare",
+        "food safety",
+        "monkeypox",
+        "others",
+        "dengue"
+    ],
+    "housing": [
+        "home improvement",
+        "housing checks",
+        "bto launches",
+        "resale prices",
+        "rental prices",
+        "others",
+        "hdb budget",
+        "cooling measures",
+        "prime location public housing",
+        "property taxes",
+        "lease buyback",
+        "absd"
+    ],
+    "jobs and economy": [
+        "core inflation",
+        "flexible work arrangements",
+        "currency",
+        "others",
+        "layoffs",
+        "hiring",
+        "gdp",
+        "mom labour market report",
+        "wages"
+    ],
+    "lgbtq issues": [
+        "repeal of 377a",
+        "others",
+        "pink dot"
+    ],
+    "manpower": [
+        "workplace safety",
+        "foreign workers",
+        "others",
+        "foreign talent"
+    ],
+    "national defence": [
+        "nsf",
+        "others"
+    ],
+    "natural disasters": [
+        "earthquake",
+        "humanitarian aid",
+        "landslide"
+    ],
+    "parliament": [
+        "parliament"
+    ],
+    "sports": [
+        "sea games",
+        "others",
+        "local athletes",
+        "f1",
+        "swimming",
+        "football",
+        "winter olympics",
+        "table tennis",
+        "world cup"
+    ],
+    "sustainability": [
+        "others",
+        "recycling"
+    ],
+    "technology": [
+        "smart nation digital transformation",
+        "others",
+        "service disruptions",
+        "fintech"
+    ],
+    "transport": [
+        "coe prices",
+        "erp rates",
+        "changi airport",
+        "service disruptions",
+        "travel suspension",
+        "others",
+        "train lines opening",
+        "public transport fares"
+    ]
+}
