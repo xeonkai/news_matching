@@ -72,3 +72,6 @@ cached_models
 trained_models
 
 TODO.txt
+
+data/
+logs/
