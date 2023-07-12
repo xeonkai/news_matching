@@ -1,11 +1,11 @@
 import streamlit as st
-from utils import core
 from functions.tabular_indexing import (
-    process_table,
-    slice_table,
     display_aggrid_by_theme,
     display_stats,
+    process_table,
+    slice_table,
 )
+from utils import core
 
 st.set_page_config(
     page_title="Article Indexing",

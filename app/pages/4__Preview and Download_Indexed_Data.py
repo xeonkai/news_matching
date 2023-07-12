@@ -1,12 +1,13 @@
+import io
+
+import numpy as np
+import pandas as pd
 import streamlit as st
 from functions.grid_response_consolidator import (
     consolidate_grid_responses,
     extract_unlabelled_articles,
 )
 from utils import core
-import io
-import pandas as pd
-import numpy as np
 
 st.set_page_config(page_title="Download Indexed Data", page_icon="📰", layout="wide")
 

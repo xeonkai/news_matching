@@ -1,9 +1,10 @@
-import streamlit as st
-from functions.taxonomy_reader import convert_chain_to_list
-from st_aggrid import AgGrid, GridUpdateMode, ColumnsAutoSizeMode, JsCode
-from st_aggrid.grid_options_builder import GridOptionsBuilder
 import ast
 import copy
+
+import streamlit as st
+from functions.taxonomy_reader import convert_chain_to_list
+from st_aggrid import AgGrid, ColumnsAutoSizeMode, GridUpdateMode, JsCode
+from st_aggrid.grid_options_builder import GridOptionsBuilder
 
 # Function to process dataframe - extract top index, index and subindex
 

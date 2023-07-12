@@ -4,6 +4,7 @@
 *.parquet
 *.parq
 *.npy
+*.db
 
 # Dev environments
 .idea/

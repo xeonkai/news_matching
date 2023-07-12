@@ -1,6 +1,7 @@
+import datetime
+
 import streamlit as st
 from utils import core
-import datetime
 
 st.set_page_config(page_title="Data Selection", page_icon="📰", layout="wide")
 

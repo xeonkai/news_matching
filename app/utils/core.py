@@ -1,24 +1,35 @@
-import pandas as pd
-from sentence_transformers import SentenceTransformer
-from setfit import SetFitModel
-import numpy as np
 import datetime
 import os
 from pathlib import Path
+
 import duckdb
+import numpy as np
+import pandas as pd
+from sentence_transformers import SentenceTransformer
+from setfit import SetFitModel
 
 DATA_DIR = Path("data")
 RAW_DATA_DIR = DATA_DIR / "raw"
-PROCESSED_DATA_DIR = DATA_DIR / "processed"
 
 
 def generate_taxonomy() -> pd.DataFrame:
+    base_taxonomy_df = pd.read_csv(
+        DATA_DIR / "all_tagged_articles_new.csv", usecols=["Theme", "New Index"]
+    ).rename(columns={"New Index": "Index"})
+
+    with duckdb.connect(str(DATA_DIR / "news.db")) as con:
+        additional_taxonomy_df = con.sql(
+            f"SELECT label FROM daily_news WHERE label IS NOT NULL"
+        ).to_df()
+
+        additional_taxonomy_df[["Theme", "Index"]] = additional_taxonomy_df[
+            "label"
+        ].str.split(" > ", expand=True)
+        additional_taxonomy_df = additional_taxonomy_df[["Theme", "Index"]]
+
     taxonomy_df = (
-        pd.read_csv(
-            DATA_DIR / "all_tagged_articles_new.csv", usecols=["Theme", "New Index"]
-        )
+        pd.concat([base_taxonomy_df, additional_taxonomy_df])
         .drop_duplicates()
-        .rename(columns={"New Index": "Index"})
         .sort_values(["Theme", "Index"])
         .reset_index(drop=True)
     )
@@ -35,7 +46,7 @@ def load_embedding_model() -> SentenceTransformer:
 
 def load_classification_model(model_path=None) -> SetFitModel:
     data_folder = Path("trained_models")
-    data_folder_date_sorted = sorted(data_folder.iterdir(), key=os.path.getmtime)
+    data_folder_date_sorted = sorted(data_folder.glob("20*"), key=os.path.getmtime)
     latest_model_path = str(data_folder_date_sorted[-1])
 
     if model_path is None:
@@ -193,10 +204,14 @@ class FileHandler:
             "max_date": max_date,
         }
 
+    def query(self, query):
+        with duckdb.connect(self.db_path) as con:
+            results_df = con.sql(query).to_df()
+        return results_df
+
     def filtered_query(self, columns, domain_filter, min_engagement, date_range):
         query = (
             f"SELECT {','.join(columns)} "
-            # f"FROM read_parquet('{io.PROCESSED_DATA_DIR}/*.parquet', filename=true) "
             f"FROM {self.DAILY_NEWS_TABLE} "
             f"WHERE domain NOT IN {tuple(domain_filter) if domain_filter else ('NULL',)} "
             f"AND facebook_interactions >= {min_engagement} "
@@ -237,6 +252,9 @@ class FileHandler:
     def download_csv_files(self):
         # Convert folder to zip, return zip file
         raise NotImplementedError
+
+    def __repr__(self):
+        return f"FileHandler({repr(self.data_dir)})"
 
     def __str__(self):
         return f"{[file.name for file in self.raw_data_dir.iterdir()]}"
