@@ -221,6 +221,10 @@ class FileHandler:
             sorted_label_list.append(sorted_label.index.to_list())
             sorted_scores_list.append(sorted_label.to_list())
 
+        # convert sorted_scores_list to np.float64
+        sorted_scores_list = np.array(sorted_scores_list).astype(np.float64).tolist()
+        sorted_label_list = np.array(sorted_label_list).astype(np.str).tolist()
+
         labelled_df = df.assign(
             predicted_indexes=sorted_label_list, prediction_prob=sorted_scores_list
         )
@@ -253,7 +257,7 @@ class FileHandler:
             .pipe(self.label_df, model=classification_model, column="headline")
             .pipe(self.embed_df, model=embedding_model, column="headline")
         )
-        # Save processed data
+
         filepath = self.processed_data_dir / \
             file.name.replace(".csv", ".parquet")
         pq.write_table(
