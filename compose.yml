@@ -1,28 +1,35 @@
 x-shared:
   &shared
-  image: news-matching
+  image: yukaichong/news-matching:latest
   volumes:
     - './data:/usr/src/app/data'
     - './trained_models:/usr/src/app/trained_models'
     - './cached_models:/usr/src/app/cached_models'
+  environment:
+    - USER_ID=1000
+    - GROUP_ID=1000
+    - TZ=Asia/Singapore
 
 services:
   streamlit:
     <<: *shared
-    build:
-      dockerfile: ./Dockerfile
-      context: ./
     ports:
       - '8501:8501'
-    environment:
-      - USER_ID=1000
-      - GROUP_ID=1000
     restart: unless-stopped
-  # scheduler:
-  #   <<: *shared
-  #   depends_on:
-  #     - streamlit
-  #   restart: unless-stopped
-  #   # command: python ...
 
-  #   # docker compose up -d
+  scheduler:
+    <<: *shared
+    depends_on:
+      - streamlit
+    command: python scripts/scheduling.py
+    restart: unless-stopped
+
+  watchtower:
+    image: containrrr/watchtower
+    restart: unless-stopped
+    environment:
+      TZ: Asia/Singapore
+      WATCHTOWER_CLEANUP: "true"
+      WATCHTOWER_SCHEDULE: "0 0 * ? * *" # Check update every hour
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock

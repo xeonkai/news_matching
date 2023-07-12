@@ -14,18 +14,21 @@ RAW_DATA_DIR = DATA_DIR / "raw"
 
 def generate_taxonomy() -> pd.DataFrame:
     base_taxonomy_df = pd.read_csv(
-        DATA_DIR / "all_tagged_articles_new.csv", usecols=["Theme", "New Index"]
+        "all_tagged_articles_new.csv", usecols=["Theme", "New Index"]
     ).rename(columns={"New Index": "Index"})
 
     with duckdb.connect(str(DATA_DIR / "news.db")) as con:
         additional_taxonomy_df = con.sql(
-            f"SELECT label FROM daily_news WHERE label IS NOT NULL"
+            f"SELECT DISTINCT label FROM daily_news WHERE label IS NOT NULL"
         ).to_df()
 
-        additional_taxonomy_df[["Theme", "Index"]] = additional_taxonomy_df[
-            "label"
-        ].str.split(" > ", expand=True)
-        additional_taxonomy_df = additional_taxonomy_df[["Theme", "Index"]]
+        if additional_taxonomy_df.empty:
+            additional_taxonomy_df = pd.DataFrame()
+        else:
+            additional_taxonomy_df[["Theme", "Index"]] = additional_taxonomy_df[
+                "label"
+            ].str.split(" > ", expand=True)
+            additional_taxonomy_df = additional_taxonomy_df[["Theme", "Index"]]
 
     taxonomy_df = (
         pd.concat([base_taxonomy_df, additional_taxonomy_df])
@@ -47,7 +50,10 @@ def load_embedding_model() -> SentenceTransformer:
 def load_classification_model(model_path=None) -> SetFitModel:
     data_folder = Path("trained_models")
     data_folder_date_sorted = sorted(data_folder.glob("20*"), key=os.path.getmtime)
-    latest_model_path = str(data_folder_date_sorted[-1])
+    if len(data_folder_date_sorted) == 0:
+        latest_model_path = "default_model"
+    else:
+        latest_model_path = str(data_folder_date_sorted[-1])
 
     if model_path is None:
         model_path = latest_model_path

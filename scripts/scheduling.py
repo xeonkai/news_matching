@@ -13,18 +13,14 @@ def file_exists(file):
     return Path(file).exists()
 
 
-@app.task(
-    weekly.on("Sat")
-    & time_of_day.after("6:00")
-    & file_exists("data/train/generated_training_data.parquet")
-)
+@app.task(weekly.on("Sat") & time_of_day.after("6:00"))
 def train_model_weekly():
     print("Start daily training")
     train_model()
     eval_model()
-    print("Complete daily training")
+    print("Completed daily training")
     delete_old_models()
-    print("Delete old models")
+    print("Deleted old models")
 
 
 if __name__ == "__main__":

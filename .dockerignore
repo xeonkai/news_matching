@@ -70,3 +70,7 @@ cython_debug/
 # cached huggingface models
 cached_models
 trained_models
+
+# Allow
+!all_tagged_articles_new.csv
+!default_model

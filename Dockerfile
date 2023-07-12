@@ -49,6 +49,4 @@ EXPOSE 8501
 COPY . .
 
 # Run streamlit
-ENTRYPOINT ["streamlit", "run"]
-
-CMD ["topic-suggestion-interface-v3/Home.py"]
+CMD ["streamlit", "run", "app/Home.py"]

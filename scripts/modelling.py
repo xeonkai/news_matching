@@ -14,7 +14,7 @@ from sklearn.metrics import classification_report, top_k_accuracy_score
 def prepare_base_training_dataset():
     DATA_DIR = Path("data")
     pd.read_csv(
-        DATA_DIR / "all_tagged_articles_new.csv",
+        "all_tagged_articles_new.csv",
         usecols=["Published", "Headline", "Theme", "New Index"],
         na_values="-",
         parse_dates=["Published"],
@@ -33,6 +33,8 @@ def prepare_base_training_dataset():
 
 def create_dataset(min_labels=2):
     DATA_DIR = Path("data")
+    if not (DATA_DIR / "train" / "base_training_data.parquet").exists():
+        prepare_base_training_dataset()
 
     with duckdb.connect(str(DATA_DIR / "news.db")) as con:
         con.sql(
@@ -142,7 +144,7 @@ def eval_model(top_k=20):
     )
 
 
-def train_model():
+def train_model(model_path=None):
     dataset = create_dataset()
     train_dataset = dataset["train"]
 
@@ -167,8 +169,11 @@ def train_model():
         },  # Map dataset columns to text/label expected by trainer
     )
 
+    if model_path is None:
+        model_path = f"trained_models/{datetime.date.today().isoformat()}"
+
     trainer.train()
-    trainer.model.save_pretrained(f"trained_models/{datetime.date.today().isoformat()}")
+    trainer.model.save_pretrained(model_path)
 
 
 def delete_old_models():
@@ -180,6 +185,6 @@ def delete_old_models():
 
 
 if __name__ == "__main__":
-    train_model()
-    eval_model()
+    # Generate default model
+    train_model("default_model")
     delete_old_models()
