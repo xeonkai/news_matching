@@ -23,14 +23,12 @@ def process_table(df):
 
     k = 5
 
-    df["Predicted_theme_and_index"] = df["suggested_labels"].apply(
-        lambda x: x[0])
+    df["Predicted_theme_and_index"] = df["suggested_labels"].apply(lambda x: x[0])
 
     df["suggested_labels"] = df["suggested_labels"].apply(lambda x: x[:k])
 
     df["suggested_themes"] = df["suggested_labels"].apply(
-        lambda chain_list: [convert_chain_to_list(
-            chain)[0] for chain in chain_list][:k]
+        lambda chain_list: [convert_chain_to_list(chain)[0] for chain in chain_list][:k]
     )
     df["theme_ref"] = df["suggested_themes"].str[0]
 
@@ -39,8 +37,7 @@ def process_table(df):
     df["theme_prob"] = df["suggested_labels_score"].str[0]
 
     df["suggested_indexes"] = df["suggested_labels"].apply(
-        lambda chain_list: [convert_chain_to_list(
-            chain)[1] for chain in chain_list][:k]
+        lambda chain_list: [convert_chain_to_list(chain)[1] for chain in chain_list][:k]
     )
     df["index_ref"] = df["suggested_indexes"].str[0]
 
@@ -93,9 +90,7 @@ def slice_table(df):
     df_collection = {}
     for theme in top_themes:
         df_slice = df[df["theme_ref"] == theme]
-        df_slice = df_slice.sort_values(
-            by=["facebook_interactions"], ascending=False
-        )
+        df_slice = df_slice.sort_values(by=["facebook_interactions"], ascending=False)
         df_collection[theme] = df_slice
     return df_collection
 
@@ -162,7 +157,6 @@ def display_stats(df, title=True, show_themes=True, show_theme_count=True):
         with col3:
             st.metric(label="Total Indexes", value=n_index)
 
-
     if show_themes:
         st.write("")
         themes = ", ".join(get_top_themes(df))
@@ -227,8 +221,7 @@ def display_aggrid_by_theme(df_collection, current_theme_index):
                 grid_responses_validation = {}
 
             grid_responses_validation[current_theme] = valid_submission
-            utils.cache_object(grid_responses_validation,
-                               "grid_responses_validation")
+            utils.cache_object(grid_responses_validation, "grid_responses_validation")
 
             if valid_submission:
                 st.success(
@@ -348,10 +341,10 @@ def table_pagination_menu():
 
 def validate_current_response(current_response):
     """Function to validate current response of aggrid table
-    
+
     Args:
         current_response (dict): Current response of aggrid table
-        
+
     Returns:
         bool: True if valid, False otherwise
     """
@@ -364,14 +357,11 @@ def validate_current_response(current_response):
         if row["Predicted_theme_and_index"] == "-Enter New Label" and (
             row["theme"] == "" or row["index"] == ""
         ):
-            incomplete_label.append(
-                row["_selectedRowNodeInfo"]["nodeRowIndex"])
+            incomplete_label.append(row["_selectedRowNodeInfo"]["nodeRowIndex"])
         if row["theme"] == "-Enter New Theme" and row["new theme"] == "":
-            incomplete_theme.append(
-                row["_selectedRowNodeInfo"]["nodeRowIndex"])
+            incomplete_theme.append(row["_selectedRowNodeInfo"]["nodeRowIndex"])
         if row["index"] == "-Enter New Index" and row["new index"] == "":
-            incomplete_index.append(
-                row["_selectedRowNodeInfo"]["nodeRowIndex"])
+            incomplete_index.append(row["_selectedRowNodeInfo"]["nodeRowIndex"])
 
     if len(incomplete_label) or len(incomplete_theme) or len(incomplete_index):
         return False
@@ -382,12 +372,12 @@ def validate_current_response(current_response):
 # @st.cache_resource(experimental_allow_widgets=True, show_spinner=False)
 def display_aggrid(df, load_state, selected_rows):
     """Function to display aggrid table
-    
+
     Args:
         df (pandas.DataFrame): Dataframe to be displayed
         load_state (bool): True if loading from cache, False otherwise
         selected_rows (list): List of selected rows
-        
+
     Returns:
         dict: Current response of aggrid table
     """
@@ -418,17 +408,17 @@ def display_aggrid(df, load_state, selected_rows):
         "theme",
         "index",
         "Predicted_theme_and_index",
-        "subindex"
+        "subindex",
     ]
 
     gb = GridOptionsBuilder.from_dataframe(df)
 
     gb.configure_default_column(
-        groupable=False,
+        groupable=True,
         value=True,
-        enableRowGroup=False,
+        enableRowGroup=True,
         aggFunc="count",
-        filterable=False,
+        filterable=True,
         sortable=False,
         suppressMenu=True,
     )
@@ -439,7 +429,11 @@ def display_aggrid(df, load_state, selected_rows):
     )
 
     gb.configure_column(
-        "headline", headerCheckboxSelection=True, width=1200, cellRenderer=headlinejs
+        "headline",
+        headerCheckboxSelection=True,
+        headerCheckboxSelectionCurrentPageOnly=True,
+        width=1200,
+        cellRenderer=headlinejs,
     )
 
     labeljs = JsCode(
@@ -543,6 +537,11 @@ def display_aggrid(df, load_state, selected_rows):
         selection_mode="multiple",
         use_checkbox=True,
         pre_selected_rows=selected_rows_id,
+
+        # select current page only
+        suppressRowClickSelection=True,
+        suppressRowDeselection=True,
+
     )
 
     gridOptions = gb.build()
@@ -559,6 +558,8 @@ def display_aggrid(df, load_state, selected_rows):
         update_mode=GridUpdateMode.MODEL_CHANGED | GridUpdateMode.VALUE_CHANGED,
         columns_auto_size_mode=ColumnsAutoSizeMode.FIT_ALL_COLUMNS_TO_VIEW,
         allow_unsafe_jscode=True,
+        # defaultColGroupDef=selectAlljs,
+
     )
 
     return grid_response
