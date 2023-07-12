@@ -469,6 +469,7 @@ def display_aggrid(df, load_state, selected_rows):
         """
         function(params) {
         const themes = Object.keys(params.data.taxonomy);
+        themes.indexOf("") === -1 ? themes.push("") : null;
             return {
                 value: "",
                 values: themes.sort(),
@@ -495,6 +496,7 @@ def display_aggrid(df, load_state, selected_rows):
         function(params) {
         const theme = params.data.theme;
         const indexes = params.data.taxonomy[theme];
+        indexes.indexOf("") === -1 ? indexes.push("") : null;
             return {
                 values: indexes.sort(),
                 popupPosition: "under",
