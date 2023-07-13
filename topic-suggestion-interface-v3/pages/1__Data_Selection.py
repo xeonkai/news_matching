@@ -136,6 +136,7 @@ def run():
 
         # TODO: Move page to indexer page, materialize only when needed
         results_filtered_df = results_filtered.to_df()
+        results_filtered_df.to_csv("predicted.csv", index=False)
         st.session_state["csv_file_with_predicted_labels"] = results_filtered_df
 
         # Update metrics on filtered data
