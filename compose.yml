@@ -17,6 +17,13 @@ services:
       - '8501:8501'
     restart: unless-stopped
 
+  streamlit-traction:
+    <<: *shared
+    ports:
+      - '8502:8501'
+    command: streamlit run traction-analytics/Home.py
+    restart: unless-stopped
+
   scheduler:
     <<: *shared
     depends_on:

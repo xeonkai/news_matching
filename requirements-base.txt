@@ -12,6 +12,7 @@ streamlit-extras
 openpyxl
 rocketry
 pydantic<2 # rocketry bug
+plotly_calplot
 # Dev optional
 watchdog
 black
