@@ -85,9 +85,16 @@ sudo usermod -aG docker $USER
 sudo apt-get install docker-compose-plugin
 ```
 
-Build and run container
+Build container
 ```bash
-docker compose up --build --detach
+docker build -t <repo_name>/news-matching:latest .
+docker tag <repo_name>/news-matching:latest <repo_name>/news-matching:latest
+docker push <repo_name>/news-matching:latest
+```
+
+Run container
+```bash
+docker compose up -d
 echo http://localhost:8501/
 # Do whatever
 ...
