@@ -23,6 +23,7 @@ st.markdown(
     The subindex column is for the user to enter the subindex of the article. If the article does not have a subindex, leave the column blank.
     You may click the headline to open the article in a new tab.
     Select the rows that you have verified and/or edited using the checkbox on the left, then click on the "Confirm" button to save the changes.
+    If you want to select multiple checkboxes at once, hold down the "Shift" key while selecting the checkboxes.
     """,
 )
 st.markdown("""---""")

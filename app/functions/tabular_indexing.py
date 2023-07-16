@@ -411,11 +411,11 @@ def display_aggrid(df, load_state, selected_rows):
     gb = GridOptionsBuilder.from_dataframe(df)
 
     gb.configure_default_column(
-        groupable=False,
+        groupable=True,
         value=True,
-        enableRowGroup=False,
+        enableRowGroup=True,
         aggFunc="count",
-        filterable=False,
+        filterable=True,
         sortable=False,
         suppressMenu=True,
     )
@@ -426,7 +426,11 @@ def display_aggrid(df, load_state, selected_rows):
     )
 
     gb.configure_column(
-        "headline", headerCheckboxSelection=True, width=1200, cellRenderer=headlinejs
+        "headline",
+        # headerCheckboxSelection=True,
+        # headerCheckboxSelectionCurrentPageOnly=True,
+        width=1200,
+        cellRenderer=headlinejs,
     )
 
     labeljs = JsCode(
@@ -456,6 +460,7 @@ def display_aggrid(df, load_state, selected_rows):
         """
         function(params) {
         const themes = Object.keys(params.data.taxonomy);
+        themes.indexOf("") === -1 ? themes.push("") : null;
             return {
                 value: "",
                 values: themes.sort(),
@@ -482,6 +487,7 @@ def display_aggrid(df, load_state, selected_rows):
         function(params) {
         const theme = params.data.theme;
         const indexes = params.data.taxonomy[theme];
+        indexes.indexOf("") === -1 ? indexes.push("") : null;
             return {
                 values: indexes.sort(),
                 popupPosition: "under",
@@ -528,6 +534,9 @@ def display_aggrid(df, load_state, selected_rows):
         selection_mode="multiple",
         use_checkbox=True,
         pre_selected_rows=selected_rows_id,
+        # select current page only
+        suppressRowClickSelection=True,
+        suppressRowDeselection=True,
     )
 
     gridOptions = gb.build()
@@ -544,6 +553,7 @@ def display_aggrid(df, load_state, selected_rows):
         update_mode=GridUpdateMode.MODEL_CHANGED | GridUpdateMode.VALUE_CHANGED,
         columns_auto_size_mode=ColumnsAutoSizeMode.FIT_ALL_COLUMNS_TO_VIEW,
         allow_unsafe_jscode=True,
+        # defaultColGroupDef=selectAlljs,
     )
 
     return grid_response

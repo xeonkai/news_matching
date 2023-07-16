@@ -109,6 +109,8 @@ def run():
             column="headline",
         )
 
+        results_filtered_df.to_csv("predicted.csv", index=False)
+
         st.session_state["subset_df_with_preds"] = processed_table
 
         # Update metrics on filtered data

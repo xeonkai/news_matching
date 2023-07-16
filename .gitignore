@@ -74,3 +74,6 @@ trained_models
 default_model
 
 TODO.txt
+
+data/
+logs/
