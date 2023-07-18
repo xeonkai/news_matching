@@ -4,7 +4,6 @@
 *.parquet
 *.parq
 *.npy
-*.db
 
 # Dev environments
 .idea/
@@ -71,9 +70,7 @@ cython_debug/
 # cached huggingface models
 cached_models
 trained_models
-default_model
 
-TODO.txt
-
-data/
-logs/
+# Allow
+!all_tagged_articles_new.csv
+!default_model
