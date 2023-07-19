@@ -13,7 +13,7 @@ def file_exists(file):
     return Path(file).exists()
 
 
-@app.task(weekly.on("Sat") & time_of_day.after("6:00"))
+@app.task(weekly.on("Sat") & time_of_day.after("6:00") & time_of_day.before("23:00"))
 def train_model_weekly():
     print("Start daily training")
     train_model()

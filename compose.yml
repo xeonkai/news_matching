@@ -37,6 +37,6 @@ services:
     environment:
       TZ: Asia/Singapore
       WATCHTOWER_CLEANUP: "true"
-      WATCHTOWER_SCHEDULE: "0 0 * ? * *" # Check update every hour
+      WATCHTOWER_SCHEDULE: "0 0 17 * * *" # Check update every day 5pm
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
