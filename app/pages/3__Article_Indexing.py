@@ -38,7 +38,7 @@ def run():
         return
 
     if "taxonomy" not in st.session_state:
-        taxonomy_chains_df = core.generate_taxonomy()
+        taxonomy_chains_df = core.fetch_taxonomy()
         taxonomy = taxonomy_chains_df.groupby("Theme")["Index"].apply(list).to_dict()
         st.session_state["taxonomy"] = taxonomy
 

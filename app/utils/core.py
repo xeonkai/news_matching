@@ -12,31 +12,34 @@ DATA_DIR = Path("data")
 RAW_DATA_DIR = DATA_DIR / "raw"
 
 
-def generate_taxonomy() -> pd.DataFrame:
-    base_taxonomy_df = pd.read_csv(
-        "all_tagged_articles_new.csv", usecols=["Theme", "New Index"]
-    ).rename(columns={"New Index": "Index"})
+def fetch_taxonomy() -> pd.DataFrame:
+    taxonomy_folder = DATA_DIR / "taxonomy"
+    taxonomy_folder.mkdir(parents=True, exist_ok=True)
+    taxonomy_date_sorted = sorted(taxonomy_folder.glob("20*"), key=os.path.getmtime)
 
-    with duckdb.connect(str(DATA_DIR / "news.db")) as con:
-        additional_taxonomy_df = con.sql(
-            f"SELECT DISTINCT label FROM daily_news WHERE label IS NOT NULL"
-        ).to_df()
+    if len(taxonomy_date_sorted) == 0:
+        taxonomy_df = (
+            pd.read_csv("all_tagged_articles_new.csv", usecols=["Theme", "New Index"])
+            .rename(columns={"New Index": "Index"})
+            .drop_duplicates()
+            .sort_values(["Theme", "Index"])
+            .reset_index(drop=True)
+        )
+    else:
+        taxonomy_df = pd.read_parquet(taxonomy_date_sorted[-1])
 
-        if additional_taxonomy_df.empty:
-            additional_taxonomy_df = pd.DataFrame()
-        else:
-            additional_taxonomy_df[["Theme", "Index"]] = additional_taxonomy_df[
-                "label"
-            ].str.split(" > ", expand=True)
-            additional_taxonomy_df = additional_taxonomy_df[["Theme", "Index"]]
+    return taxonomy_df
 
-    taxonomy_df = (
-        pd.concat([base_taxonomy_df, additional_taxonomy_df])
-        .drop_duplicates()
+
+def save_taxonomy(df):
+    taxonomy_folder = DATA_DIR / "taxonomy"
+    (
+        df.drop_duplicates()
         .sort_values(["Theme", "Index"])
         .reset_index(drop=True)
+        # drop incomplete rows
+        .to_parquet(taxonomy_folder / datetime.date.today().isoformat())
     )
-    return taxonomy_df
 
 
 def load_embedding_model() -> SentenceTransformer:
