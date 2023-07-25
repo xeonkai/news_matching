@@ -12,10 +12,20 @@ DATA_DIR = Path("data")
 RAW_DATA_DIR = DATA_DIR / "raw"
 
 
-def fetch_taxonomy() -> pd.DataFrame:
+def list_taxonomies() -> list[Path]:
     taxonomy_folder = DATA_DIR / "taxonomy"
     taxonomy_folder.mkdir(parents=True, exist_ok=True)
     taxonomy_date_sorted = sorted(taxonomy_folder.glob("20*"), key=os.path.getmtime)
+    return taxonomy_date_sorted
+
+
+def fetch_taxonomy(path: Path) -> pd.DataFrame:
+    taxonomy_df = pd.read_parquet(path)
+    return taxonomy_df
+
+
+def fetch_latest_taxonomy() -> pd.DataFrame:
+    taxonomy_date_sorted = list_taxonomies()
 
     if len(taxonomy_date_sorted) == 0:
         taxonomy_df = (
@@ -26,7 +36,7 @@ def fetch_taxonomy() -> pd.DataFrame:
             .reset_index(drop=True)
         )
     else:
-        taxonomy_df = pd.read_parquet(taxonomy_date_sorted[-1])
+        taxonomy_df = fetch_taxonomy(taxonomy_date_sorted[-1])
 
     return taxonomy_df
 

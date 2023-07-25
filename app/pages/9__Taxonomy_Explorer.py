@@ -1,9 +1,12 @@
-import datetime
-import os
-import pandas as pd
 import streamlit as st
+from streamlit_extras.no_default_selectbox import selectbox
 from streamlit_extras.dataframe_explorer import dataframe_explorer
-from utils.core import fetch_taxonomy, save_taxonomy, DATA_DIR
+from utils.core import (
+    fetch_taxonomy,
+    save_taxonomy,
+    fetch_latest_taxonomy,
+    list_taxonomies,
+)
 
 st.set_page_config(page_title="Taxonomy Explorer", page_icon="📰", layout="wide")
 
@@ -20,7 +23,18 @@ st.markdown("""---""")
 def run():
     st.subheader("Previewing the Taxonomy")
 
-    taxonomy_chains_df = dataframe_explorer(fetch_taxonomy())
+    taxonomy_date_sorted = list_taxonomies()
+
+    past_taxonomies_selection = selectbox(
+        "Taxonomy versions", taxonomy_date_sorted, no_selection_label="<Latest>"
+    )
+
+    if past_taxonomies_selection is None:
+        taxonomy_df = fetch_latest_taxonomy()
+    else:
+        taxonomy_df = fetch_taxonomy(past_taxonomies_selection)
+
+    taxonomy_chains_df = dataframe_explorer(taxonomy_df)
 
     edit_df = st.data_editor(
         taxonomy_chains_df, num_rows="dynamic", use_container_width=True
