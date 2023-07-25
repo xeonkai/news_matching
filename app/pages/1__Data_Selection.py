@@ -1,6 +1,7 @@
 import datetime
 
 import streamlit as st
+from streamlit_extras.no_default_selectbox import selectbox
 from utils import core
 
 st.set_page_config(page_title="Data Selection", page_icon="📰", layout="wide")
@@ -25,7 +26,7 @@ def run():
     with col1:
         nrows_metric = st.empty()
 
-    filter_bounds = st.cache_data(file_handler.get_filter_bounds)()
+    filter_bounds = file_handler.get_filter_bounds()
     # max_fb_interactions, domain_list, min_date, max_date = get_filter_bounds()
 
     # Filter inputs by user
@@ -73,6 +74,12 @@ def run():
                 default=[],
             )
 
+            label_filter = selectbox(
+                label="Labelled articles to include",
+                options=filter_bounds["labels"],
+                no_selection_label="All, including unlabelled",
+            )
+
             max_results = int(
                 st.number_input(
                     label="Max results to show",
@@ -93,10 +100,11 @@ def run():
             "link",
             "domain",
             "facebook_interactions",
+            "label",
             "source",
         )
         results_filtered_df = file_handler.filtered_query(
-            columns, domain_filter, min_engagement, date_range
+            columns, domain_filter, min_engagement, date_range, label_filter
         )
         # Classify & embed for subsequent steps
         processed_table = results_filtered_df.pipe(

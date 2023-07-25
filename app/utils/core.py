@@ -216,11 +216,20 @@ class FileHandler:
                 f"SELECT MIN(published), MAX(published) FROM "
                 f"{self.DAILY_NEWS_TABLE} "
             ).fetchone()
+
+            label_list = [
+                label[0]
+                for label in con.sql(
+                    f"SELECT DISTINCT label FROM {self.DAILY_NEWS_TABLE} "
+                    "WHERE label IS NOT NULL"
+                ).fetchall()
+            ]
         return {
             "max_fb_interactions": max_fb_interactions,
             "domain_list": domain_list,
             "min_date": min_date,
             "max_date": max_date,
+            "labels": label_list,
         }
 
     def query(self, query):
@@ -228,14 +237,17 @@ class FileHandler:
             results_df = con.sql(query).to_df()
         return results_df
 
-    def filtered_query(self, columns, domain_filter, min_engagement, date_range):
+    def filtered_query(
+        self, columns, domain_filter, min_engagement, date_range, label_filter
+    ):
         query = (
             f"SELECT {','.join(columns)} "
             f"FROM {self.DAILY_NEWS_TABLE} "
             f"WHERE domain NOT IN {tuple(domain_filter) if domain_filter else ('NULL',)} "
             f"AND facebook_interactions >= {min_engagement} "
             f"AND published BETWEEN '{date_range[0]}' AND '{date_range[1]}' "
-            f"ORDER BY facebook_interactions DESC   "
+            + ("" if label_filter is None else f"AND label='{label_filter}' ")
+            + f"ORDER BY facebook_interactions DESC "
             # f"{f'LIMIT {limit}' if limit else ''} "
         )
         with duckdb.connect(self.db_path) as con:
