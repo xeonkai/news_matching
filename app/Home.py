@@ -96,6 +96,10 @@ def run():
     # Update table on each action
     files_table.write(file_handler.list_csv_files_df())
 
+    if file_handler.list_csv_files_df().empty:
+        st.warning("There is no data. Please upload a csv file before continuing.")
+
+
     st.markdown("""---""")
 
 
