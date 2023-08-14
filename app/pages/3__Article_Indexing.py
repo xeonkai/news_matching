@@ -5,6 +5,7 @@ from functions.tabular_indexing import (
     process_table,
     slice_table,
 )
+from functions.grid_response_consolidator import consolidate_grid_responses
 from utils import core
 
 st.set_page_config(
@@ -58,6 +59,10 @@ def run():
     st.markdown("""---""")
 
     display_aggrid_by_theme(table_collection, current_index_index)
+
+    grid_responses = st.session_state["grid_responses"]
+    consolidated_df = consolidate_grid_responses(grid_responses)
+    st.success(f"{consolidated_df.shape[0]} articles labelled.")
 
     st.markdown("""---""")
 

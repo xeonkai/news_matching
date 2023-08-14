@@ -22,7 +22,9 @@ def run():
     file_handler = core.FileHandler(core.DATA_DIR)
 
     if file_handler.list_csv_files_df().empty:
-        st.error("There is no data. Please return to the Home page and upload a csv file.")
+        st.error(
+            "There is no data. Please return to the Home page and upload a csv file."
+        )
     else:
         # Metrics placeholder
         col1, col2 = st.columns([1, 1])
@@ -31,7 +33,6 @@ def run():
 
         filter_bounds = file_handler.get_filter_bounds()
         # max_fb_interactions, domain_list, min_date, max_date = get_filter_bounds()
-
 
         # Filter inputs by user
         with st.sidebar:

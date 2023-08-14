@@ -95,6 +95,7 @@ def make_clickable_df(df):
     )
     return df
 
+
 def adjust_time_period_for_agg(df, agg_by_time):
     # transform the date_extracted columns into week-based time period indicated by the first day of each 7-day cycle
 
@@ -102,5 +103,3 @@ def adjust_time_period_for_agg(df, agg_by_time):
     df["date_extracted"] = df["date_extracted"].dt.to_period(agg_by_time).dt.start_time
 
     return df
-
-

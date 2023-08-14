@@ -109,7 +109,9 @@ def plot_heatmap(df):
             color=alt.Color(
                 "mean(facebook_interactions)",
                 title="Mean Facebook Interactions",
-                scale=alt.Scale(scheme="greens")#, bins=alt.BinParams(step=700), nice=True),
+                scale=alt.Scale(
+                    scheme="greens"
+                ),  # , bins=alt.BinParams(step=700), nice=True),
             ),
             tooltip=["date_extracted", "theme_index", "mean(facebook_interactions)"],
         )
@@ -223,7 +225,7 @@ def show_colour_scale(df):
                 x=-1,
                 y=1,
                 title="Mean Facebook Interactions",
-                dtick=1000, # adjust here
+                dtick=1000,  # adjust here
             ),
             showscale=True,
         ),

@@ -99,7 +99,6 @@ def run():
     if file_handler.list_csv_files_df().empty:
         st.warning("There is no data. Please upload a csv file before continuing.")
 
-
     st.markdown("""---""")
 
 

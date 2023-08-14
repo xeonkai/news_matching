@@ -11,37 +11,47 @@ import datetime
 
 
 def run_theme_tab(uploaded_data_filtered):
-
     st.write()
 
     visualisation.show_theme_metrics(uploaded_data_filtered)
 
     format.horizontal_line()
 
-    tab1, tab2, tab3, tab4, tab5 = st.tabs(["Calendar", "Heatmap", "Count Analysis", "Mean Analysis", "Sum Analysis"])
+    tab1, tab2, tab3, tab4, tab5 = st.tabs(
+        ["Calendar", "Heatmap", "Count Analysis", "Mean Analysis", "Sum Analysis"]
+    )
 
     with tab1:
+        selected_theme = st.multiselect(
+            "Select Theme",
+            uploaded_data_filtered["theme"].unique(),
+            default=uploaded_data_filtered["theme"].unique()[0],
+        )
 
-        selected_theme = st.multiselect("Select Theme", uploaded_data_filtered["theme"].unique()
-                          , default=uploaded_data_filtered["theme"].unique()[0])
-        
         # filter based on selected theme
-        uploaded_data_filtered_cal = uploaded_data_filtered[uploaded_data_filtered["theme"].isin(selected_theme)]
+        uploaded_data_filtered_cal = uploaded_data_filtered[
+            uploaded_data_filtered["theme"].isin(selected_theme)
+        ]
 
         subcol1, subcol2 = st.columns([6, 1])
         with subcol1:
             # st.markdown("##### Mean Facebook Interactions")
-            st.plotly_chart(visualisation.plot_theme_calplot(uploaded_data_filtered_cal), use_container_width=True)
+            st.plotly_chart(
+                visualisation.plot_theme_calplot(uploaded_data_filtered_cal),
+                use_container_width=True,
+            )
         with subcol2:
-            st.plotly_chart(visualisation.show_colour_scale(uploaded_data_filtered_cal), use_container_width=True)
-
+            st.plotly_chart(
+                visualisation.show_colour_scale(uploaded_data_filtered_cal),
+                use_container_width=True,
+            )
 
     with tab2:
         st.altair_chart(
             visualisation.plot_theme_heatmap(uploaded_data_filtered),
             use_container_width=True,
         )
-        #visualisation.plot_theme_calplot(uploaded_data_filtered, theme="general")
+        # visualisation.plot_theme_calplot(uploaded_data_filtered, theme="general")
 
     with tab3:
         col1, col2, col3 = st.columns([2, 1, 2])
@@ -52,7 +62,7 @@ def run_theme_tab(uploaded_data_filtered):
         theme_count_chart = visualisation.plot_theme_timeseries(
             uploaded_data_filtered, "count()", "Number of Articles"
         )
-        st.altair_chart(theme_count_chart, use_container_width=True, theme='streamlit')
+        st.altair_chart(theme_count_chart, use_container_width=True, theme="streamlit")
 
         format.horizontal_line()
 
