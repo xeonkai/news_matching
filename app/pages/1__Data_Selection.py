@@ -98,48 +98,53 @@ def run():
 
         # filters dataset according to filters set in sidebar
         if submit_button:
-            columns = (
-                "published",
-                "headline",
-                "summary",
-                "link",
-                "domain",
-                "facebook_interactions",
-                "label",
-                "source",
-            )
-            results_filtered_df = file_handler.filtered_query(
-                columns, domain_filter, min_engagement, date_range, label_filter
-            )
-            # Classify & embed for subsequent steps
-            processed_table = results_filtered_df.pipe(
-                core.label_df,
-                model=classification_model,
-                column="headline",
-            ).pipe(
-                core.embed_df,
-                model=embedding_model,
-                column="headline",
-            )
+            try:
+                columns = (
+                    "published",
+                    "headline",
+                    "summary",
+                    "link",
+                    "domain",
+                    "facebook_interactions",
+                    "label",
+                    "source",
+                )
+                results_filtered_df = file_handler.filtered_query(
+                    columns, domain_filter, min_engagement, date_range, label_filter
+                )
+                # Classify & embed for subsequent steps
+                processed_table = results_filtered_df.pipe(
+                    core.label_df,
+                    model=classification_model,
+                    column="headline",
+                ).pipe(
+                    core.embed_df,
+                    model=embedding_model,
+                    column="headline",
+                )
 
-            results_filtered_df.to_csv("predicted.csv", index=False)
+                results_filtered_df.to_csv("predicted.csv", index=False)
 
-            st.session_state["subset_df_with_preds"] = processed_table
+                st.session_state["subset_df_with_preds"] = processed_table
 
-            # Update metrics on filtered data
-            nrows_metric.metric(
-                label="Total number of Rows", value=results_filtered_df.shape[0]
-            )
+                # Update metrics on filtered data
+                nrows_metric.metric(
+                    label="Total number of Rows", value=results_filtered_df.shape[0]
+                )
 
-            st.write(
-                results_filtered_df.iloc[:max_results]
-                # .limit(
-                #     max_results
-                # )  # Limit rows in case too much data sent to browser
-                # .drop(
-                #     "vector", axis="columns"
-                # )  # Need "vector" embedding column for subsequent steps, but don't want to show
-            )
+                st.write(
+                    results_filtered_df.iloc[:max_results]
+                    # .limit(
+                    #     max_results
+                    # )  # Limit rows in case too much data sent to browser
+                    # .drop(
+                    #     "vector", axis="columns"
+                    # )  # Need "vector" embedding column for subsequent steps, but don't want to show
+                )
+            except ValueError as ve:
+                st.error(
+                    "The filters selected produces an empty dataframe. Please re-adjust filters to view data."
+                )
 
 
 if __name__ == "__main__":
