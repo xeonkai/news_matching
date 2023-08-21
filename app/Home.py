@@ -5,12 +5,12 @@ st.set_page_config(
     page_title="Index Suggestion Interface Demo", page_icon="📰", layout="wide"
 )
 
-st.title("🖥️ Index Suggestion Interface Demo")
+st.title("🖥️ Topic Discovery Tool")
 st.markdown("""---""")
 st.subheader("Welcome!")
 st.markdown(
     """
-    This is a demo of the Index Suggestion Interface. Upload a CSV file of the news daily scans below to begin.
+    Upload a CSV file of the news daily scans below to begin.
     """
 )
 st.markdown("""---""")

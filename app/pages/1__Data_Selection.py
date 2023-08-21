@@ -10,7 +10,7 @@ st.title("🔎 Data Selection")
 st.markdown("""---""")
 st.markdown(
     """
-    In this page, you are able to select the data that you would like to work on from the DataBase. You may perform the relevant filtering of the data using the filtering side bar on the left.
+    Please select the data to work on from the DataBase. You may perform the relevant filtering of the data using the filters side bar on the left.
     """
 )
 st.markdown("""---""")
