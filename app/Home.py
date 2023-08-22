@@ -2,15 +2,15 @@ import streamlit as st
 from utils import core
 
 st.set_page_config(
-    page_title="Index Suggestion Interface Demo", page_icon="📰", layout="wide"
+    page_title="Index Suggestion Interface", page_icon="📰", layout="wide"
 )
 
-st.title("🖥️ Index Suggestion Interface Demo")
+st.title("🖥️ Index Suggestion Interface")
 st.markdown("""---""")
 st.subheader("Welcome!")
 st.markdown(
     """
-    This is a demo of the Index Suggestion Interface. Upload a CSV file of the news daily scans below to begin.
+    Upload a CSV file of the news daily scans below to begin.
     """
 )
 st.markdown("""---""")
@@ -95,6 +95,9 @@ def run():
 
     # Update table on each action
     files_table.write(file_handler.list_csv_files_df())
+
+    if file_handler.list_csv_files_df().empty:
+        st.warning("There is no data. Please upload a csv file before continuing.")
 
     st.markdown("""---""")
 

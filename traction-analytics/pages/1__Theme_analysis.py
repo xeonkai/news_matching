@@ -29,6 +29,7 @@ format.align_text(
 
 format.horizontal_line()
 
+
 def run_summary_tab(uploaded_data_filtered):
     st.write()
 
@@ -41,6 +42,7 @@ def run_summary_tab(uploaded_data_filtered):
     )
 
     return
+
 
 def run():
     if utils.check_session_state_key("csv_file"):
@@ -103,12 +105,17 @@ def run():
         )
 
         if aggregate_by == "week":
-            uploaded_data_filtered = data_processor.adjust_time_period_for_agg(uploaded_data_filtered, "W")
+            uploaded_data_filtered = data_processor.adjust_time_period_for_agg(
+                uploaded_data_filtered, "W"
+            )
         elif aggregate_by == "month":
-            uploaded_data_filtered = data_processor.adjust_time_period_for_agg(uploaded_data_filtered, "M")
+            uploaded_data_filtered = data_processor.adjust_time_period_for_agg(
+                uploaded_data_filtered, "M"
+            )
 
-
-        tab1, tab2, tab3 = st.tabs(["Summary Analysis", "Theme Analysis", "Index Analysis"])
+        tab1, tab2, tab3 = st.tabs(
+            ["Summary Analysis", "Theme Analysis", "Index Analysis"]
+        )
 
         with tab1:
             run_summary_tab(uploaded_data_filtered)

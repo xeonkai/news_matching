@@ -9,6 +9,7 @@ import utils.design_format as format
 import utils.utils as utils
 import datetime
 
+
 def run_index_tab(uploaded_data_filtered):
     # get list of themes sorted by sum of interactions
     themes_sorted = uploaded_data_filtered.groupby("theme")[
@@ -27,23 +28,32 @@ def run_index_tab(uploaded_data_filtered):
 
     format.horizontal_line()
 
-    tab1, tab2, tab3, tab4, tab5 = st.tabs(["Calendar", "Heatmap", "Count Analysis", "Mean Analysis", "Sum Analysis"])
-
+    tab1, tab2, tab3, tab4, tab5 = st.tabs(
+        ["Calendar", "Heatmap", "Count Analysis", "Mean Analysis", "Sum Analysis"]
+    )
 
     with tab1:
+        selected_index = st.multiselect(
+            "Select Index",
+            theme_data["index"].unique(),
+            default=theme_data["index"].unique()[0],
+        )
 
-        selected_index = st.multiselect("Select Index", theme_data["index"].unique()
-                            , default=theme_data["index"].unique()[0])
-        
         # filter based on selected index
         theme_data_cal = theme_data[theme_data["index"].isin(selected_index)]
 
         subcol1, subcol2 = st.columns([10, 1])
         with subcol1:
             # st.markdown("##### Mean Facebook Interactions")
-            st.plotly_chart(visualisation.plot_index_calplot(theme_data_cal), use_container_width=True)
+            st.plotly_chart(
+                visualisation.plot_index_calplot(theme_data_cal),
+                use_container_width=True,
+            )
         with subcol2:
-            st.plotly_chart(visualisation.show_colour_scale(theme_data_cal), use_container_width=True)
+            st.plotly_chart(
+                visualisation.show_colour_scale(theme_data_cal),
+                use_container_width=True,
+            )
     with tab2:
         st.altair_chart(
             visualisation.plot_index_heatmap(theme_data),

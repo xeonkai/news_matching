@@ -5,6 +5,7 @@ from functions.tabular_indexing import (
     process_table,
     slice_table,
 )
+from functions.grid_response_consolidator import consolidate_grid_responses
 from utils import core
 
 st.set_page_config(
@@ -16,16 +17,13 @@ st.set_page_config(
 
 st.title("📝 Article Indexing")
 st.markdown("""---""")
-st.markdown(
-    """
-    In this page, you can view the themes and indexes predicted for each news article. 
-    If the predicted theme and index are not correct, select "-Enter New Label" in the drop-down menu, then select the correct theme and index from the respective dropdown menus.
-    The subindex column is for the user to enter the subindex of the article. If the article does not have a subindex, leave the column blank.
-    You may click the headline to open the article in a new tab.
-    Select the rows that you have verified and/or edited using the checkbox on the left, then click on the "Confirm" button to save the changes.
-    If you want to select multiple checkboxes at once, hold down the "Shift" key while selecting the checkboxes.
-    """,
-)
+st.markdown("## Instructions")
+st.markdown("- In this page, you can view the themes and indexes predicted for each news article. ")
+st.markdown("""- If the predicted theme and index are not correct, select "-Enter New Label" in the drop-down menu, then select the correct theme and index from the respective dropdown menus.""")
+st.markdown("- The subindex column is for the user to enter the subindex of the article. If the article does not have a subindex, leave the column blank.")
+st.markdown("- You may click the headline to open the article in a new tab.")
+st.markdown("""- Select the rows that you have verified and/or edited using the checkbox on the left, then click on the "Confirm" button to save the changes.""")
+st.markdown("""- If you want to select multiple checkboxes at once, hold down the "Shift" key while selecting the checkboxes.""")
 st.markdown("""---""")
 
 
@@ -58,6 +56,10 @@ def run():
     st.markdown("""---""")
 
     display_aggrid_by_theme(table_collection, current_index_index)
+
+    grid_responses = st.session_state["grid_responses"]
+    consolidated_df = consolidate_grid_responses(grid_responses)
+    st.success(f"{consolidated_df.shape[0]} articles labelled.")
 
     st.markdown("""---""")
 
