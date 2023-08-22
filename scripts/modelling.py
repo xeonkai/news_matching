@@ -16,7 +16,7 @@ def prepare_base_training_dataset():
     (DATA_DIR / "train").mkdir(parents=True, exist_ok=True)
 
     pd.read_csv(
-        "../all_tagged_articles_new.csv",
+        "all_tagged_articles_new.csv",
         usecols=["Published", "Headline", "Theme", "New Index"],
         na_values="-",
         parse_dates=["Published"],
