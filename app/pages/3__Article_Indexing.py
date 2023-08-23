@@ -57,11 +57,15 @@ def run():
 
     display_aggrid_by_theme(table_collection, current_index_index)
 
-    grid_responses = st.session_state["grid_responses"]
-    consolidated_df = consolidate_grid_responses(grid_responses)
-    st.success(f"{consolidated_df.shape[0]} articles labelled.")
+    if 'grid_responses' not in st.session_state:
+        st.session_state['grid_responses'] = {}
 
-    st.markdown("""---""")
+    else:
+        grid_responses = st.session_state["grid_responses"]
+        consolidated_df = consolidate_grid_responses(grid_responses)
+        st.success(f"{consolidated_df.shape[0]} articles labelled.")
+
+        st.markdown("""---""")
 
 
 if __name__ == "__main__":

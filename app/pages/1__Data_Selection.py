@@ -2,21 +2,28 @@ import datetime
 
 import streamlit as st
 from streamlit_extras.no_default_selectbox import selectbox
+from functions.tabular_indexing import (
+    display_aggrid_by_theme,
+    display_stats,
+    process_table,
+    slice_table,
+)
+from functions.grid_response_consolidator import consolidate_grid_responses
 from utils import core
 
 st.set_page_config(page_title="Data Selection", page_icon="📰", layout="wide")
 
-st.title("🔎 Data Selection")
-st.markdown("""---""")
-st.markdown(
-    """
-    Please select the data to work on from the DataBase. You may perform the relevant filtering of the data using the filters side bar on the left.
-    """
-)
-st.markdown("""---""")
 
+def data_selection():
+    st.title("🔎 Data Selection")
+    st.markdown("""---""")
+    st.markdown(
+        """
+        Please select the data to work on from the DataBase. You may perform the relevant filtering of the data using the filters side bar on the left.
+        """
+    )
+    st.markdown("""---""")
 
-def run():
     embedding_model = st.cache_resource(core.load_embedding_model)()
     classification_model = st.cache_resource(core.load_classification_model)()
     file_handler = core.FileHandler(core.DATA_DIR)
@@ -148,4 +155,5 @@ def run():
 
 
 if __name__ == "__main__":
-    run()
+    data_selection()
+

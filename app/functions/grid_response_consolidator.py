@@ -38,39 +38,40 @@ def consolidate_grid_responses(grid_responses):
     """
     consolidated_df = pd.DataFrame()
 
-    for theme in grid_responses:
-        sub_df = pd.DataFrame(grid_responses[theme]["selected_rows"])
-        consolidated_df = pd.concat([consolidated_df, sub_df])
+    if grid_responses != {}:
+        for theme in grid_responses:
+            sub_df = pd.DataFrame(grid_responses[theme]["selected_rows"])
+            consolidated_df = pd.concat([consolidated_df, sub_df])
 
-    consolidated_columns = consolidated_df.columns.tolist()
+        consolidated_columns = consolidated_df.columns.tolist()
 
-    consolidated_df = consolidated_df.apply(
-        lambda x: row_processer(x, consolidated_columns), axis=1
-    )
+        consolidated_df = consolidated_df.apply(
+            lambda x: row_processer(x, consolidated_columns), axis=1
+        )
 
-    # Filtering out rows without new theme/index/subindex
-    consolidated_df = consolidated_df[consolidated_df["theme"] != "-Enter New Theme"]
-    consolidated_df = consolidated_df[consolidated_df["index"] != "-Enter New Index"]
+        # Filtering out rows without new theme/index/subindex
+        consolidated_df = consolidated_df[consolidated_df["theme"] != "-Enter New Theme"]
+        consolidated_df = consolidated_df[consolidated_df["index"] != "-Enter New Index"]
 
-    # Filtering out blank theme/index/subindex
-    consolidated_df = consolidated_df[consolidated_df["theme"] != ""]
-    consolidated_df = consolidated_df[consolidated_df["index"] != ""]
+        # Filtering out blank theme/index/subindex
+        consolidated_df = consolidated_df[consolidated_df["theme"] != ""]
+        consolidated_df = consolidated_df[consolidated_df["index"] != ""]
 
-    # selecting relevent columns
-    consolidated_df = consolidated_df[
-        [
-            "headline",
-            "summary",
-            "link",
-            "domain",
-            "facebook_interactions",
-            "theme",
-            "index",
-            "subindex",
+        # selecting relevent columns
+        consolidated_df = consolidated_df[
+            [
+                "headline",
+                "summary",
+                "link",
+                "domain",
+                "facebook_interactions",
+                "theme",
+                "index",
+                "subindex",
+            ]
         ]
-    ]
 
-    consolidated_df = consolidated_df.reset_index(drop=True)
+        consolidated_df = consolidated_df.reset_index(drop=True)
 
     return consolidated_df
 
