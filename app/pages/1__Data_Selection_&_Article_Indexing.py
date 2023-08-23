@@ -11,7 +11,9 @@ from functions.tabular_indexing import (
 from functions.grid_response_consolidator import consolidate_grid_responses
 from utils import core
 
-st.set_page_config(page_title="Data Selection", page_icon="📰", layout="wide")
+st.set_page_config(
+    page_title="Data Selection & Article Indexing", page_icon="📰", layout="wide"
+)
 
 
 def data_selection():
@@ -148,12 +150,75 @@ def data_selection():
                 #     "vector", axis="columns"
                 # )  # Need "vector" embedding column for subsequent steps, but don't want to show
             )
+            st.markdown("---")
         except ValueError as ve:
             st.error(
                 "The filters selected produces an empty dataframe. Please re-adjust filters to view data."
             )
 
 
+def article_indexing():
+    st.title("📝 Article Indexing")
+    st.markdown("""---""")
+    st.markdown("## Instructions")
+    st.markdown(
+        "- In this page, you can view the themes and indexes predicted for each news article. "
+    )
+    st.markdown(
+        """- If the predicted theme and index are not correct, select "-Enter New Label" in the drop-down menu, then select the correct theme and index from the respective dropdown menus."""
+    )
+    st.markdown(
+        "- The subindex column is for the user to enter the subindex of the article. If the article does not have a subindex, leave the column blank."
+    )
+    st.markdown("- You may click the headline to open the article in a new tab.")
+    st.markdown(
+        """- Select the rows that you have verified and/or edited using the checkbox on the left, then click on the "Confirm" button to save the changes."""
+    )
+    st.markdown(
+        """- If you want to select multiple checkboxes at once, hold down the "Shift" key while selecting the checkboxes."""
+    )
+    st.markdown("""---""")
+
+    if "subset_df_with_preds" not in st.session_state:
+        st.warning(
+            "No data selected yet! Please select the required data from the Data Explorer page!",
+            icon="⚠️",
+        )
+        return
+
+    if "taxonomy" not in st.session_state:
+        taxonomy_chains_df = core.fetch_latest_taxonomy()
+        taxonomy = taxonomy_chains_df.groupby("Theme")["Index"].apply(list).to_dict()
+        st.session_state["taxonomy"] = taxonomy
+
+    uploaded_data_with_indexes = st.session_state["subset_df_with_preds"]
+
+    uploaded_data_with_indexes = process_table(
+        uploaded_data_with_indexes, st.session_state["taxonomy"]
+    )
+    table_collection = slice_table(uploaded_data_with_indexes)
+
+    display_stats(uploaded_data_with_indexes)
+
+    if "current_theme_index" not in st.session_state:
+        st.session_state["current_theme_index"] = 0
+    current_index_index = st.session_state["current_theme_index"]
+
+    st.markdown("""---""")
+
+    display_aggrid_by_theme(table_collection, current_index_index)
+
+    if "grid_responses" not in st.session_state:
+        st.session_state["grid_responses"] = {}
+
+    else:
+        grid_responses = st.session_state["grid_responses"]
+        consolidated_df = consolidate_grid_responses(grid_responses)
+        st.success(f"{consolidated_df.shape[0]} articles labelled.")
+
+        st.markdown("""---""")
+
+
 if __name__ == "__main__":
     data_selection()
-
+    article_indexing()

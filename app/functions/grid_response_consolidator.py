@@ -50,8 +50,12 @@ def consolidate_grid_responses(grid_responses):
         )
 
         # Filtering out rows without new theme/index/subindex
-        consolidated_df = consolidated_df[consolidated_df["theme"] != "-Enter New Theme"]
-        consolidated_df = consolidated_df[consolidated_df["index"] != "-Enter New Index"]
+        consolidated_df = consolidated_df[
+            consolidated_df["theme"] != "-Enter New Theme"
+        ]
+        consolidated_df = consolidated_df[
+            consolidated_df["index"] != "-Enter New Index"
+        ]
 
         # Filtering out blank theme/index/subindex
         consolidated_df = consolidated_df[consolidated_df["theme"] != ""]
