@@ -3,12 +3,19 @@
 ## Folder structure
 ```bash
 .
-├──topic-suggestion-interface-v3/
+├── app/
+│   ├── functions/
+│   ├── utils/
 │   └── pages/
-├──data/
+├── scripts/
+├── data/
+│   ├── metrics/
 │   ├── raw/
-│   └── processed/
+│   ├── taxonomy/
+│   └── train/
 ├── .gitignore
+├── default_model/
+├── all_tagged_articles.csv
 ├── README.md
 └── requirements.txt
 ```
@@ -30,9 +37,16 @@ python -m pip install -r requirements.txt
 deactivate
 ```
 
+### To train default model
+```bash
+# requires "all_tagged_articles_new.csv" in root folder
+python scripts/modelling.py
+```
+
 ### To run app
 ```bash
-streamlit run app/topic-suggestion-interface-v3/Home.py
+# requires "default model" and "all_tagged_articles_new.csv"
+streamlit run app/Home.py
 ```
 
 ### To add additional libraries, and update environment
@@ -85,30 +99,16 @@ sudo usermod -aG docker $USER
 sudo apt-get install docker-compose-plugin
 ```
 
-Build container
+Build & push container
 ```bash
-docker build -t <repo_name>/news-matching:latest .
-docker tag <repo_name>/news-matching:latest <repo_name>/news-matching:latest
-docker push <repo_name>/news-matching:latest
+docker buildx build --push --platform linux/arm64/v8,linux/amd64 --tag <repo_name>/news-matching:latest .
 ```
 
-Run container
+Run container from docker hub
 ```bash
 docker compose up -d
 echo http://localhost:8501/
 # Do whatever
 ...
 docker compose down
-```
-
-Build & push container
-```bash
-docker build -t news-matching:latest .
-docker tag news-matching:latest <repo>/news-matching:latest
-docker push <repo>/news-matching:latest
-```
-
-```bash
-docker compose pull
-docker compose up -d
 ```
