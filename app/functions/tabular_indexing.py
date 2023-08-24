@@ -265,7 +265,7 @@ def nav_buttons(current_theme_index, n_themes):
         n_themes (int): Total number of themes
     """
 
-    b1, b2, b3, b4, b5 = st.columns([7, 1, 1, 1, 7])
+    b1, b2, b3, b4, b5 = st.columns([7, 2, 2, 2, 7])
     with b2:
         if st.button("Prev"):
             current_theme_index = max(current_theme_index - 1, 0)

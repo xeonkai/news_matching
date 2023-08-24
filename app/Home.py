@@ -1,11 +1,9 @@
 import streamlit as st
 from utils import core
 
-st.set_page_config(
-    page_title="Index Suggestion Interface", page_icon="📰", layout="wide"
-)
+st.set_page_config(page_title="Topic Discovery Tool", page_icon="📰", layout="wide")
 
-st.title("🖥️ Index Suggestion Interface")
+st.title("🖥️ Topic Discovery Tool")
 st.markdown("""---""")
 st.subheader("Welcome!")
 st.markdown(
