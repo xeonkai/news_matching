@@ -1,7 +1,7 @@
 ###############
 # BUILD IMAGE #
 ###############
-FROM python:3.9.17-slim-buster AS build
+FROM python:3.9.17-slim-bullseye AS build
 
 # virtualenv
 ENV VIRTUAL_ENV=/opt/venv
@@ -16,7 +16,7 @@ RUN pip install -r requirements.txt
 #################
 # RUNTIME IMAGE #
 #################
-FROM python:3.9.17-slim-buster AS runtime
+FROM python:3.9.17-slim-bullseye AS runtime
 
 # setup user and group ids
 ARG USER_ID=1000
