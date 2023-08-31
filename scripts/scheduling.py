@@ -1,7 +1,7 @@
 from rocketry import Rocketry
 
 from pathlib import Path
-from rocketry.conds import weekly, time_of_day
+from rocketry.conds import weekly, time_of_day, after_success
 from modelling import eval_model, train_model, delete_old_models
 
 
@@ -13,14 +13,20 @@ def file_exists(file):
     return Path(file).exists()
 
 
-@app.task(weekly.on("Sat") & time_of_day.after("6:00") & time_of_day.before("23:00"))
+@app.task(weekly.on("Sat") & time_of_day.after("6:00"))
 def train_model_weekly():
-    print("Start daily training")
+    print("Start weekly training")
     train_model()
+
+
+@app.task(after_success(train_model_weekly))
+def eval_model_after_training():
     eval_model()
-    print("Completed daily training")
+
+
+@app.task(after_success(eval_model_after_training))
+def delete_old_model_after_eval():
     delete_old_models()
-    print("Deleted old models")
 
 
 if __name__ == "__main__":
