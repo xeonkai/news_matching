@@ -12,29 +12,35 @@ DATA_DIR = Path("data")
 RAW_DATA_DIR = DATA_DIR / "raw"
 
 
+def fetch_default_taxonomy() -> pd.DataFrame:
+    return (
+        pd.read_csv("all_tagged_articles_new.csv", usecols=["Theme", "New Index"])
+        .rename(columns={"New Index": "Index"})
+        .drop_duplicates()
+        .sort_values(["Theme", "Index"])
+        .reset_index(drop=True)
+    )
+
+
 def list_taxonomies() -> list[Path]:
     taxonomy_folder = DATA_DIR / "taxonomy"
     taxonomy_folder.mkdir(parents=True, exist_ok=True)
     taxonomy_date_sorted = sorted(taxonomy_folder.glob("20*"), key=os.path.getmtime)
+    taxonomy_date_sorted.append("Default")
     return taxonomy_date_sorted
 
 
 def fetch_taxonomy(path: Path) -> pd.DataFrame:
-    taxonomy_df = pd.read_parquet(path)
-    return taxonomy_df
+    if str(path) == "Default":
+        return fetch_default_taxonomy()
+    return pd.read_parquet(path)
 
 
 def fetch_latest_taxonomy() -> pd.DataFrame:
     taxonomy_date_sorted = list_taxonomies()
 
     if len(taxonomy_date_sorted) == 0:
-        taxonomy_df = (
-            pd.read_csv("all_tagged_articles_new.csv", usecols=["Theme", "New Index"])
-            .rename(columns={"New Index": "Index"})
-            .drop_duplicates()
-            .sort_values(["Theme", "Index"])
-            .reset_index(drop=True)
-        )
+        taxonomy_df = fetch_default_taxonomy()
     else:
         taxonomy_df = fetch_taxonomy(taxonomy_date_sorted[-1])
 
@@ -47,7 +53,7 @@ def save_taxonomy(df):
         df.drop_duplicates()
         .sort_values(["Theme", "Index"])
         .reset_index(drop=True)
-        # drop incomplete rows
+        # TODO: drop incomplete rows
         .to_parquet(taxonomy_folder / datetime.date.today().isoformat())
     )
 
@@ -190,9 +196,9 @@ class FileHandler:
             con.sql(
                 f"""
                 UPDATE {self.DAILY_NEWS_TABLE} 
-                SET label = df.label 
-                FROM df 
-                WHERE {self.DAILY_NEWS_TABLE}.link = df.link;
+                SET label = df_filtered.label 
+                FROM (SELECT * FROM df WHERE label IS NOT NULL) as df_filtered
+                WHERE {self.DAILY_NEWS_TABLE}.link = df_filtered.link;
                 """
             )
 
@@ -246,7 +252,13 @@ class FileHandler:
             f"WHERE domain NOT IN {tuple(domain_filter) if domain_filter else ('NULL',)} "
             f"AND facebook_interactions >= {min_engagement} "
             f"AND published BETWEEN '{date_range[0]}' AND '{date_range[1]}' "
-            + ("" if label_filter is None else f"AND label='{label_filter}' ")
+            + (
+                ""
+                if label_filter is None
+                else "AND label is NOT NULL "
+                if label_filter == "All, excluding unlabelled"
+                else f"AND label='{label_filter}' "
+            )
             + f"ORDER BY facebook_interactions DESC "
             # f"{f'LIMIT {limit}' if limit else ''} "
         )
@@ -281,7 +293,7 @@ class FileHandler:
         return [self.raw_data_dir / filename for filename in filenames]
 
     def download_csv_files(self):
-        # Convert folder to zip, return zip file
+        """Convert folder to zip, return zip file"""
         raise NotImplementedError
 
     def __repr__(self):
@@ -291,4 +303,4 @@ class FileHandler:
         return f"{[file.name for file in self.raw_data_dir.iterdir()]}"
 
     def __len__(self):
-        return len(self.raw_data_dir.iterdir())
+        return len(list(self.raw_data_dir.iterdir()))

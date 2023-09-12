@@ -41,6 +41,7 @@ def data_selection():
         nrows_metric = st.empty()
 
     filter_bounds = file_handler.get_filter_bounds()
+    filter_bounds["labels"].insert(0, "All, excluding unlabelled")
     # max_fb_interactions, domain_list, min_date, max_date = get_filter_bounds()
 
     # Filter inputs by user
@@ -141,16 +142,12 @@ def data_selection():
                 label="Total number of Rows", value=results_filtered_df.shape[0]
             )
 
-            st.write(
-                results_filtered_df.iloc[:max_results]
-                # .limit(
-                #     max_results
-                # )  # Limit rows in case too much data sent to browser
-                # .drop(
-                #     "vector", axis="columns"
-                # )  # Need "vector" embedding column for subsequent steps, but don't want to show
-            )
+            st.write(results_filtered_df.iloc[:max_results])
             st.markdown("---")
+
+            # Reset theme jumper
+            if "current_theme_index" in st.session_state:
+                del st.session_state["current_theme_index"]
         except ValueError as ve:
             st.error(
                 "The filters selected produces an empty dataframe. Please re-adjust filters to view data."
@@ -181,7 +178,7 @@ def article_indexing():
 
     if "subset_df_with_preds" not in st.session_state:
         st.warning(
-            "No data selected yet! Please select the required data from the Data Explorer page!",
+            "No data selected yet! Please select the required data by submitting relevant filters on the sidebar!",
             icon="⚠️",
         )
         return
@@ -214,6 +211,18 @@ def article_indexing():
     else:
         grid_responses = st.session_state["grid_responses"]
         consolidated_df = consolidate_grid_responses(grid_responses)
+        # temp_df = consolidated_df.merge(
+        #     uploaded_data_with_indexes[["link", "theme_ref", "index_ref"]],
+        #     on="link",
+        # )
+
+        # percentage_correct = (
+        #     (temp_df["theme"] == temp_df["theme_ref"])
+        #     & (temp_df["index"] == temp_df["index_ref"])
+        # ).mean()
+
+        # st.write(f"{percentage_correct:.0%}")
+
         st.success(f"{consolidated_df.shape[0]} articles labelled.")
 
         st.markdown("""---""")
