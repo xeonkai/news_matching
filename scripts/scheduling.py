@@ -2,7 +2,7 @@ from rocketry import Rocketry
 
 from pathlib import Path
 from rocketry.conds import weekly, time_of_day, after_success
-from modelling import eval_model, train_model, delete_old_models
+from modelling import train_test_split_eval_model, train_model, delete_old_models
 
 
 app = Rocketry()
@@ -21,7 +21,7 @@ def train_model_weekly():
 
 @app.task(after_success(train_model_weekly))
 def eval_model_after_training():
-    eval_model()
+    train_test_split_eval_model()
 
 
 @app.task(after_success(eval_model_after_training))

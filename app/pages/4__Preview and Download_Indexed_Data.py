@@ -101,7 +101,7 @@ def run():
 
     # download button for excel file
     st.download_button(
-        label="Download Articles as Excel File",
+        label="Save Results & Download Articles as Excel File",
         data=buffer,
         file_name="Labelled_Articles.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

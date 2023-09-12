@@ -72,7 +72,7 @@ def create_dataset(min_labels=2):
     return dataset
 
 
-def eval_model(top_k=20):
+def train_test_split_eval_model(top_k=20):
     dataset = create_dataset(min_labels=10)
     # Evaluation split
     temp_dataset = (
