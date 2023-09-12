@@ -5,6 +5,7 @@ import streamlit as st
 from functions.taxonomy_reader import convert_chain_to_list
 from st_aggrid import AgGrid, ColumnsAutoSizeMode, GridUpdateMode, JsCode
 from st_aggrid.grid_options_builder import GridOptionsBuilder
+from functions.grid_response_consolidator import consolidate_grid_responses
 
 # Function to process dataframe - extract top index, index and subindex
 
@@ -140,6 +141,27 @@ def display_stats(df, title=True, show_themes=True, show_theme_count=True):
 
         with col4:
             st.metric(label="Total Indexes", value=n_index)
+
+        with col5:
+            try:
+                consolidated_df = consolidate_grid_responses(
+                    st.session_state["grid_responses"]
+                )
+
+                temp_df = consolidated_df.merge(
+                    df[["link", "theme_ref", "index_ref"]],
+                    on="link",
+                )
+
+                percentage_correct = (
+                    (temp_df["theme"] == temp_df["theme_ref"])
+                    & (temp_df["index"] == temp_df["index_ref"])
+                ).mean()
+                st.metric(
+                    label="% Correctly Predicted", value=f"{percentage_correct:.0%}"
+                )
+            except:
+                pass
 
     else:
         with col3:
