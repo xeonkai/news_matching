@@ -56,6 +56,7 @@ def run():
     st.subheader("Labelled Articles")
     csv_file = st.session_state["subset_df_with_preds"]
     grid_responses = st.session_state["grid_responses"]
+    date = grid_responses['general']['data']['published'][0].date().strftime('%Y/%m/%d')
 
     selected_rows = [
         grid_response["selected_rows"] for grid_response in grid_responses.values()
@@ -78,11 +79,11 @@ def run():
     # st.write(unlabelled_articles)
 
     # pivot table of count of each theme and index
-    st.subheader("Count of each theme and index")
+    # st.subheader("Count of each theme and index")
     theme_index_pivot = (
         consolidated_df.groupby(["theme", "index"])['facebook_interactions'].agg(['sum', 'count']).reset_index(names=["theme", "index"]).rename(columns={"sum": "sum_of_interactions"})
     )
-    st.dataframe(theme_index_pivot, use_container_width=True)
+    # st.dataframe(theme_index_pivot, use_container_width=True)
 
     # pivot table of count of each theme, index and subindex
     st.subheader("Count of each theme, index and subindex")
@@ -102,7 +103,7 @@ def run():
     with pd.ExcelWriter(buffer) as writer:
         consolidated_df.to_excel(writer, sheet_name="Articles", index=False)
         theme_index_pivot.to_excel(writer, sheet_name="Theme Index Pivot", index=False)
-        theme_index_subindex_pivot.to_excel(writer, sheet_name="Theme Index Pivot", index=False)
+        theme_index_subindex_pivot.to_excel(writer, sheet_name="Theme Index Subindex Pivot", index=False)
         # unlabelled_articles.to_excel(
         #     writer, sheet_name="Unlabelled Articles", index=False
         # )
@@ -112,7 +113,7 @@ def run():
     st.download_button(
         label="Save Results & Download Articles as Excel File",
         data=buffer,
-        file_name="Labelled_Articles.xlsx",
+        file_name=f"Labelled_Articles_{date}.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         on_click=update_labels,
         args=(consolidated_df,),
