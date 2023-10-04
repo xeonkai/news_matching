@@ -79,10 +79,18 @@ def run():
 
     # pivot table of count of each theme and index
     st.subheader("Count of each theme and index")
-    df_pivot = (
-        consolidated_df.groupby(["theme", "index"]).size().reset_index(name="count")
+    theme_index_pivot = (
+        consolidated_df.groupby(["theme", "index"])['facebook_interactions'].agg(['sum', 'count']).reset_index(names=["theme", "index"]).rename(columns={"sum": "sum_of_interactions"})
     )
-    st.dataframe(df_pivot, use_container_width=True)
+    st.dataframe(theme_index_pivot, use_container_width=True)
+
+    # pivot table of count of each theme, index and subindex
+    st.subheader("Count of each theme, index and subindex")
+    theme_index_subindex_pivot = (
+        consolidated_df.groupby(["theme", "index", "subindex"])['facebook_interactions'].agg(['sum', 'count']).reset_index(
+            names=["theme", "index", "subindex"]).rename(columns={"sum": "sum_of_interactions"})
+    )
+    st.dataframe(theme_index_subindex_pivot, use_container_width=True)
 
     consolidated_df = pd.concat(
         [consolidated_df, unlabelled_articles], ignore_index=True
@@ -93,7 +101,8 @@ def run():
     # build excel workbook with 2 sheets - consolidated_df and df_pivot
     with pd.ExcelWriter(buffer) as writer:
         consolidated_df.to_excel(writer, sheet_name="Articles", index=False)
-        df_pivot.to_excel(writer, sheet_name="Theme and Index Count", index=False)
+        theme_index_pivot.to_excel(writer, sheet_name="Theme Index Pivot", index=False)
+        theme_index_subindex_pivot.to_excel(writer, sheet_name="Theme Index Pivot", index=False)
         # unlabelled_articles.to_excel(
         #     writer, sheet_name="Unlabelled Articles", index=False
         # )
