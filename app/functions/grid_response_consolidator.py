@@ -64,6 +64,7 @@ def consolidate_grid_responses(grid_responses):
         # selecting relevent columns
         consolidated_df = consolidated_df[
             [
+                "published",
                 "headline",
                 "summary",
                 "link",
@@ -72,6 +73,7 @@ def consolidate_grid_responses(grid_responses):
                 "theme",
                 "index",
                 "subindex",
+                "source"
             ]
         ]
 
@@ -91,9 +93,11 @@ def extract_unlabelled_articles(labelled_df, all_data_df):
     unlabelled_articles["theme"] = ""
     unlabelled_articles["index"] = ""
     unlabelled_articles["subindex"] = ""
+    unlabelled_articles["label"] = ""
 
     unlabelled_articles = unlabelled_articles[
         [
+            "published",
             "headline",
             "summary",
             "link",
@@ -102,6 +106,8 @@ def extract_unlabelled_articles(labelled_df, all_data_df):
             "theme",
             "index",
             "subindex",
+            "source",
+            "label"
         ]
     ]
 

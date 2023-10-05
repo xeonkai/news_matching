@@ -8,6 +8,7 @@ from functions.grid_response_consolidator import (
     extract_unlabelled_articles,
 )
 from utils import core
+from datetime import datetime
 
 st.set_page_config(page_title="Download Indexed Data", page_icon="📰", layout="wide")
 
@@ -70,6 +71,10 @@ def run():
         return
         # st.write(grid_responses['general']['data'])
     consolidated_df = consolidate_grid_responses(grid_responses)
+    consolidated_df['published'] = pd.to_datetime(consolidated_df['published'].str.replace("T", " "))
+    consolidated_df["label"] = consolidated_df["theme"] + ">" + consolidated_df["index"]
+
+    date = consolidated_df['published'][0].date().strftime('%Y/%m/%d')
     st.metric(label="Total Labelled Articles", value=consolidated_df.shape[0])
 
     st.dataframe(consolidated_df, use_container_width=True)
@@ -78,22 +83,35 @@ def run():
     # st.write(unlabelled_articles)
 
     # pivot table of count of each theme and index
-    st.subheader("Count of each theme and index")
-    df_pivot = (
-        consolidated_df.groupby(["theme", "index"]).size().reset_index(name="count")
+    # st.subheader("Count of each theme and index")
+    theme_index_pivot = (
+        consolidated_df.groupby(["theme", "index"])['facebook_interactions'].agg(['sum', 'count']).reset_index(names=["theme", "index"]).rename(columns={"sum": "sum_of_interactions"})
     )
-    st.dataframe(df_pivot, use_container_width=True)
+    # st.dataframe(theme_index_pivot, use_container_width=True)
+
+    # pivot table of count of each theme, index and subindex
+    st.subheader("Count of each theme, index and subindex")
+    theme_index_subindex_pivot = (
+        consolidated_df.groupby(["theme", "index", "subindex"])['facebook_interactions'].agg(['sum', 'count']).reset_index(
+            names=["theme", "index", "subindex"]).rename(columns={"sum": "sum_of_interactions"})
+    )
+    st.dataframe(theme_index_subindex_pivot, use_container_width=True)
 
     consolidated_df = pd.concat(
         [consolidated_df, unlabelled_articles], ignore_index=True
     ).reset_index(drop=True)
+
 
     buffer = io.BytesIO()
 
     # build excel workbook with 2 sheets - consolidated_df and df_pivot
     with pd.ExcelWriter(buffer) as writer:
         consolidated_df.to_excel(writer, sheet_name="Articles", index=False)
-        df_pivot.to_excel(writer, sheet_name="Theme and Index Count", index=False)
+        theme_index_pivot.to_excel(writer, sheet_name="Theme Index Pivot", index=False)
+        theme_index_subindex_pivot.to_excel(writer, sheet_name="Theme Index Subindex Pivot", index=False)
+        worksheet = writer.sheets['Articles']
+        worksheet.set_column('J:J', None, None, {'hidden': 1})
+        worksheet.set_column('K:K', None, None, {'hidden': 1})
         # unlabelled_articles.to_excel(
         #     writer, sheet_name="Unlabelled Articles", index=False
         # )
@@ -103,7 +121,7 @@ def run():
     st.download_button(
         label="Save Results & Download Articles as Excel File",
         data=buffer,
-        file_name="Labelled_Articles.xlsx",
+        file_name=f"Labelled_Articles_{date}.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         on_click=update_labels,
         args=(consolidated_df,),

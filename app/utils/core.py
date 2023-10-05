@@ -151,16 +151,47 @@ class FileHandler:
                     "Facebook Interactions",
                 ],
                 dtype={
+                    "Published": "string",
                     "Headline": "string",
                     "Summary": "string",
                     "Link": "string",
                     "Domain": "string",
                     "Facebook Interactions": "int",
                 },
-                parse_dates=["Published"],
+                # parse_dates=["Published"],
             )
             .assign(source=source)
             .rename(lambda col_name: col_name.lower().replace(" ", "_"), axis="columns")
+        )
+        df["published"] = pd.to_datetime(df['published'])
+        return df
+
+    @staticmethod
+    def preprocess_labelled_articles(file, source: str = "") -> pd.DataFrame:
+        df = (
+            pd.read_excel(
+                file,
+                usecols=[
+                    "published",
+                    "headline",
+                    "summary",
+                    "link",
+                    "domain",
+                    "facebook_interactions",
+                    "label",
+                    "source"
+                ],
+                dtype={
+                    "published": "string",
+                    "headline": "string",
+                    "summary": "string",
+                    "link": "string",
+                    "domain": "string",
+                    "facebook_interactions": "int",
+                    "label": "string",
+                    "source": "string"
+                },
+            )
         )
         return df
 
@@ -190,6 +221,38 @@ class FileHandler:
                     source = source
                 """
             )
+
+    def write_labelled_articles_db(self, file) -> None:
+        processed_table = self.preprocess_labelled_articles(file)
+        with duckdb.connect(self.db_path) as con:
+            #
+            con.sql(f"DELETE FROM {self.DAILY_NEWS_TABLE} WHERE source = '{file.name}'")
+            # Append to table, replace if existing link found
+            con.sql(
+                f"""
+                INSERT INTO {self.DAILY_NEWS_TABLE} 
+                SELECT published, headline, summary, link, domain, facebook_interactions, source, label 
+                FROM processed_table
+                ON CONFLICT
+                DO UPDATE
+                    SET published = published,
+                    headline = headline,
+                    summary = summary,
+                    domain = domain,
+                    facebook_interactions = facebook_interactions,
+                    source = source,
+                    label = label
+                """
+            )
+
+    def labelled_query(self, columns):
+        query = (
+            f"SELECT {','.join(columns)} "
+            f"FROM {self.DAILY_NEWS_TABLE} "
+        )
+        with duckdb.connect(self.db_path) as con:
+            results_filtered = con.sql(query).to_df()
+        return results_filtered
 
     def update_labels(self, df):
         with duckdb.connect(self.db_path) as con:
