@@ -8,6 +8,7 @@ from functions.grid_response_consolidator import (
     extract_unlabelled_articles,
 )
 from utils import core
+from datetime import datetime
 
 st.set_page_config(page_title="Download Indexed Data", page_icon="📰", layout="wide")
 
@@ -56,7 +57,6 @@ def run():
     st.subheader("Labelled Articles")
     csv_file = st.session_state["subset_df_with_preds"]
     grid_responses = st.session_state["grid_responses"]
-    date = grid_responses['general']['data']['published'][0].date().strftime('%Y/%m/%d')
 
     selected_rows = [
         grid_response["selected_rows"] for grid_response in grid_responses.values()
@@ -71,6 +71,10 @@ def run():
         return
         # st.write(grid_responses['general']['data'])
     consolidated_df = consolidate_grid_responses(grid_responses)
+    consolidated_df['published'] = pd.to_datetime(consolidated_df['published'].str.replace("T", " "))
+    consolidated_df["label"] = consolidated_df["theme"] + ">" + consolidated_df["index"]
+
+    date = consolidated_df['published'][0].date().strftime('%Y/%m/%d')
     st.metric(label="Total Labelled Articles", value=consolidated_df.shape[0])
 
     st.dataframe(consolidated_df, use_container_width=True)
@@ -97,6 +101,7 @@ def run():
         [consolidated_df, unlabelled_articles], ignore_index=True
     ).reset_index(drop=True)
 
+
     buffer = io.BytesIO()
 
     # build excel workbook with 2 sheets - consolidated_df and df_pivot
@@ -104,6 +109,9 @@ def run():
         consolidated_df.to_excel(writer, sheet_name="Articles", index=False)
         theme_index_pivot.to_excel(writer, sheet_name="Theme Index Pivot", index=False)
         theme_index_subindex_pivot.to_excel(writer, sheet_name="Theme Index Subindex Pivot", index=False)
+        worksheet = writer.sheets['Articles']
+        worksheet.set_column('J:J', None, None, {'hidden': 1})
+        worksheet.set_column('K:K', None, None, {'hidden': 1})
         # unlabelled_articles.to_excel(
         #     writer, sheet_name="Unlabelled Articles", index=False
         # )
