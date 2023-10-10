@@ -341,7 +341,7 @@ class FileHandler:
         raw_files_info = [
             {
                 "filename": file.name,
-                "modified": datetime.datetime.fromtimestamp(file.stat().st_mtime),
+                "modified": datetime.fromtimestamp(file.stat().st_mtime),
                 # "filesize": f"{file.stat().st_size / 1000 / 1000:.2f} MB",
             }
             for file in self.raw_data_dir.iterdir()
