@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 from sentence_transformers import SentenceTransformer
 from setfit import SetFitModel
-from datetime import datetime
+from datetime import datetime, timedelta
 
 DATA_DIR = Path("data")
 RAW_DATA_DIR = DATA_DIR / "raw"
@@ -142,13 +142,13 @@ class FileHandler:
     @staticmethod
     def preprocess_daily_scan(file, source: str = "") -> pd.DataFrame:
         df = (
-            pd.read_csv(
+            pd.read_excel(
                 file,
                 usecols=[
                     "Published",
                     "Headline",
                     "Summary",
-                    "Link",
+                    "Link URL",
                     "Domain",
                     "Facebook Interactions",
                 ],
@@ -156,7 +156,7 @@ class FileHandler:
                     "Published": "string",
                     "Headline": "string",
                     "Summary": "string",
-                    "Link": "string",
+                    "Link URL": "string",
                     "Domain": "string",
                     "Facebook Interactions": "int",
                 },
@@ -164,8 +164,15 @@ class FileHandler:
             )
             .assign(source=source)
             .rename(lambda col_name: col_name.lower().replace(" ", "_"), axis="columns")
+            .rename(columns={"link_url": "link"})
         )
         df["published"] = pd.to_datetime(df['published'])
+        data_name = file.name
+        date_string = data_name.partition("posts-")[2].partition(" -")[0]
+        format = '%m_%d_%y-%H_%M'
+        formatted_date = datetime.strptime(date_string, format)
+        past_day = formatted_date - timedelta(hours=24, minutes=0)
+        df = df.loc[df["published"] > past_day]
         return df
 
     @staticmethod
