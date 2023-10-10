@@ -7,9 +7,11 @@ import numpy as np
 import pandas as pd
 from sentence_transformers import SentenceTransformer
 from setfit import SetFitModel
+from datetime import datetime
 
 DATA_DIR = Path("data")
 RAW_DATA_DIR = DATA_DIR / "raw"
+WEEKLY_DATA_DIR = DATA_DIR / "weekly"
 
 
 def fetch_default_taxonomy() -> pd.DataFrame:
@@ -367,3 +369,109 @@ class FileHandler:
 
     def __len__(self):
         return len(list(self.raw_data_dir.iterdir()))
+
+
+
+
+class WeeklyFileHandler:
+    WEEKLY_NEWS_TABLE = "weekly_news"
+
+    def __init__(self, data_dir):
+        self.data_dir = Path(data_dir)
+        self.weekly_data_dir = self.data_dir / "weekly"
+        self.db_path = str(self.data_dir / "weekly_news.db")
+
+        self.weekly_data_dir.mkdir(parents=True, exist_ok=True)
+
+        with duckdb.connect(self.db_path) as con:
+            con.execute(
+                f"""
+                CREATE TABLE IF NOT EXISTS
+                {self.WEEKLY_NEWS_TABLE}(
+                    "published" TIMESTAMP(6),
+                    "link" VARCHAR,  
+                    "facebook_interactions" BIGINT,
+                    "date_extracted" TIMESTAMP(6),
+                    PRIMARY KEY ("published", "link", "date_extracted"),
+                    "timestamp" TIMESTAMP(6),
+                    "source" VARCHAR,
+                );
+                """
+            )
+
+    @staticmethod
+    def preprocess_weekly_scan(file) -> pd.DataFrame:
+        data_name = file.name
+        weekly_data = pd.read_excel(file)
+        columns = ["Published", "Link URL", "Facebook Interactions"]
+        weekly_data = weekly_data[columns].rename(columns={"Published": "published", "Link URL": "link", "Facebook Interactions": "facebook_interactions"})
+        weekly_data['published'] = pd.to_datetime(weekly_data['published'])
+        date_string = data_name.partition("posts-")[2].partition(" -")[0]
+        format = '%m_%d_%y-%H_%M'
+        formatted_date = datetime.strptime(date_string, format)
+        weekly_data['date_extracted'] = formatted_date
+        weekly_data['timestamp'] = formatted_date
+        weekly_data = weekly_data.dropna()
+        weekly_data['source'] = data_name
+
+        # weekly_data["published"] = pd.to_datetime(weekly_data['published'])
+        # weekly_data["date_extracted"] = pd.to_datetime(weekly_data['date_extracted'])
+        # weekly_data["timestamp"] = pd.to_datetime(weekly_data['timestamp'])
+        return weekly_data
+
+    def write_db(self, file) -> None:
+        processed_table = self.preprocess_weekly_scan(file)
+
+        with duckdb.connect(self.db_path) as con:
+            #
+            con.sql(f"DELETE FROM {self.WEEKLY_NEWS_TABLE} WHERE source = '{file.name}'")
+            # Append to table, replace if existing link found
+            con.sql(
+                f"""
+                INSERT INTO {self.WEEKLY_NEWS_TABLE} 
+                SELECT published, link, facebook_interactions, date_extracted, timestamp, source
+                FROM processed_table
+                ON CONFLICT (published, link, date_extracted)
+                DO UPDATE
+                    SET facebook_interactions = facebook_interactions,
+                    timestamp = timestamp,
+                    source = source
+                """
+            )
+
+    def query(self):
+        query = (
+            f"SELECT *"
+            f"FROM {self.WEEKLY_NEWS_TABLE} "
+        )
+        with duckdb.connect(self.db_path) as con:
+            results_filtered = con.sql(query).to_df()
+        return results_filtered
+
+    def list_csv_filenames(self):
+        return [file.name for file in self.weekly_data_dir.iterdir()]
+
+    def list_csv_files_df(self):
+        raw_files_info = [
+            {
+                "filename": file.name,
+                "modified": datetime.fromtimestamp(file.stat().st_mtime),
+                # "filesize": f"{file.stat().st_size / 1000 / 1000:.2f} MB",
+            }
+            for file in self.weekly_data_dir.iterdir()
+        ]
+        return pd.DataFrame(raw_files_info)
+
+    def write_csv(self, file):
+        filepath = self.weekly_data_dir / file.name
+        filepath.write_bytes(file.getbuffer())
+        return filepath
+
+    def remove_files(self, filenames):
+        for filename in filenames:
+            (self.weekly_data_dir / filename).unlink(missing_ok=True)
+            with duckdb.connect(self.db_path) as con:
+                con.sql(
+                    f"DELETE FROM {self.WEEKLY_NEWS_TABLE} WHERE source = '{filename}'"
+                )
+        return [self.weekly_data_dir / filename for filename in filenames]
