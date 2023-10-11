@@ -414,9 +414,8 @@ class WeeklyFileHandler:
                     "published" TIMESTAMP(6),
                     "link" VARCHAR,  
                     "facebook_interactions" BIGINT,
-                    "date_extracted" TIMESTAMP(6),
-                    PRIMARY KEY ("published", "link", "date_extracted"),
-                    "timestamp" TIMESTAMP(6),
+                    "date_time_extracted" TIMESTAMP(6),
+                    PRIMARY KEY ("published", "link", "date_time_extracted"),
                     "source" VARCHAR,
                 );
                 """
@@ -432,8 +431,7 @@ class WeeklyFileHandler:
         date_string = data_name.partition("posts-")[2].partition(" -")[0]
         format = '%m_%d_%y-%H_%M'
         formatted_date = datetime.strptime(date_string, format)
-        weekly_data['date_extracted'] = formatted_date
-        weekly_data['timestamp'] = formatted_date
+        weekly_data['date_time_extracted'] = formatted_date
         weekly_data = weekly_data.dropna()
         weekly_data['source'] = data_name
 
@@ -449,12 +447,28 @@ class WeeklyFileHandler:
             con.sql(
                 f"""
                 INSERT INTO {self.WEEKLY_NEWS_TABLE} 
-                SELECT published, link, facebook_interactions, date_extracted, timestamp, source
+                SELECT published, link, facebook_interactions, date_time_extracted, source
                 FROM processed_table
-                ON CONFLICT (published, link, date_extracted)
+                ON CONFLICT (published, link, date_time_extracted)
                 DO UPDATE
                     SET facebook_interactions = facebook_interactions,
-                    timestamp = timestamp,
+                    source = source
+                """
+            )
+
+    def write_may_june_db(self):
+        may_june_data = pd.read_excel("../../traction-analytics/may_june_data_filtered.xlsx")
+
+        with duckdb.connect(self.db_path) as con:
+            #
+            con.sql(
+                f"""
+                INSERT INTO {self.WEEKLY_NEWS_TABLE} 
+                SELECT published, link, facebook_interactions, date_time_extracted, source
+                FROM may_june_data
+                ON CONFLICT (published, link, date_time_extracted)
+                DO UPDATE
+                    SET facebook_interactions = facebook_interactions,
                     source = source
                 """
             )

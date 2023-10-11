@@ -79,6 +79,10 @@ if io_mode == "Upload":
                     st.error(err)
             if num_uploaded_files == len(new_files):
                 st.success(f"{num_uploaded_files} files uploaded successfully!")
+            st.dataframe(file_handler.query())
+            # test = file_handler.query()
+            # test = test.loc[test['link'] == 'https://sg.news.yahoo.com/90-old-employee-mcdonalds-japan-225430598.html']
+            # st.dataframe(test)
 
 
 elif io_mode == "Delete":
