@@ -130,11 +130,12 @@ class FileHandler:
                     "published" TIMESTAMP,
                     "headline" VARCHAR,
                     "summary" VARCHAR,
-                    "link" VARCHAR UNIQUE,
+                    "link" VARCHAR,
                     "domain" VARCHAR,
                     "facebook_interactions" BIGINT,  
                     "source" VARCHAR,
-                    "label" VARCHAR
+                    "label" VARCHAR,
+                    PRIMARY KEY ("published", "link")
                 );
                 """
             )
@@ -166,14 +167,15 @@ class FileHandler:
             .rename(lambda col_name: col_name.lower().replace(" ", "_"), axis="columns")
             .rename(columns={"link_url": "link"})
         )
+
         df["published"] = pd.to_datetime(df['published'])
+        df = df.dropna(subset=['link'])
         data_name = file.name
         date_string = data_name.partition("posts-")[2].partition(" -")[0]
         format = '%m_%d_%y-%H_%M'
-        formatted_date = datetime.strptime(date_string, format)
-        past_day = formatted_date - timedelta(hours=24, minutes=0)
-        df = df.loc[df["published"] > past_day]
-        return df
+        latest_date_file = datetime.strptime(date_string, format).date()
+
+        return df, latest_date_file
 
     @staticmethod
     def preprocess_labelled_articles(file, source: str = "") -> pd.DataFrame:
@@ -210,20 +212,33 @@ class FileHandler:
         return filepath
 
     def write_db(self, file) -> None:
-        processed_table = self.preprocess_daily_scan(file, source=file.name)
+        processed_table, latest_date_file = self.preprocess_daily_scan(file, source=file.name)
+
+        query = (
+            f"SELECT max(published) max_published "
+            f"FROM {self.DAILY_NEWS_TABLE} "
+        )
+        with duckdb.connect(self.db_path) as con:
+            results_filtered = con.sql(query).to_df()
+
+        latest_date_db = results_filtered['max_published'].dt.date[0]
+        if pd.isnull(latest_date_db):
+            insert_table = processed_table
+        else:
+            insert_table = processed_table.loc[processed_table['published'].dt.date.between(latest_date_db, latest_date_file, inclusive=False)]
+        #
         with duckdb.connect(self.db_path) as con:
             #
             con.sql(f"DELETE FROM {self.DAILY_NEWS_TABLE} WHERE source = '{file.name}'")
             # Append to table, replace if existing link found
             con.sql(
                 f"""
-                INSERT INTO {self.DAILY_NEWS_TABLE} 
-                SELECT published, headline, summary, link, domain, facebook_interactions, source, NULL 
-                FROM processed_table
-                ON CONFLICT
+                INSERT INTO {self.DAILY_NEWS_TABLE}
+                SELECT published, headline, summary, link, domain, facebook_interactions, source, NULL
+                FROM insert_table
+                ON CONFLICT (published, link)
                 DO UPDATE
-                    SET published = published,
-                    headline = headline,
+                    SET headline = headline,
                     summary = summary,
                     domain = domain,
                     facebook_interactions = facebook_interactions,
@@ -233,19 +248,20 @@ class FileHandler:
 
     def write_labelled_articles_db(self, file) -> None:
         processed_table = self.preprocess_labelled_articles(file)
+        min_date = min(processed_table['published'])
+        max_date = max(processed_table['published'])
         with duckdb.connect(self.db_path) as con:
-            #
-            con.sql(f"DELETE FROM {self.DAILY_NEWS_TABLE} WHERE source = '{file.name}'")
+
+            con.sql(f"DELETE FROM {self.DAILY_NEWS_TABLE} WHERE published >= '{min_date}' AND published <= '{max_date}'")
             # Append to table, replace if existing link found
             con.sql(
                 f"""
                 INSERT INTO {self.DAILY_NEWS_TABLE} 
                 SELECT published, headline, summary, link, domain, facebook_interactions, source, label 
                 FROM processed_table
-                ON CONFLICT
+                ON CONFLICT (published, link)
                 DO UPDATE
-                    SET published = published,
-                    headline = headline,
+                    SET headline = headline,
                     summary = summary,
                     domain = domain,
                     facebook_interactions = facebook_interactions,
@@ -421,9 +437,6 @@ class WeeklyFileHandler:
         weekly_data = weekly_data.dropna()
         weekly_data['source'] = data_name
 
-        # weekly_data["published"] = pd.to_datetime(weekly_data['published'])
-        # weekly_data["date_extracted"] = pd.to_datetime(weekly_data['date_extracted'])
-        # weekly_data["timestamp"] = pd.to_datetime(weekly_data['timestamp'])
         return weekly_data
 
     def write_db(self, file) -> None:
