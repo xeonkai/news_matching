@@ -8,7 +8,9 @@ st.markdown("""---""")
 st.subheader("Welcome!")
 st.markdown(
     """
-    Upload a CSV file of the news daily scans below to begin.
+    - Upload a CSV file of the weekly news file downloaded from the content aggregator. \n
+    - Please ensure that the name of the uploaded file follows the format below:\n
+        `test_-_for_indexing-facebook_posts-<MM_DD_YY-HH_MM -  D MMM> weekly`, where `MMM` are the first 3 letters of the month.
     """
 )
 st.markdown("""---""")
