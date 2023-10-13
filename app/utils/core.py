@@ -131,11 +131,12 @@ class FileHandler:
                     "headline" VARCHAR,
                     "summary" VARCHAR,
                     "link" VARCHAR,
+                    "facebook_page_name" VARCHAR,
                     "domain" VARCHAR,
                     "facebook_interactions" BIGINT,  
                     "source" VARCHAR,
                     "label" VARCHAR,
-                    PRIMARY KEY ("published", "link")
+                    PRIMARY KEY ("published", "link", "facebook_page_name")
                 );
                 """
             )
@@ -150,6 +151,7 @@ class FileHandler:
                     "Headline",
                     "Summary",
                     "Link URL",
+                    "Facebook Page Name",
                     "Domain",
                     "Facebook Interactions",
                 ],
@@ -158,6 +160,7 @@ class FileHandler:
                     "Headline": "string",
                     "Summary": "string",
                     "Link URL": "string",
+                    "Facebook Page Name": "string",
                     "Domain": "string",
                     "Facebook Interactions": "int",
                 },
@@ -187,6 +190,7 @@ class FileHandler:
                     "headline",
                     "summary",
                     "link",
+                    "facebook_page_name",
                     "domain",
                     "facebook_interactions",
                     "label",
@@ -197,6 +201,7 @@ class FileHandler:
                     "headline": "string",
                     "summary": "string",
                     "link": "string",
+                    "facebook_page_name": "string",
                     "domain": "string",
                     "facebook_interactions": "int",
                     "label": "string",
@@ -234,9 +239,9 @@ class FileHandler:
             con.sql(
                 f"""
                 INSERT INTO {self.DAILY_NEWS_TABLE}
-                SELECT published, headline, summary, link, domain, facebook_interactions, source, NULL
+                SELECT published, headline, summary, link, facebook_page_name, domain, facebook_interactions, source, NULL
                 FROM insert_table
-                ON CONFLICT (published, link)
+                ON CONFLICT (published, link, facebook_page_name)
                 DO UPDATE
                     SET headline = headline,
                     summary = summary,
@@ -257,9 +262,9 @@ class FileHandler:
             con.sql(
                 f"""
                 INSERT INTO {self.DAILY_NEWS_TABLE} 
-                SELECT published, headline, summary, link, domain, facebook_interactions, source, label 
+                SELECT published, headline, summary, link, facebook_page_name, domain, facebook_interactions, source, label 
                 FROM processed_table
-                ON CONFLICT (published, link)
+                ON CONFLICT (published, link, facebook_page_name)
                 DO UPDATE
                     SET headline = headline,
                     summary = summary,
@@ -413,9 +418,10 @@ class WeeklyFileHandler:
                 {self.WEEKLY_NEWS_TABLE}(
                     "published" TIMESTAMP(6),
                     "link" VARCHAR,  
+                    "facebook_page_name" VARCHAR,
                     "facebook_interactions" BIGINT,
                     "date_time_extracted" TIMESTAMP(6),
-                    PRIMARY KEY ("published", "link", "date_time_extracted"),
+                    PRIMARY KEY ("published", "link", "facebook_page_name"),
                     "source" VARCHAR,
                 );
                 """
@@ -425,8 +431,8 @@ class WeeklyFileHandler:
     def preprocess_weekly_scan(file) -> pd.DataFrame:
         data_name = file.name
         weekly_data = pd.read_excel(file)
-        columns = ["Published", "Link URL", "Facebook Interactions"]
-        weekly_data = weekly_data[columns].rename(columns={"Published": "published", "Link URL": "link", "Facebook Interactions": "facebook_interactions"})
+        columns = ["Published", "Link URL", "Facebook Page Name", "Facebook Interactions"]
+        weekly_data = weekly_data[columns].rename(columns={"Published": "published", "Link URL": "link", "Facebook Page Name": "facebook_page_name", "Facebook Interactions":"facebook_interactions"})
         weekly_data['published'] = pd.to_datetime(weekly_data['published'])
         date_string = data_name.partition("posts-")[2].partition(" -")[0]
         format = '%m_%d_%y-%H_%M'
@@ -447,11 +453,12 @@ class WeeklyFileHandler:
             con.sql(
                 f"""
                 INSERT INTO {self.WEEKLY_NEWS_TABLE} 
-                SELECT published, link, facebook_interactions, date_time_extracted, source
+                SELECT published, link, facebook_page_name, facebook_interactions, date_time_extracted, source
                 FROM processed_table
-                ON CONFLICT (published, link, date_time_extracted)
+                ON CONFLICT (published, link, facebook_page_name)
                 DO UPDATE
                     SET facebook_interactions = facebook_interactions,
+                    date_time_extracted = date_time_extracted,
                     source = source
                 """
             )
@@ -464,11 +471,12 @@ class WeeklyFileHandler:
             con.sql(
                 f"""
                 INSERT INTO {self.WEEKLY_NEWS_TABLE} 
-                SELECT published, link, facebook_interactions, date_time_extracted, source
+                SELECT published, link, facebook_page_name, facebook_interactions, date_time_extracted, source
                 FROM may_june_data
-                ON CONFLICT (published, link, date_time_extracted)
+                ON CONFLICT (published, link, facebook_page_name)
                 DO UPDATE
                     SET facebook_interactions = facebook_interactions,
+                    date_time_extracted = date_time_extracted,
                     source = source
                 """
             )

@@ -114,6 +114,7 @@ def data_selection():
                 "headline",
                 "summary",
                 "link",
+                "facebook_page_name",
                 "domain",
                 "facebook_interactions",
                 "label",
