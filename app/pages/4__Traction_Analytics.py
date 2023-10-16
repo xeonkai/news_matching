@@ -8,12 +8,16 @@ from st_aggrid import AgGrid, GridUpdateMode, ColumnsAutoSizeMode, JsCode
 from st_aggrid.grid_options_builder import GridOptionsBuilder
 import altair as alt
 import random
+from utils import core
+from st_pages import add_page_title
 
-st.set_page_config(
-    page_title="Traction Analytics Interface Demo", page_icon="📰", layout="wide"
-)
+add_page_title(layout="wide")
 
-st.title("🖥️ Traction Analytics Interface Demo")
+# st.set_page_config(
+#     page_title="Traction Analytics Interface Demo", page_icon="📰", layout="wide"
+# )
+
+# st.title("🖥️ Traction Analytics Interface Demo")
 st.markdown("""---""")
 st.subheader("Welcome!")
 
@@ -26,19 +30,19 @@ st.markdown(
 st.markdown("""---""")
 
 st.write("")
-
+daily_file_handler = core.FileHandler(core.DATA_DIR)
 
 def upload_data():
     # Upload file
-    uploaded_file = st.file_uploader("Upload CSV file", type="csv")
-    if uploaded_file is not None:
-        st.write(f"You selected {uploaded_file.name}")
-        if "traction_data" in st.session_state:
-            if st.button("Overwrite previous traction data"):
-                pass
-            else:
-                return
-        st.session_state["traction_data"] = pd.read_csv(uploaded_file)
+    # uploaded_file = st.file_uploader("Upload Excel file", type="xlsx")
+    # if uploaded_file is not None:
+    #     st.write(f"You selected {uploaded_file.name}")
+    #     if "traction_data" in st.session_state:
+    #         if st.button("Overwrite previous traction data"):
+    #             pass
+    #         else:
+    #             return
+    st.session_state["traction_data"] = daily_file_handler.full_query()
 
     st.write("")
 

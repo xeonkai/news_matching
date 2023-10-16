@@ -10,14 +10,17 @@ from functions.tabular_indexing import (
 )
 from functions.grid_response_consolidator import consolidate_grid_responses
 from utils import core
+from st_pages import add_page_title
 
-st.set_page_config(
-    page_title="Data Selection & Article Indexing", page_icon="📰", layout="wide"
-)
+add_page_title(layout="wide")
+
+# st.set_page_config(
+#     page_title="Data Selection & Article Indexing", page_icon="📰", layout="wide"
+# )
 
 
 def data_selection():
-    st.title("🔎 Data Selection")
+    # st.title("🔎 Data Selection")
     st.markdown("""---""")
     st.markdown(
         """

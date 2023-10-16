@@ -9,10 +9,13 @@ from functions.grid_response_consolidator import (
 )
 from utils import core
 from datetime import datetime
+from st_pages import add_page_title
 
-st.set_page_config(page_title="Download Indexed Data", page_icon="📰", layout="wide")
+add_page_title(layout="wide")
 
-st.title("📊 Download Indexed Data")
+# st.set_page_config(page_title="Download Indexed Data", page_icon="📰", layout="wide")
+
+# st.title("📊 Download Indexed Data")
 st.markdown("""---""")
 st.markdown(
     """

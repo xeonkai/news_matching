@@ -7,10 +7,13 @@ from utils.core import (
     fetch_latest_taxonomy,
     list_taxonomies,
 )
+from st_pages import add_page_title
 
-st.set_page_config(page_title="Taxonomy Explorer", page_icon="📰", layout="wide")
+add_page_title(layout="wide")
 
-st.title("🔮 Taxonomy Explorer")
+# st.set_page_config(page_title="Taxonomy Explorer", page_icon="📰", layout="wide")
+
+# st.title("🔮 Taxonomy Explorer")
 st.markdown("""---""")
 st.markdown(
     """

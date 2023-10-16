@@ -1,9 +1,13 @@
 import streamlit as st
 from utils import core
+import os
+from st_pages import add_page_title
 
-st.set_page_config(page_title="Topic Discovery Tool", page_icon="📰", layout="wide")
+add_page_title(layout="wide")
 
-st.title("🖥️ Topic Discovery Tool")
+# st.set_page_config(page_title="Topic Discovery Tool", page_icon="📰", layout="wide")
+# st.title("🖥️ Topic Discovery Tool")
+
 st.markdown("""---""")
 st.subheader("Welcome!")
 st.markdown(
@@ -20,9 +24,12 @@ def run():
     daily_file_handler = core.FileHandler(core.DATA_DIR)
     weekly_file_handler = core.WeeklyFileHandler(core.DATA_DIR)
 
+    if weekly_file_handler.query().empty:
+        os.rename('traction-analytics/may_june_data_filtered.xlsx', 'data/weekly/may_june_data_filtered.xlsx')
+        weekly_file_handler.write_may_june_db()
+
     st.subheader("Uploaded files")
     files_table = st.empty()
-    files_table.write(daily_file_handler.list_csv_files_df())
 
     # TODO: Maybe add download mode
     io_mode = st.selectbox("Upload or Delete files", ("Upload", "Delete"))

@@ -2,11 +2,14 @@ import pandas as pd
 import streamlit as st
 import numpy as np
 from utils import core
+from st_pages import add_page_title
 
-st.set_page_config(
-    page_title="Upload Data to Central Tool", page_icon="📰", layout="wide"
-)
-st.title("🖥️ Upload Data to Central Tool")
+add_page_title(layout="wide")
+
+# st.set_page_config(
+#     page_title="Upload Data to Central Tool", page_icon="📰", layout="wide"
+# )
+# st.title("🖥️ Upload Data to Central Tool")
 st.markdown(
     """
     - If you have done the article indexing on your internet laptop, please upload the indexed data 

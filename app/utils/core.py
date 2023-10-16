@@ -284,6 +284,15 @@ class FileHandler:
             results_filtered = con.sql(query).to_df()
         return results_filtered
 
+    def full_query(self):
+        query = (
+            f"SELECT *"
+            f"FROM {self.DAILY_NEWS_TABLE} "
+        )
+        with duckdb.connect(self.db_path) as con:
+            full_df = con.sql(query).to_df()
+        return full_df
+
     def update_labels(self, df):
         with duckdb.connect(self.db_path) as con:
             con.sql(
@@ -421,7 +430,7 @@ class WeeklyFileHandler:
                     "facebook_page_name" VARCHAR,
                     "facebook_interactions" BIGINT,
                     "date_time_extracted" TIMESTAMP(6),
-                    PRIMARY KEY ("published", "link", "facebook_page_name"),
+                    PRIMARY KEY ("published", "link", "facebook_page_name", "date_time_extracted"),
                     "source" VARCHAR,
                 );
                 """
@@ -455,16 +464,18 @@ class WeeklyFileHandler:
                 INSERT INTO {self.WEEKLY_NEWS_TABLE} 
                 SELECT published, link, facebook_page_name, facebook_interactions, date_time_extracted, source
                 FROM processed_table
-                ON CONFLICT (published, link, facebook_page_name)
+                ON CONFLICT (published, link, facebook_page_name, date_time_extracted)
                 DO UPDATE
                     SET facebook_interactions = facebook_interactions,
-                    date_time_extracted = date_time_extracted,
                     source = source
                 """
             )
 
     def write_may_june_db(self):
-        may_june_data = pd.read_excel("../../traction-analytics/may_june_data_filtered.xlsx")
+        may_june_data = pd.read_excel("data/weekly/may_june_data_filtered.xlsx")
+
+        # for i in range(0, may_june_data.shape[0]):
+        #     row = may_june_data.iloc[[i]]
 
         with duckdb.connect(self.db_path) as con:
             #
@@ -473,10 +484,9 @@ class WeeklyFileHandler:
                 INSERT INTO {self.WEEKLY_NEWS_TABLE} 
                 SELECT published, link, facebook_page_name, facebook_interactions, date_time_extracted, source
                 FROM may_june_data
-                ON CONFLICT (published, link, facebook_page_name)
+                ON CONFLICT (published, link, facebook_page_name, date_time_extracted)
                 DO UPDATE
                     SET facebook_interactions = facebook_interactions,
-                    date_time_extracted = date_time_extracted,
                     source = source
                 """
             )
@@ -487,8 +497,8 @@ class WeeklyFileHandler:
             f"FROM {self.WEEKLY_NEWS_TABLE} "
         )
         with duckdb.connect(self.db_path) as con:
-            results_filtered = con.sql(query).to_df()
-        return results_filtered
+            full_df = con.sql(query).to_df()
+        return full_df
 
     def list_csv_filenames(self):
         return [file.name for file in self.weekly_data_dir.iterdir()]
