@@ -491,7 +491,7 @@ class WeeklyFileHandler:
                 """
             )
 
-    def query(self):
+    def full_query(self):
         query = (
             f"SELECT *"
             f"FROM {self.WEEKLY_NEWS_TABLE} "

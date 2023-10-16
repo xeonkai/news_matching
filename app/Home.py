@@ -24,7 +24,7 @@ def run():
     daily_file_handler = core.FileHandler(core.DATA_DIR)
     weekly_file_handler = core.WeeklyFileHandler(core.DATA_DIR)
 
-    if weekly_file_handler.query().empty:
+    if weekly_file_handler.full_query().empty:
         os.rename('traction-analytics/may_june_data_filtered.xlsx', 'data/weekly/may_june_data_filtered.xlsx')
         weekly_file_handler.write_may_june_db()
 

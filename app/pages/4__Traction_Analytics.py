@@ -31,18 +31,22 @@ st.markdown("""---""")
 
 st.write("")
 daily_file_handler = core.FileHandler(core.DATA_DIR)
+weekly_file_handler = core.WeeklyFileHandler(core.DATA_DIR)
+daily_df = daily_file_handler.full_query()
+weekly_df = weekly_file_handler.full_query()
 
 def upload_data():
     # Upload file
-    # uploaded_file = st.file_uploader("Upload Excel file", type="xlsx")
-    # if uploaded_file is not None:
-    #     st.write(f"You selected {uploaded_file.name}")
-    #     if "traction_data" in st.session_state:
-    #         if st.button("Overwrite previous traction data"):
-    #             pass
-    #         else:
-    #             return
-    st.session_state["traction_data"] = daily_file_handler.full_query()
+    daily_cols = ['published', 'headline', 'summary', 'link', 'facebook_page_name', 'domain', 'label']
+    merge_cols = ['published', 'link', 'facebook_page_name']
+    final_cols = ['published', 'headline', 'summary', 'link', 'facebook_page_name',
+                  'domain', 'facebook_interactions', 'date_time_extracted', 'source', 'label']
+    traction_df = weekly_df.merge(daily_df[daily_cols],
+                                 on=merge_cols,
+                                 how='left')[final_cols].rename(columns={'label': 'suggested_labels'})
+    traction_df = traction_df.dropna(subset=['suggested_labels'])
+
+    st.session_state["traction_data"] = traction_df
 
     st.write("")
 
@@ -103,13 +107,13 @@ def analyze_uploaded_data():
                 selected_themes = st.multiselect(
                     "Select Themes to Exclude",
                     options=sorted(uploaded_data["theme"].unique().tolist()),
-                    default=["general"],
+                    # default=["general"],
                 )
 
                 selected_index = st.multiselect(
                     "Select Index to Exclude",
                     options=sorted(uploaded_data["index"].unique().tolist()),
-                    default=["others"],
+                    # default=["others"],
                 )
 
                 submit_button = st.form_submit_button(label="Submit")
@@ -123,8 +127,8 @@ def analyze_uploaded_data():
 
         period_mapping = {"day": "D", "week": "W", "month": "M"}
 
-        uploaded_data_filtered["date_extracted"] = (
-            pd.to_datetime(uploaded_data_filtered["date_extracted"])
+        uploaded_data_filtered["date_time_extracted"] = (
+            pd.to_datetime(uploaded_data_filtered["date_time_extracted"])
             .dt.to_period(period_mapping[aggregate_by])
             .dt.start_time
         )
@@ -179,7 +183,7 @@ def run_summary_tab(df):
         .mark_rect()
         .encode(
             x=alt.X(
-                "monthdate(date_extracted):T",
+                "monthdate(date_time_extracted):T",
                 title="Date Extracted",
                 axis=alt.Axis(labelAngle=-45),
             ),
@@ -191,7 +195,7 @@ def run_summary_tab(df):
                     scheme="greens"
                 ),  # , bins=alt.BinParams(step=700), nice=True),
             ),
-            tooltip=["date_extracted", "theme_index", "mean(facebook_interactions)"],
+            tooltip=["date_time_extracted", "theme_index", "mean(facebook_interactions)"],
         )
         .properties(width=1600)
     ).configure_axis(
@@ -228,17 +232,17 @@ def plot_theme_calplot(df):
     # df[df['theme'] == theme]
     # # aggregate facebook_interactions by day
     df = (
-        df.groupby(["date_extracted"])
+        df.groupby(["date_time_extracted"])
         .agg({"facebook_interactions": "mean"})
         .reset_index()
     )
 
-    # convert date_extracted to datetime
-    df["date_extracted"] = pd.to_datetime(df["date_extracted"])
+    # convert date_time_extracted to datetime
+    df["date_time_extracted"] = pd.to_datetime(df["date_time_extracted"])
 
     fig = calplot(
         df,
-        x="date_extracted",
+        x="date_time_extracted",
         y="facebook_interactions",
         dark_theme=True,
         month_lines_color="#fff",
@@ -254,7 +258,7 @@ def plot_theme_calplot(df):
 
 def show_colour_scale(df):
     df = (
-        df.groupby(["date_extracted"])
+        df.groupby(["date_time_extracted"])
         .agg({"facebook_interactions": "mean"})
         .reset_index()
     )
@@ -333,7 +337,7 @@ def plot_theme_heatmap(df):
         .mark_rect()
         .encode(
             x=alt.X(
-                "monthdate(date_extracted):T",
+                "monthdate(date_time_extracted):T",
                 title="Date Extracted",
                 axis=alt.Axis(labelAngle=-45),
             ),
@@ -343,7 +347,7 @@ def plot_theme_heatmap(df):
                 title="Mean Facebook Interactions",
                 scale=alt.Scale(scheme="greens"),
             ),
-            tooltip=["date_extracted", "theme", "mean(facebook_interactions)"],
+            tooltip=["date_time_extracted", "theme", "mean(facebook_interactions)"],
         )
         .properties(width=1600)
     ).configure_axis(
@@ -365,7 +369,7 @@ def plot_theme_timeseries(df, y, title):
             .mark_line(point=True)
             .encode(
                 x=alt.X(
-                    "monthdate(date_extracted):T",
+                    "monthdate(date_time_extracted):T",
                     title="Date Extracted",
                     axis=alt.Axis(labelAngle=-45),
                 ),
@@ -373,7 +377,7 @@ def plot_theme_timeseries(df, y, title):
                 color=alt.Color("theme", title="Theme").scale(
                     domain=unique_themes, scheme="category20"
                 ),
-                tooltip=["date_extracted", "theme", y],
+                tooltip=["date_time_extracted", "theme", y],
             )
             .properties(width=800, height=600)
         )
@@ -459,8 +463,8 @@ def show_articles_exceeding_threshold_theme(df_agg, df, criteria, threshold):
     df_mean_threshold = df_agg[df_agg[criteria] >= threshold]
     df_mean_filtered = df[df["theme"].isin(df_mean_threshold["theme"].unique())]
     df_mean_filtered = df_mean_filtered[
-        df_mean_filtered["date_extracted"].isin(
-            df_mean_threshold["date_extracted"].unique()
+        df_mean_filtered["date_time_extracted"].isin(
+            df_mean_threshold["date_time_extracted"].unique()
         )
     ]
     # df_mean_filtered = make_clickable_df(df_mean_filtered)
@@ -557,7 +561,7 @@ def run_theme_tab(uploaded_data_filtered):
 
         with col2:
             df_mean = (
-                uploaded_data_filtered.groupby(["theme", "date_extracted"])[
+                uploaded_data_filtered.groupby(["theme", "date_time_extracted"])[
                     "facebook_interactions"
                 ]
                 .mean()
@@ -591,7 +595,7 @@ def run_theme_tab(uploaded_data_filtered):
             )
             df_mean_agg = aggregate_pct_change(
                 uploaded_data_filtered,
-                ["theme", "date_extracted"],
+                ["theme", "date_time_extracted"],
                 "facebook_interactions",
                 "mean",
             )
@@ -634,7 +638,7 @@ def run_theme_tab(uploaded_data_filtered):
             st.altair_chart(theme_sum_chart, use_container_width=True)
         with col2:
             df_sum = (
-                uploaded_data_filtered.groupby(["theme", "date_extracted"])[
+                uploaded_data_filtered.groupby(["theme", "date_time_extracted"])[
                     "facebook_interactions"
                 ]
                 .sum()
@@ -667,7 +671,7 @@ def run_theme_tab(uploaded_data_filtered):
             )
             df_sum_agg = aggregate_pct_change(
                 uploaded_data_filtered,
-                ["theme", "date_extracted"],
+                ["theme", "date_time_extracted"],
                 "facebook_interactions",
                 "sum",
             )
@@ -722,17 +726,17 @@ def plot_index_calplot(df):
     # df[df['index'] == index]
     # # aggregate facebook_interactions by day
     df = (
-        df.groupby(["date_extracted"])
+        df.groupby(["date_time_extracted"])
         .agg({"facebook_interactions": "mean"})
         .reset_index()
     )
 
-    # convert date_extracted to datetime
-    df["date_extracted"] = pd.to_datetime(df["date_extracted"])
+    # convert date_time_extracted to datetime
+    df["date_time_extracted"] = pd.to_datetime(df["date_time_extracted"])
 
     fig = calplot(
         df,
-        x="date_extracted",
+        x="date_time_extracted",
         y="facebook_interactions",
         dark_theme=True,
         month_lines_color="#fff",
@@ -752,7 +756,7 @@ def plot_index_heatmap(df):
         .mark_rect()
         .encode(
             x=alt.X(
-                "monthdate(date_extracted):T",
+                "monthdate(date_time_extracted):T",
                 title="Date Extracted",
                 axis=alt.Axis(labelAngle=-45),
             ),
@@ -762,7 +766,7 @@ def plot_index_heatmap(df):
                 title="Mean Facebook Interactions",
                 scale=alt.Scale(scheme="greens"),
             ),
-            tooltip=["date_extracted", "index", "mean(facebook_interactions)"],
+            tooltip=["date_time_extracted", "index", "mean(facebook_interactions)"],
         )
         .properties(width=1600)
     ).configure_axis(
@@ -784,7 +788,7 @@ def plot_index_timeseries(df, y, title):
             .mark_line(point=True)
             .encode(
                 x=alt.X(
-                    "monthdate(date_extracted):T",
+                    "monthdate(date_time_extracted):T",
                     title="Date Extracted",
                     axis=alt.Axis(labelAngle=-45),
                 ),
@@ -792,7 +796,7 @@ def plot_index_timeseries(df, y, title):
                 color=alt.Color("index", title="Index").scale(
                     domain=unique_indexes, scheme="category20"
                 ),
-                tooltip=["date_extracted", "index", y],
+                tooltip=["date_time_extracted", "index", y],
             )
             .properties(width=800, height=600)
         )
@@ -806,8 +810,8 @@ def show_articles_exceeding_threshold_index(df_agg, df, criteria, threshold):
     df_mean_threshold = df_agg[df_agg[criteria] >= threshold]
     df_mean_filtered = df[df["index"].isin(df_mean_threshold["index"].unique())]
     df_mean_filtered = df_mean_filtered[
-        df_mean_filtered["date_extracted"].isin(
-            df_mean_threshold["date_extracted"].unique()
+        df_mean_filtered["date_time_extracted"].isin(
+            df_mean_threshold["date_time_extracted"].unique()
         )
     ]
     df_mean_filtered = df_mean_filtered[
@@ -898,7 +902,7 @@ def run_index_tab(uploaded_data_filtered):
             st.altair_chart(index_mean_chart, use_container_width=True)
         with col2:
             df_mean = (
-                theme_data.groupby(["index", "date_extracted"])["facebook_interactions"]
+                theme_data.groupby(["index", "date_time_extracted"])["facebook_interactions"]
                 .mean()
                 .sort_values(ascending=False)
                 .reset_index()
@@ -926,7 +930,7 @@ def run_index_tab(uploaded_data_filtered):
                 "###### Percent Change in Mean of Facebook Interactions by Index"
             )
             df_mean_agg = aggregate_pct_change(
-                theme_data, ["index", "date_extracted"], "facebook_interactions", "mean"
+                theme_data, ["index", "date_time_extracted"], "facebook_interactions", "mean"
             )
             index_pct_change_chart = plot_index_timeseries(
                 df_mean_agg,
@@ -967,7 +971,7 @@ def run_index_tab(uploaded_data_filtered):
             st.altair_chart(index_sum_chart, use_container_width=True)
         with col2:
             df_sum = (
-                theme_data.groupby(["index", "date_extracted"])["facebook_interactions"]
+                theme_data.groupby(["index", "date_time_extracted"])["facebook_interactions"]
                 .sum()
                 .sort_values(ascending=False)
                 .reset_index()
@@ -995,7 +999,7 @@ def run_index_tab(uploaded_data_filtered):
                 "###### Percent Change in Sum of Facebook Interactions by Index"
             )
             df_sum_agg = aggregate_pct_change(
-                theme_data, ["index", "date_extracted"], "facebook_interactions", "sum"
+                theme_data, ["index", "date_time_extracted"], "facebook_interactions", "sum"
             )
             index_pct_change_chart = plot_index_timeseries(
                 df_sum_agg,
@@ -1021,21 +1025,22 @@ def run_index_tab(uploaded_data_filtered):
 
 
 def process_data(df):
-    df["suggested_labels"] = df["suggested_labels"].apply(
-        lambda x: ast.literal_eval(x) if isinstance(x, str) else x
-    )
-    df["theme"] = df["suggested_labels"].apply(lambda x: x[0].split(">")[0].strip())
-    df["index"] = df["suggested_labels"].apply(lambda x: x[0].split(">")[1].strip())
+    # df["suggested_labels"] = df["suggested_labels"].apply(
+    #     lambda x: ast.literal_eval(x) if isinstance(x, str) else x
+    # )
+    # df["theme"] = df["suggested_labels"].str.split(">")[0]
+    # df["index"] = df["suggested_labels"].apply(lambda x: x[0].split(">")[1].strip())
+    df[['theme', 'index']] = df['suggested_labels'].str.split('>', n=1, expand=True)
     df["date"] = df["published"].apply(lambda x: pd.to_datetime(x).date())
     df["time"] = df["published"].apply(lambda x: pd.to_datetime(x).time())
-    df["date_extracted"] = df["date_extracted"].apply(
+    df["date_time_extracted"] = df["date_time_extracted"].apply(
         lambda x: pd.to_datetime(x).date()
     )
-    # df["date_extracted"] = pd.to_datetime(df["date_extracted"])
+    # df["date_time_extracted"] = pd.to_datetime(df["date_time_extracted"])
 
     # Sorting by headline
     df = df.sort_values(
-        by=["headline", "published", "date_extracted"], ascending=[False, True, True]
+        by=["headline", "published", "date_time_extracted"], ascending=[False, True, True]
     ).reset_index(drop=True)
 
     # calculating difference between consecutive rows for each article
@@ -1054,7 +1059,7 @@ def process_data(df):
             "published",
             "date",
             "time",
-            "date_extracted",
+            "date_time_extracted",
             "headline",
             "summary",
             "link",
