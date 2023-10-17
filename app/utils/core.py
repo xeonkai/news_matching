@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 from sentence_transformers import SentenceTransformer
 from setfit import SetFitModel
-from datetime import datetime, timedelta
+from datetime import datetime, date
 
 DATA_DIR = Path("data")
 RAW_DATA_DIR = DATA_DIR / "raw"
@@ -56,7 +56,7 @@ def save_taxonomy(df):
         .sort_values(["Theme", "Index"])
         .reset_index(drop=True)
         # TODO: drop incomplete rows
-        .to_parquet(taxonomy_folder / datetime.date.today().isoformat())
+        .to_parquet(taxonomy_folder / date.today().isoformat())
     )
 
 
