@@ -23,11 +23,9 @@ st.subheader("Welcome!")
 
 st.markdown(
     """
-    This is a demo of the Traction Analytics Interface. Upload a CSV file of the news daily scans below to begin.
+    This is a demo of the Traction Analytics Interface.
     """
 )
-
-st.markdown("""---""")
 
 st.write("")
 daily_file_handler = core.FileHandler(core.DATA_DIR)

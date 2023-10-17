@@ -17,6 +17,6 @@ show_pages(
 
         Section(name="Reference", icon="📰"),
         Page("app/pages/5__Taxonomy_Explorer.py", "Taxonomy Explorer", "🔮"),
-        Page("app/pages/6__Model_Performance.py", "Data Selection & Article Indexing", "🔎"),
+        Page("app/pages/6__Model_Performance.py", "Model Performance", "🔎"),
     ]
 )
