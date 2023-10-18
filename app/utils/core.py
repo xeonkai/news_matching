@@ -40,6 +40,8 @@ def fetch_taxonomy(path: Path) -> pd.DataFrame:
 
 def fetch_latest_taxonomy() -> pd.DataFrame:
     taxonomy_date_sorted = list_taxonomies()
+    # Remove added "default" option from sort
+    taxonomy_date_sorted.remove("Default")
 
     if len(taxonomy_date_sorted) == 0:
         taxonomy_df = fetch_default_taxonomy()
@@ -171,11 +173,11 @@ class FileHandler:
             .rename(columns={"link_url": "link"})
         )
 
-        df["published"] = pd.to_datetime(df['published'])
-        df = df.dropna(subset=['link'])
+        df["published"] = pd.to_datetime(df["published"])
+        df = df.dropna(subset=["link"])
         data_name = file.name
         date_string = data_name.partition("posts-")[2].partition(".csv")[0]
-        format = '%m_%d_%y-%H_%M'
+        format = "%m_%d_%y-%H_%M"
         latest_date_file = datetime.strptime(date_string, format).date()
 
         return df, latest_date_file
@@ -194,7 +196,7 @@ class FileHandler:
                     "domain",
                     "facebook_interactions",
                     "label",
-                    "source"
+                    "source",
                 ],
                 dtype={
                     "published": "string",
@@ -205,7 +207,7 @@ class FileHandler:
                     "domain": "string",
                     "facebook_interactions": "int",
                     "label": "string",
-                    "source": "string"
+                    "source": "string",
                 },
             )
         ).copy()
@@ -217,20 +219,23 @@ class FileHandler:
         return filepath
 
     def write_db(self, file) -> None:
-        processed_table, latest_date_file = self.preprocess_daily_scan(file, source=file.name)
-
-        query = (
-            f"SELECT max(published) max_published "
-            f"FROM {self.DAILY_NEWS_TABLE} "
+        processed_table, latest_date_file = self.preprocess_daily_scan(
+            file, source=file.name
         )
+
+        query = f"SELECT max(published) max_published " f"FROM {self.DAILY_NEWS_TABLE} "
         with duckdb.connect(self.db_path) as con:
             results_filtered = con.sql(query).to_df()
 
-        latest_date_db = results_filtered['max_published'].dt.date[0]
+        latest_date_db = results_filtered["max_published"].dt.date[0]
         if pd.isnull(latest_date_db):
             insert_table = processed_table
         else:
-            insert_table = processed_table.loc[processed_table['published'].dt.date.between(latest_date_db, latest_date_file, inclusive=False)]
+            insert_table = processed_table.loc[
+                processed_table["published"].dt.date.between(
+                    latest_date_db, latest_date_file, inclusive=False
+                )
+            ]
         #
         with duckdb.connect(self.db_path) as con:
             #
@@ -253,11 +258,12 @@ class FileHandler:
 
     def write_labelled_articles_db(self, file) -> None:
         processed_table = self.preprocess_labelled_articles(file)
-        min_date = min(processed_table['published'])
-        max_date = max(processed_table['published'])
+        min_date = min(processed_table["published"])
+        max_date = max(processed_table["published"])
         with duckdb.connect(self.db_path) as con:
-
-            con.sql(f"DELETE FROM {self.DAILY_NEWS_TABLE} WHERE published >= '{min_date}' AND published <= '{max_date}'")
+            con.sql(
+                f"DELETE FROM {self.DAILY_NEWS_TABLE} WHERE published >= '{min_date}' AND published <= '{max_date}'"
+            )
             # Append to table, replace if existing link found
             con.sql(
                 f"""
@@ -276,19 +282,13 @@ class FileHandler:
             )
 
     def labelled_query(self, columns):
-        query = (
-            f"SELECT {','.join(columns)} "
-            f"FROM {self.DAILY_NEWS_TABLE} "
-        )
+        query = f"SELECT {','.join(columns)} " f"FROM {self.DAILY_NEWS_TABLE} "
         with duckdb.connect(self.db_path) as con:
             results_filtered = con.sql(query).to_df()
         return results_filtered
 
     def full_query(self):
-        query = (
-            f"SELECT *"
-            f"FROM {self.DAILY_NEWS_TABLE} "
-        )
+        query = f"SELECT *" f"FROM {self.DAILY_NEWS_TABLE} "
         with duckdb.connect(self.db_path) as con:
             full_df = con.sql(query).to_df()
         return full_df
@@ -408,8 +408,6 @@ class FileHandler:
         return len(list(self.raw_data_dir.iterdir()))
 
 
-
-
 class WeeklyFileHandler:
     WEEKLY_NEWS_TABLE = "weekly_news"
 
@@ -440,15 +438,27 @@ class WeeklyFileHandler:
     def preprocess_weekly_scan(file) -> pd.DataFrame:
         data_name = file.name
         weekly_data = pd.read_csv(file)
-        columns = ["Published", "Link URL", "Facebook Page Name", "Facebook Interactions"]
-        weekly_data = weekly_data[columns].rename(columns={"Published": "published", "Link URL": "link", "Facebook Page Name": "facebook_page_name", "Facebook Interactions":"facebook_interactions"})
-        weekly_data['published'] = pd.to_datetime(weekly_data['published'])
+        columns = [
+            "Published",
+            "Link URL",
+            "Facebook Page Name",
+            "Facebook Interactions",
+        ]
+        weekly_data = weekly_data[columns].rename(
+            columns={
+                "Published": "published",
+                "Link URL": "link",
+                "Facebook Page Name": "facebook_page_name",
+                "Facebook Interactions": "facebook_interactions",
+            }
+        )
+        weekly_data["published"] = pd.to_datetime(weekly_data["published"])
         date_string = data_name.partition("posts-")[2].partition(".csv")[0]
-        format = '%m_%d_%y-%H_%M'
+        format = "%m_%d_%y-%H_%M"
         formatted_date = datetime.strptime(date_string, format)
-        weekly_data['date_time_extracted'] = formatted_date
+        weekly_data["date_time_extracted"] = formatted_date
         weekly_data = weekly_data.dropna()
-        weekly_data['source'] = data_name
+        weekly_data["source"] = data_name
 
         return weekly_data
 
@@ -457,7 +467,9 @@ class WeeklyFileHandler:
 
         with duckdb.connect(self.db_path) as con:
             #
-            con.sql(f"DELETE FROM {self.WEEKLY_NEWS_TABLE} WHERE source = '{file.name}'")
+            con.sql(
+                f"DELETE FROM {self.WEEKLY_NEWS_TABLE} WHERE source = '{file.name}'"
+            )
             # Append to table, replace if existing link found
             con.sql(
                 f"""
@@ -492,10 +504,7 @@ class WeeklyFileHandler:
             )
 
     def full_query(self):
-        query = (
-            f"SELECT *"
-            f"FROM {self.WEEKLY_NEWS_TABLE} "
-        )
+        query = f"SELECT *" f"FROM {self.WEEKLY_NEWS_TABLE} "
         with duckdb.connect(self.db_path) as con:
             full_df = con.sql(query).to_df()
         return full_df
