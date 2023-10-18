@@ -14,7 +14,7 @@ st.markdown(
     """
     - Upload a CSV file of the weekly news file downloaded from the content aggregator. \n
     - Please ensure that the name of the uploaded file follows the format below:\n
-        `test_-_for_indexing-facebook_posts-<MM_DD_YY-HH_MM -  D MMM> weekly`, where `MMM` are the first 3 letters of the month.
+        `test_-_for_indexing-facebook_posts-<MM_DD_YY-HH_MM>.csv`.
     """
 )
 st.markdown("""---""")
@@ -36,7 +36,7 @@ def run():
 
     if io_mode == "Upload":
         uploaded_files = st.file_uploader(
-            "Upload new data here:", type=["xlsx"], accept_multiple_files=True
+            "Upload new data here:", type=["csv"], accept_multiple_files=True
         )
         if uploaded_files:
             dup_filenames = [
@@ -75,6 +75,8 @@ def run():
                         daily_file_handler.write_db(news)
                         # Raw file if processing ok
                         daily_file_handler.write_csv(news)
+                        # To allow reading uploaded file twice
+                        news.seek(0, 0)
                         # Processed file first for schema validation
                         weekly_file_handler.write_db(news)
                         # Raw file if processing ok
@@ -93,6 +95,8 @@ def run():
                             f"Failed to write{news.name}, check if file is valid"
                         )
                         st.error(err)
+
+
                 if num_uploaded_files == len(new_files):
                     st.success(f"{num_uploaded_files} files uploaded successfully!")
 

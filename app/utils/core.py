@@ -144,7 +144,7 @@ class FileHandler:
     @staticmethod
     def preprocess_daily_scan(file, source: str = "") -> pd.DataFrame:
         df = (
-            pd.read_excel(
+            pd.read_csv(
                 file,
                 usecols=[
                     "Published",
@@ -174,7 +174,7 @@ class FileHandler:
         df["published"] = pd.to_datetime(df['published'])
         df = df.dropna(subset=['link'])
         data_name = file.name
-        date_string = data_name.partition("posts-")[2].partition(" -")[0]
+        date_string = data_name.partition("posts-")[2].partition(".csv")[0]
         format = '%m_%d_%y-%H_%M'
         latest_date_file = datetime.strptime(date_string, format).date()
 
@@ -208,7 +208,7 @@ class FileHandler:
                     "source": "string"
                 },
             )
-        )
+        ).copy()
         return df
 
     def write_csv(self, file):
@@ -439,11 +439,11 @@ class WeeklyFileHandler:
     @staticmethod
     def preprocess_weekly_scan(file) -> pd.DataFrame:
         data_name = file.name
-        weekly_data = pd.read_excel(file)
+        weekly_data = pd.read_csv(file)
         columns = ["Published", "Link URL", "Facebook Page Name", "Facebook Interactions"]
         weekly_data = weekly_data[columns].rename(columns={"Published": "published", "Link URL": "link", "Facebook Page Name": "facebook_page_name", "Facebook Interactions":"facebook_interactions"})
         weekly_data['published'] = pd.to_datetime(weekly_data['published'])
-        date_string = data_name.partition("posts-")[2].partition(" -")[0]
+        date_string = data_name.partition("posts-")[2].partition(".csv")[0]
         format = '%m_%d_%y-%H_%M'
         formatted_date = datetime.strptime(date_string, format)
         weekly_data['date_time_extracted'] = formatted_date
@@ -461,7 +461,7 @@ class WeeklyFileHandler:
             # Append to table, replace if existing link found
             con.sql(
                 f"""
-                INSERT INTO {self.WEEKLY_NEWS_TABLE} 
+                INSERT INTO {self.WEEKLY_NEWS_TABLE}
                 SELECT published, link, facebook_page_name, facebook_interactions, date_time_extracted, source
                 FROM processed_table
                 ON CONFLICT (published, link, facebook_page_name, date_time_extracted)

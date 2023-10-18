@@ -28,11 +28,11 @@ st.markdown(
     """
 )
 
-file_handler = core.FileHandler(core.DATA_DIR)
+daily_file_handler = core.FileHandler(core.DATA_DIR)
 
 st.subheader("Uploaded files")
 files_table = st.empty()
-files_table.write(file_handler.list_csv_files_df())
+files_table.write(daily_file_handler.list_csv_files_df())
 
 io_mode_indexed = st.selectbox("Upload or Delete files", ("Upload", "Delete"), key="Indexed_Articles_io")
 
@@ -44,7 +44,7 @@ if io_mode_indexed == "Upload":
         dup_filenames = [
             file.name
             for file in uploaded_files
-            if file.name in file_handler.list_csv_filenames()
+            if file.name in daily_file_handler.list_csv_filenames()
         ]
         new_files = [
             file for file in uploaded_files if (file.name not in dup_filenames)
@@ -74,9 +74,9 @@ if io_mode_indexed == "Upload":
             for daily_news in new_files:
                 try:
                     # Processed file first for schema validation
-                    file_handler.write_labelled_articles_db(daily_news)
+                    daily_file_handler.write_labelled_articles_db(daily_news)
                     # Raw file if processing ok
-                    file_handler.write_csv(daily_news)
+                    daily_file_handler.write_csv(daily_news)
 
                     num_uploaded_files += 1
                     progress_bar.progress(
@@ -96,17 +96,17 @@ if io_mode_indexed == "Upload":
 
 elif io_mode_indexed == "Delete":
     files_to_delete = st.multiselect(
-        "Files to Delete", file_handler.list_csv_filenames()
+        "Files to Delete", daily_file_handler.list_csv_filenames()
     )
     delete_btn = st.button("Delete")
 
     if delete_btn:
-        file_handler.remove_files(files_to_delete)
+        daily_file_handler.remove_files(files_to_delete)
 
 # Update table on each action
-files_table.write(file_handler.list_csv_files_df())
+files_table.write(daily_file_handler.list_csv_files_df())
 
-if file_handler.list_csv_files_df().empty:
+if daily_file_handler.list_csv_files_df().empty:
     st.warning("There is no data. Please upload an excel file before continuing.")
 
 st.markdown("---")
@@ -115,27 +115,27 @@ st.markdown(
     """
     - Upload weekly csv file from content aggregator.
     - Please ensure that the name of the uploaded file follows the format below:\n
-        `test_-_for_indexing-facebook_posts-<MM_DD_YY-HH_MM -  D MMM> weekly`, where `MMM` are the first 3 letters of the month.
+        `test_-_for_indexing-facebook_posts-<MM_DD_YY-HH_MM>.csv`.
     """
 )
 
-file_handler = core.WeeklyFileHandler(core.DATA_DIR)
+weekly_file_handler = core.WeeklyFileHandler(core.DATA_DIR)
 
 st.subheader("Uploaded files")
 files_table = st.empty()
-files_table.write(file_handler.list_csv_files_df())
+files_table.write(weekly_file_handler.list_csv_files_df())
 
 io_mode_weekly = st.selectbox("Upload or Delete files", ("Upload", "Delete"), key="Weekly_Articles_io")
 
 if io_mode_weekly == "Upload":
     uploaded_files = st.file_uploader(
-        "Upload excel file here:", type=["xlsx"], accept_multiple_files=True, key="Weekly_Articles_files"
+        "Upload excel file here:", type=["csv"], accept_multiple_files=True, key="Weekly_Articles_files"
     )
     if uploaded_files:
         dup_filenames = [
             file.name
             for file in uploaded_files
-            if file.name in file_handler.list_csv_filenames()
+            if file.name in weekly_file_handler.list_csv_filenames()
         ]
         new_files = [
             file for file in uploaded_files if (file.name not in dup_filenames)
@@ -165,9 +165,9 @@ if io_mode_weekly == "Upload":
             for weekly_news in new_files:
                 try:
                     # Processed file first for schema validation
-                    file_handler.write_db(weekly_news)
+                    weekly_file_handler.write_db(weekly_news)
                     # Raw file if processing ok
-                    file_handler.write_csv(weekly_news)
+                    weekly_file_handler.write_csv(weekly_news)
 
                     num_uploaded_files += 1
                     progress_bar.progress(
@@ -184,25 +184,25 @@ if io_mode_weekly == "Upload":
                     st.error(err)
             if num_uploaded_files == len(new_files):
                 st.success(f"{num_uploaded_files} files uploaded successfully!")
-            st.dataframe(file_handler.query())
-            # test = file_handler.query()
+            st.dataframe(weekly_file_handler.full_query())
+            # test = file_handler.full_query()
             # test = test.loc[test['link'] == 'https://sg.news.yahoo.com/90-old-employee-mcdonalds-japan-225430598.html']
             # st.dataframe(test)
 
 
 elif io_mode_weekly == "Delete":
     files_to_delete = st.multiselect(
-        "Files to Delete", file_handler.list_csv_filenames()
+        "Files to Delete", weekly_file_handler.list_csv_filenames()
     )
     delete_btn = st.button("Delete")
 
     if delete_btn:
-        file_handler.remove_files(files_to_delete)
+        weekly_file_handler.remove_files(files_to_delete)
 
 # Update table on each action
-files_table.write(file_handler.list_csv_files_df())
-# st.dataframe(file_handler.query())
+files_table.write(weekly_file_handler.list_csv_files_df())
+# st.dataframe(file_handler.full_query())
 
-if file_handler.list_csv_files_df().empty:
+if weekly_file_handler.list_csv_files_df().empty:
     st.warning("There is no data. Please upload a csv file before continuing.")
 
