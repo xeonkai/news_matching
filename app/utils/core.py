@@ -16,8 +16,13 @@ WEEKLY_DATA_DIR = DATA_DIR / "weekly"
 
 def fetch_default_taxonomy() -> pd.DataFrame:
     return (
-        pd.read_csv("all_tagged_articles_new.csv", usecols=["Theme", "New Index"])
-        .rename(columns={"New Index": "Index"})
+        # pd.read_csv("all_tagged_articles_new.csv", usecols=["Theme", "New Index"])
+        # .rename(columns={"New Index": "Index"})
+        pd.read_excel("taxonomy_consolidated (updated 15 Sep).xlsx")[
+            ["Theme", "Index"]
+        ][:-1]
+        .dropna(axis=0, how="all")
+        .ffill()
         .drop_duplicates()
         .sort_values(["Theme", "Index"])
         .reset_index(drop=True)
