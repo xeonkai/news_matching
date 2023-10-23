@@ -46,7 +46,7 @@ python scripts/modelling.py
 ### To run app
 ```bash
 # requires "default model" and "all_tagged_articles_new.csv"
-streamlit run app/Home.py
+streamlit run app/main.py
 ```
 
 ### To add additional libraries, and update environment

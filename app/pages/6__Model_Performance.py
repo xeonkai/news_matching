@@ -3,6 +3,9 @@ import pandas as pd
 import numpy as np
 from utils import core
 import altair as alt
+from st_pages import add_page_title
+
+add_page_title(layout="wide")
 
 
 def plot_top_k_accuracy(top_k=20):
