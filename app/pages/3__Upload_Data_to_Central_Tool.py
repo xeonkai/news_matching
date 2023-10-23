@@ -12,8 +12,9 @@ add_page_title(layout="wide")
 # st.title("🖥️ Upload Data to Central Tool")
 st.markdown(
     """
-    - If you have done the article indexing on your internet laptop, please upload the indexed data 
-    (from the previous section) and the weekly news file (from the content aggregator) to the central tool on this page.
+    - If you have done the article indexing on your internet laptop, please upload **2 FILES** on this page:
+        - Indexed Data (from the previous section) 
+        - Weekly News File (from the content aggregator)
     - Please disregard this page if the article indexing was done on the central tool.
     
     """
@@ -110,7 +111,7 @@ if daily_file_handler.list_csv_files_df().empty:
     st.warning("There is no data. Please upload an excel file before continuing.")
 
 st.markdown("---")
-st.markdown("## 2. Upload Weekly Data")
+st.markdown("## 2. Upload Weekly News File")
 st.markdown(
     """
     - Upload weekly csv file from content aggregator.
