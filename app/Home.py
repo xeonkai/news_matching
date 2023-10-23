@@ -12,10 +12,9 @@ st.markdown("""---""")
 st.subheader("Welcome!")
 st.markdown(
     """
-    - Upload a CSV file of the weekly news file downloaded from the content aggregator. \n
+    - Upload a CSV file of the WEEKLY NEWS FILE downloaded from the content aggregator. \n
     - Please ensure that the name of the uploaded file follows the format below:\n
         `test_-_for_indexing-facebook_posts-<MM_DD_YY-HH_MM>.csv`. \n
-    - **Reminder:** Upload one week's worth of data that ends on the preceding day (i.e 6 days of data).
     """
 )
 st.markdown("""---""")

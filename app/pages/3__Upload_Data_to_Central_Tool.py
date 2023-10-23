@@ -12,7 +12,7 @@ add_page_title(layout="wide")
 # st.title("🖥️ Upload Data to Central Tool")
 st.markdown(
     """
-    - If you have done the article indexing on your internet laptop, please upload **2 FILES** on this page:
+    - If you have done the article indexing on your internet laptop, please upload 2 FILES on this page:
         - Indexed Data (from the previous section) 
         - Weekly News File (from the content aggregator)
     - Please disregard this page if the article indexing was done on the central tool.
