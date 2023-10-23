@@ -18,7 +18,7 @@ def fetch_default_taxonomy() -> pd.DataFrame:
     return (
         # pd.read_csv("all_tagged_articles_new.csv", usecols=["Theme", "New Index"])
         # .rename(columns={"New Index": "Index"})
-        pd.read_excel("taxonomy_consolidated (updated 15 Sep).xlsx")[
+        pd.read_excel("taxonomy_consolidated.xlsx")[
             ["Theme", "Index"]
         ][:-1]
         .dropna(axis=0, how="all")

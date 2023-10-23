@@ -74,3 +74,4 @@ trained_models
 # Allow
 !all_tagged_articles_new.csv
 !default_model
+!taxonomy_consolidated.xlsx

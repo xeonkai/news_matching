@@ -49,4 +49,4 @@ EXPOSE 8501
 COPY . .
 
 # Run streamlit
-CMD ["streamlit", "run", "app/Home.py"]
+CMD ["streamlit", "run", "app/main.py"]
