@@ -7,7 +7,6 @@ import numpy as np
 import pandas as pd
 from sentence_transformers import SentenceTransformer
 from setfit import SetFitModel
-from datetime import datetime, date
 
 DATA_DIR = Path("data")
 RAW_DATA_DIR = DATA_DIR / "raw"
@@ -63,7 +62,7 @@ def save_taxonomy(df):
         .sort_values(["Theme", "Index"])
         .reset_index(drop=True)
         # TODO: drop incomplete rows
-        .to_parquet(taxonomy_folder / date.today().isoformat())
+        .to_parquet(taxonomy_folder / datetime.date.today().isoformat())
     )
 
 
@@ -179,11 +178,12 @@ class FileHandler:
         )
 
         df["published"] = pd.to_datetime(df["published"])
+        df['published'] = df['published'] + datetime.timedelta(hours=7)
         df = df.dropna(subset=["link"])
         data_name = file.name
         date_string = data_name.partition("posts-")[2].partition(".csv")[0]
         format = "%m_%d_%y-%H_%M"
-        latest_date_file = datetime.strptime(date_string, format).date()
+        latest_date_file = datetime.datetime.strptime(date_string, format).date()
 
         return df, latest_date_file
 
@@ -383,7 +383,7 @@ class FileHandler:
         raw_files_info = [
             {
                 "filename": file.name,
-                "modified": datetime.fromtimestamp(file.stat().st_mtime),
+                "modified": datetime.datetime.fromtimestamp(file.stat().st_mtime),
                 # "filesize": f"{file.stat().st_size / 1000 / 1000:.2f} MB",
             }
             for file in self.raw_data_dir.iterdir()
@@ -458,9 +458,10 @@ class WeeklyFileHandler:
             }
         )
         weekly_data["published"] = pd.to_datetime(weekly_data["published"])
+        weekly_data['published'] = weekly_data['published'] + datetime.timedelta(hours=7)
         date_string = data_name.partition("posts-")[2].partition(".csv")[0]
         format = "%m_%d_%y-%H_%M"
-        formatted_date = datetime.strptime(date_string, format)
+        formatted_date = datetime.datetime.strptime(date_string, format)
         weekly_data["date_time_extracted"] = formatted_date
         weekly_data = weekly_data.dropna()
         weekly_data["source"] = data_name
@@ -488,25 +489,25 @@ class WeeklyFileHandler:
                 """
             )
 
-    def write_may_june_db(self):
-        may_june_data = pd.read_excel("data/weekly/may_june_data_filtered.xlsx")
-
-        # for i in range(0, may_june_data.shape[0]):
-        #     row = may_june_data.iloc[[i]]
-
-        with duckdb.connect(self.db_path) as con:
-            #
-            con.sql(
-                f"""
-                INSERT INTO {self.WEEKLY_NEWS_TABLE} 
-                SELECT published, link, facebook_page_name, facebook_interactions, date_time_extracted, source
-                FROM may_june_data
-                ON CONFLICT (published, link, facebook_page_name, date_time_extracted)
-                DO UPDATE
-                    SET facebook_interactions = facebook_interactions,
-                    source = source
-                """
-            )
+    # def write_may_june_db(self):
+    #     may_june_data = pd.read_excel("data/weekly/may_june_data_filtered.xlsx")
+    #
+    #     # for i in range(0, may_june_data.shape[0]):
+    #     #     row = may_june_data.iloc[[i]]
+    #
+    #     with duckdb.connect(self.db_path) as con:
+    #         #
+    #         con.sql(
+    #             f"""
+    #             INSERT INTO {self.WEEKLY_NEWS_TABLE}
+    #             SELECT published, link, facebook_page_name, facebook_interactions, date_time_extracted, source
+    #             FROM may_june_data
+    #             ON CONFLICT (published, link, facebook_page_name, date_time_extracted)
+    #             DO UPDATE
+    #                 SET facebook_interactions = facebook_interactions,
+    #                 source = source
+    #             """
+    #         )
 
     def full_query(self):
         query = f"SELECT *" f"FROM {self.WEEKLY_NEWS_TABLE} "
@@ -521,7 +522,7 @@ class WeeklyFileHandler:
         raw_files_info = [
             {
                 "filename": file.name,
-                "modified": datetime.fromtimestamp(file.stat().st_mtime),
+                "modified": datetime.datetime.fromtimestamp(file.stat().st_mtime),
                 # "filesize": f"{file.stat().st_size / 1000 / 1000:.2f} MB",
             }
             for file in self.weekly_data_dir.iterdir()
