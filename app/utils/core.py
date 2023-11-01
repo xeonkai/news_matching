@@ -7,62 +7,35 @@ import numpy as np
 import pandas as pd
 from sentence_transformers import SentenceTransformer
 from setfit import SetFitModel
+from dotenv import load_dotenv
+import json
+import gcsfs
+import shutil
+
+load_dotenv()
+
+GSHEET_TAXONOMY_ID = os.environ.get("GSHEET_TAXONOMY_ID")
+gsheet_taxonomy_url = "https://docs.google.com/spreadsheets/d/" + GSHEET_TAXONOMY_ID
+
+GCS_BUCKET = os.environ["GCS_BUCKET"]
+service_account_info = json.loads(os.environ["GOOGLE_APPLICATION_CREDENTIALS_JSON"])
+fs = gcsfs.GCSFileSystem(
+    project=service_account_info["project_id"], token=service_account_info
+)
 
 DATA_DIR = Path("data")
 RAW_DATA_DIR = DATA_DIR / "raw"
 WEEKLY_DATA_DIR = DATA_DIR / "weekly"
 
 
-def fetch_default_taxonomy() -> pd.DataFrame:
+def fetch_latest_taxonomy() -> pd.DataFrame:
     return (
-        # pd.read_csv("all_tagged_articles_new.csv", usecols=["Theme", "New Index"])
-        # .rename(columns={"New Index": "Index"})
-        pd.read_excel("taxonomy_consolidated.xlsx")[
-            ["Theme", "Index"]
-        ][:-1]
+        pd.read_csv(gsheet_taxonomy_url + "/export?format=csv")[["Theme", "Index"]][:-1]
         .dropna(axis=0, how="all")
         .ffill()
         .drop_duplicates()
         .sort_values(["Theme", "Index"])
         .reset_index(drop=True)
-    )
-
-
-def list_taxonomies() -> list[Path]:
-    taxonomy_folder = DATA_DIR / "taxonomy"
-    taxonomy_folder.mkdir(parents=True, exist_ok=True)
-    taxonomy_date_sorted = sorted(taxonomy_folder.glob("20*"), key=os.path.getmtime)
-    taxonomy_date_sorted.append("Default")
-    return taxonomy_date_sorted
-
-
-def fetch_taxonomy(path: Path) -> pd.DataFrame:
-    if str(path) == "Default":
-        return fetch_default_taxonomy()
-    return pd.read_parquet(path)
-
-
-def fetch_latest_taxonomy() -> pd.DataFrame:
-    taxonomy_date_sorted = list_taxonomies()
-    # Remove added "default" option from sort
-    taxonomy_date_sorted.remove("Default")
-
-    if len(taxonomy_date_sorted) == 0:
-        taxonomy_df = fetch_default_taxonomy()
-    else:
-        taxonomy_df = fetch_taxonomy(taxonomy_date_sorted[-1])
-
-    return taxonomy_df
-
-
-def save_taxonomy(df):
-    taxonomy_folder = DATA_DIR / "taxonomy"
-    (
-        df.drop_duplicates()
-        .sort_values(["Theme", "Index"])
-        .reset_index(drop=True)
-        # TODO: drop incomplete rows
-        .to_parquet(taxonomy_folder / datetime.date.today().isoformat())
     )
 
 
@@ -74,14 +47,26 @@ def load_embedding_model() -> SentenceTransformer:
     return model
 
 
-def load_classification_model(model_path=None) -> SetFitModel:
-    data_folder = Path("trained_models")
-    data_folder_date_sorted = sorted(data_folder.glob("20*"), key=os.path.getmtime)
-    if len(data_folder_date_sorted) == 0:
-        latest_model_path = "default_model"
-    else:
-        latest_model_path = str(data_folder_date_sorted[-1])
+def get_latest_model_path():
+    latest_model_uri = "gs://" + sorted(fs.ls(f"gs://{GCS_BUCKET}/trained_models"))[-1]
+    latest_model_path = latest_model_uri.lstrip(f"gs://{GCS_BUCKET}/")
 
+    if latest_model_path not in [
+        str(model_path) for model_path in Path("trained_models").glob("20*")
+    ]:
+        fs.get(latest_model_uri, latest_model_path, recursive=True)
+
+    return latest_model_path
+
+
+def remove_old_models(models_to_keep=12):
+    for old_model_path in sorted(Path("trained_models").glob("20*"))[:-models_to_keep]:
+        shutil.rmtree(old_model_path)
+
+
+def load_classification_model(model_path=None) -> SetFitModel:
+    latest_model_path = get_latest_model_path()
+    remove_old_models()
     if model_path is None:
         model_path = latest_model_path
 
@@ -178,7 +163,7 @@ class FileHandler:
         )
 
         df["published"] = pd.to_datetime(df["published"])
-        df['published'] = df['published'] + datetime.timedelta(hours=7)
+        df["published"] = df["published"] + datetime.timedelta(hours=7)
         df = df.dropna(subset=["link"])
         data_name = file.name
         date_string = data_name.partition("posts-")[2].partition(".csv")[0]
@@ -458,7 +443,9 @@ class WeeklyFileHandler:
             }
         )
         weekly_data["published"] = pd.to_datetime(weekly_data["published"])
-        weekly_data['published'] = weekly_data['published'] + datetime.timedelta(hours=7)
+        weekly_data["published"] = weekly_data["published"] + datetime.timedelta(
+            hours=7
+        )
         date_string = data_name.partition("posts-")[2].partition(".csv")[0]
         format = "%m_%d_%y-%H_%M"
         formatted_date = datetime.datetime.strptime(date_string, format)
