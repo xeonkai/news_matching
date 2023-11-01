@@ -59,7 +59,7 @@ if io_mode_indexed == "Upload":
             new_files.extend(
                 [file for file in uploaded_files if file.name in files_to_overwrite]
             )
-        save_btn = st.button("Save")
+        save_btn = st.button("Save", key="save_indexed")
         if save_btn:
             # save file name for future output name
             num_uploaded_files = 0
@@ -99,7 +99,7 @@ elif io_mode_indexed == "Delete":
     files_to_delete = st.multiselect(
         "Files to Delete", daily_file_handler.list_csv_filenames()
     )
-    delete_btn = st.button("Delete")
+    delete_btn = st.button("Delete", key="delete_indexed")
 
     if delete_btn:
         daily_file_handler.remove_files(files_to_delete)
@@ -150,7 +150,7 @@ if io_mode_weekly == "Upload":
             new_files.extend(
                 [file for file in uploaded_files if file.name in files_to_overwrite]
             )
-        save_btn = st.button("Save")
+        save_btn = st.button("Save", key="save_weekly")
         if save_btn:
             # save file name for future output name
             num_uploaded_files = 0
@@ -195,7 +195,7 @@ elif io_mode_weekly == "Delete":
     files_to_delete = st.multiselect(
         "Files to Delete", weekly_file_handler.list_csv_filenames()
     )
-    delete_btn = st.button("Delete")
+    delete_btn = st.button("Delete", key="delete_weekly")
 
     if delete_btn:
         weekly_file_handler.remove_files(files_to_delete)

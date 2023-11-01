@@ -1,10 +1,9 @@
 from st_pages import Page, Section, add_page_title, show_pages
 
-"## Please click on Topic Discovery Tool in the sidebar to continue."
-
 show_pages(
     [
         Section(name="ARTICLE INDEXING", icon="📰"),
+        Page("app/Instructions.py", "Instructions", "📰"),
         Page("app/Home.py", "Topic Discovery Tool", "🖥️"),
         Page("app/pages/1__Data_Selection_&_Article_Indexing.py", "Data Selection & Article Indexing", "🔎"),
         Page("app/pages/2__Preview_and_Download_Indexed_Data.py", "Download Indexed Data", "📊"),
