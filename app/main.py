@@ -1,4 +1,7 @@
 from st_pages import Page, Section, add_page_title, show_pages
+import streamlit as st
+
+st.subheader(" Please click on Topic Discovery Tool in the sidebar to continue!")
 
 show_pages(
     [
