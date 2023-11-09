@@ -6,6 +6,9 @@
 *.npy
 *.db
 
+# DO-NOT ignore specific file
+!DBB/taxonomy_consolidated.xlsx
+
 # Dev environments
 .idea/
 *.vscode
