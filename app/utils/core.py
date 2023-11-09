@@ -1,16 +1,16 @@
 import datetime
+import json
 import os
+import shutil
 from pathlib import Path
 
 import duckdb
+import gcsfs
 import numpy as np
 import pandas as pd
+from dotenv import load_dotenv
 from sentence_transformers import SentenceTransformer
 from setfit import SetFitModel
-from dotenv import load_dotenv
-import json
-import gcsfs
-import shutil
 
 load_dotenv()
 
@@ -29,7 +29,7 @@ WEEKLY_DATA_DIR = DATA_DIR / "weekly"
 
 
 def fetch_latest_taxonomy() -> pd.DataFrame:
-    return (
+    taxonomy_df = (
         pd.read_csv(gsheet_taxonomy_url + "/export?format=csv")[["Theme", "Index"]][:-1]
         .dropna(axis=0, how="all")
         .ffill()
@@ -37,6 +37,15 @@ def fetch_latest_taxonomy() -> pd.DataFrame:
         .sort_values(["Theme", "Index"])
         .reset_index(drop=True)
     )
+
+    # Cache taxonomy versions
+    taxonomy_folder = DATA_DIR / "taxonomy"
+    taxonomy_folder.mkdir(parents=True, exist_ok=True)
+    taxonomy_df.to_csv(
+        f"{taxonomy_folder / datetime.date.today().isoformat()}.csv",
+        index=False,
+    )
+    return taxonomy_df
 
 
 def load_embedding_model() -> SentenceTransformer:
