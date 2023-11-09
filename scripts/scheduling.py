@@ -1,9 +1,8 @@
-from rocketry import Rocketry
-
 from pathlib import Path
-from rocketry.conds import weekly, time_of_day, after_success
-from modelling import train_test_split_eval_model, train_model, delete_old_models
 
+from modelling import delete_old_models, train_model, train_test_split_eval_model
+from rocketry import Rocketry
+from rocketry.conds import after_success, time_of_day, weekly
 
 app = Rocketry()
 
