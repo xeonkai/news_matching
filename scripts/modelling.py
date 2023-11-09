@@ -1,14 +1,27 @@
 import datetime
+import json
 import os
 import shutil
 from pathlib import Path
 
 import duckdb
+import gcsfs
 import pandas as pd
 from datasets import Features, Value, load_dataset
+from dotenv import load_dotenv
 from sentence_transformers.losses import CosineSimilarityLoss
 from setfit import SetFitModel, SetFitTrainer
 from sklearn.metrics import classification_report, top_k_accuracy_score
+
+load_dotenv()
+GSHEET_TAXONOMY_ID = os.environ.get("GSHEET_TAXONOMY_ID")
+gsheet_taxonomy_url = "https://docs.google.com/spreadsheets/d/" + GSHEET_TAXONOMY_ID
+
+GCS_BUCKET = os.environ["GCS_BUCKET"]
+service_account_info = json.loads(os.environ["GOOGLE_APPLICATION_CREDENTIALS_JSON"])
+fs = gcsfs.GCSFileSystem(
+    project=service_account_info["project_id"], token=service_account_info
+)
 
 
 def prepare_base_training_dataset():
@@ -132,16 +145,12 @@ def train_test_split_eval_model(top_k=20):
         )
     ).T
 
-    metrics_folder = Path("data", "metrics")
-
-    metrics_folder.mkdir(parents=True, exist_ok=True)
-
     top_k_df.to_csv(
-        metrics_folder / f"top_k_scores_{datetime.date.today().isoformat()}.csv",
+        f"gs://{GCS_BUCKET}/metrics/top_k_scores_{datetime.date.today().isoformat()}.csv",
         index=False,
     )
     class_scores_df.to_csv(
-        metrics_folder / f"class_scores_{datetime.date.today().isoformat()}.csv",
+        f"gs://{GCS_BUCKET}/metrics/class_scores_{datetime.date.today().isoformat()}.csv",
         index=False,
     )
 
@@ -176,17 +185,19 @@ def train_model(model_path=None):
 
     trainer.train()
     trainer.model.save_pretrained(model_path)
+    fs.put(model_path, f"gs://{GCS_BUCKET}/{model_path}", recursive=True)
 
 
-def delete_old_models():
+def delete_old_models(models_to_keep=24):
+    # Keep 24 most recent trained models locally
     data_folder = Path("trained_models")
-    data_folder_date_sorted = sorted(data_folder.glob("20*"), key=os.path.getmtime)
-    # Keep 24 most recent models
-    for old_model_path in data_folder_date_sorted[:-24]:
+    data_folder_date_sorted = sorted(data_folder.glob("20*"))
+    for old_model_path in data_folder_date_sorted[:-models_to_keep]:
         shutil.rmtree(old_model_path)
 
 
 if __name__ == "__main__":
     # Generate default model
-    train_model("default_model")
+    train_model()
+    # train_test_split_eval_model()
     delete_old_models()
