@@ -7,7 +7,7 @@
 *.db
 
 # DO-NOT ignore specific file
-!DBB/taxonomy_consolidated.xlsx
+!taxonomy_consolidated.xlsx
 
 # Dev environments
 .idea/
