@@ -78,9 +78,27 @@ def create_dataset(min_labels=2):
         .index.to_list()
     )
 
+    taxonomy_labels = (
+        pd.read_csv(gsheet_taxonomy_url + "/export?format=csv")[["Theme", "Index"]][:-1]
+        .dropna(axis=0, how="all")
+        .ffill()
+        .drop_duplicates()
+        .sort_values(["Theme", "Index"])
+        .reset_index(drop=True)
+        .assign(
+            label=lambda df: df[["Theme", "Index"]]
+            .fillna("")
+            .agg(" > ".join, axis="columns")
+        )["label"]
+        .to_list()
+    )
+
     dataset = load_dataset(
         "parquet", data_dir=str(DATA_DIR / "train"), features=features
-    ).filter(lambda row: row["label"] in min_labels_list)
+    ).filter(
+        lambda row: (row["label"] in min_labels_list)
+        & (row["label"] in taxonomy_labels)
+    )
 
     return dataset
 
@@ -145,14 +163,17 @@ def train_test_split_eval_model(top_k=20):
         )
     ).T
 
-    top_k_df.to_csv(
+    with fs.open(
         f"gs://{GCS_BUCKET}/metrics/top_k_scores_{datetime.date.today().isoformat()}.csv",
-        index=False,
-    )
-    class_scores_df.to_csv(
+        'wb'
+    ) as f:
+        top_k_df.to_csv(f, index=False)
+
+    with fs.open(
         f"gs://{GCS_BUCKET}/metrics/class_scores_{datetime.date.today().isoformat()}.csv",
-        index=False,
-    )
+        'wb'
+    ) as f:
+        class_scores_df.to_csv(f, index=False)
 
 
 def train_model(model_path=None):
