@@ -43,7 +43,7 @@ def data_selection():
     with col1:
         nrows_metric = st.empty()
 
-    filter_bounds = file_handler.get_filter_bounds()
+    filter_bounds = st.cache_data(file_handler.get_filter_bounds)()
     filter_bounds["labels"].insert(0, "All, excluding unlabelled")
     # max_fb_interactions, domain_list, min_date, max_date = get_filter_bounds()
 

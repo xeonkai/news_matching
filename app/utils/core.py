@@ -184,6 +184,7 @@ class FileHandler:
         date_string = data_name.partition("posts-")[2].partition(".csv")[0]
         format = "%m_%d_%y-%H_%M"
         latest_date_file = datetime.datetime.strptime(date_string, format).date()
+        df["domain"] = df["domain"].fillna(value="facebook.com")
 
         return df, latest_date_file
 
