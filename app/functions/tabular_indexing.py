@@ -6,6 +6,9 @@ from functions.taxonomy_reader import convert_chain_to_list
 from st_aggrid import AgGrid, ColumnsAutoSizeMode, GridUpdateMode, JsCode
 from st_aggrid.grid_options_builder import GridOptionsBuilder
 from functions.grid_response_consolidator import consolidate_grid_responses
+from sklearn.metrics.pairwise import cosine_similarity
+import numpy as np
+import pandas as pd
 
 # Function to process dataframe - extract top index, index and subindex
 
@@ -75,12 +78,56 @@ def slice_table(df):
     # top_themes = get_top_themes(df)
     df_collection = {}
     for theme in top_themes:
-        # df_slice = df[df["theme_ref"] == theme]
-        # df_slice = df_slice.sort_values(by=["facebook_interactions"], ascending=False)
-        # df_collection[theme] = df_slice
-        df_collection[theme] = df_theme_grouped.get_group(theme).sort_values(
-            by=["facebook_interactions"], ascending=False
+        # # Sort by similarity to first, starting with most FB interactions
+        # df_theme = df_theme_grouped.get_group(theme)
+
+        # top_vector = np.array(
+        #     df_theme.nlargest(1, "facebook_interactions")
+        #     .reset_index(drop=True)
+        #     .at[0, "vector"]
+        # ).reshape(1, -1)
+
+        # df_theme["similarity"] = cosine_similarity(
+        #     np.array(df_theme["vector"].to_list()), 
+        #     top_vector
+        # )
+
+        # df_collection[theme] = df_theme.sort_values(
+        #     by=["similarity"], ascending=False
+        # )
+
+        # Sort by recursive similiarity to first, starting with most FB interactions
+        df_theme = df_theme_grouped.get_group(theme)
+        df_theme["similarity_rank"] = pd.Series(dtype='int')
+        ref_vector = np.array(
+            df_theme.nlargest(1, "facebook_interactions")
+            .reset_index(drop=True)
+            .at[0, "vector"]
+        ).reshape(1, -1)
+        for i in range(len(df_theme)):
+            temp_df = df_theme[df_theme["similarity_rank"].isna()]
+            temp_df["similarity"] = cosine_similarity(
+                np.array(temp_df["vector"].to_list()), 
+                ref_vector
+            )
+            ref_vector = np.array(
+                temp_df
+                .nlargest(2, "similarity")
+                .nsmallest(1, "similarity")
+                .reset_index(drop=True)
+                .at[0, "vector"]
+            ).reshape(1, -1)
+            
+            df_theme.at[temp_df["similarity"].idxmax(), "similarity_rank"] = i
+            
+        df_collection[theme] = df_theme.sort_values(
+            by=["similarity_rank"], ascending=True
         )
+
+        # # Sort by fB interactions
+        # df_collection[theme] = df_theme_grouped.get_group(theme).sort_values(
+        #     by=["facebook_interactions"], ascending=False
+        # )
     return df_collection
 
 
