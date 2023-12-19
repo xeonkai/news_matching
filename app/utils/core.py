@@ -305,9 +305,9 @@ class FileHandler:
             con.sql(
                 f"""
                 UPDATE {self.DAILY_NEWS_TABLE} 
-                SET subindex = df_filtered.subindex,
-                FROM (SELECT * FROM df WHERE subindex NOT NULL) as df_filtered
-                WHERE {self.DAILY_NEWS_TABLE}.link = df_filtered.link;
+                SET subindex = df.subindex,
+                FROM df
+                WHERE {self.DAILY_NEWS_TABLE}.link = df.link;
                 """
             )
 

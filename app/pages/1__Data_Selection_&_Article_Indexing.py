@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 from st_pages import add_page_title
 from streamlit_extras.no_default_selectbox import selectbox
 from utils import core
+from sklearn.metrics.pairwise import cosine_similarity
 
 load_dotenv()
 GSHEET_TAXONOMY_ID = os.environ.get("GSHEET_TAXONOMY_ID")
@@ -22,7 +23,7 @@ file_handler = st.cache_resource(core.FileHandler)(core.DATA_DIR)
 
 def filter_featurize(columns, domain_filter, min_engagement, date_range):
     if file_handler.list_csv_files_df().empty:
-        # Raise error, decouple streamlit
+        # TODO: Raise error, decouple streamlit
         st.error(
             "There is no data. Please return to the Home page and upload a csv file."
         )
@@ -43,11 +44,39 @@ def filter_featurize(columns, domain_filter, min_engagement, date_range):
         column="headline",
     )
     # processed_table.insert(0, "Select", False)
+
+    processed_table["similarity_rank"] = pd.Series(dtype="int")
+    ref_vector = np.array(
+        processed_table.nlargest(1, "facebook_interactions")
+        .reset_index(drop=True)
+        .at[0, "vector"]
+    ).reshape(1, -1)
+    for i in range(len(processed_table)):
+        temp_df = processed_table[processed_table["similarity_rank"].isna()]
+        temp_df["similarity"] = cosine_similarity(
+            np.array(temp_df["vector"].to_list()), ref_vector
+        )
+        ref_vector = np.array(
+            temp_df.nlargest(2, "similarity")
+            .nsmallest(1, "similarity")
+            .reset_index(drop=True)
+            .at[0, "vector"]
+        ).reshape(1, -1)
+
+        processed_table.at[temp_df["similarity"].idxmax(), "similarity_rank"] = i
+
+    processed_table = (
+        processed_table.sort_values(by=["similarity_rank"], ascending=True)
+        .reset_index(drop=True)
+        .drop(columns=["similarity_rank"])
+    )
+
     return processed_table
 
 
 def data_selection():
     taxonomy_df = st.cache_data(core.fetch_latest_taxonomy)()
+    filter_bounds = st.cache_data(file_handler.get_filter_bounds)()
 
     # st.title("🔎 Data Selection")
     st.markdown("""---""")
@@ -65,7 +94,6 @@ def data_selection():
     with col_fb_interactions:
         fb_interactions_metric = st.empty()
 
-    filter_bounds = st.cache_data(file_handler.get_filter_bounds)()
     # filter_bounds["theme"].insert(0, "All, excluding unthemed")
 
     # Filter inputs by user
@@ -246,6 +274,79 @@ def data_selection():
         st.error(
             f"The filters selected produces an empty dataframe. Please re-adjust filters to view data. \n\n {ve}"
         )
+
+
+def slice_table(df):
+    """Function to slice dataframe
+
+    Args:
+        df (pandas.core.frame.DataFrame): Dataframe to be sliced
+
+    Returns:
+        dict: Sliced dataframe
+    """
+
+    df_theme_grouped = df.copy().groupby("theme_ref")
+
+    top_themes = (
+        df_theme_grouped["facebook_interactions"]
+        .sum()
+        .sort_values(ascending=False)
+        .index.tolist()
+    )
+
+    # top_themes = get_top_themes(df)
+    df_collection = {}
+    for theme in top_themes:
+        # # Sort by similarity to first, starting with most FB interactions
+        # df_theme = df_theme_grouped.get_group(theme)
+
+        # top_vector = np.array(
+        #     df_theme.nlargest(1, "facebook_interactions")
+        #     .reset_index(drop=True)
+        #     .at[0, "vector"]
+        # ).reshape(1, -1)
+
+        # df_theme["similarity"] = cosine_similarity(
+        #     np.array(df_theme["vector"].to_list()),
+        #     top_vector
+        # )
+
+        # df_collection[theme] = df_theme.sort_values(
+        #     by=["similarity"], ascending=False
+        # )
+
+        # Sort by recursive similiarity to first, starting with most FB interactions
+        df_theme = df_theme_grouped.get_group(theme)
+        df_theme["similarity_rank"] = pd.Series(dtype="int")
+        ref_vector = np.array(
+            df_theme.nlargest(1, "facebook_interactions")
+            .reset_index(drop=True)
+            .at[0, "vector"]
+        ).reshape(1, -1)
+        for i in range(len(df_theme)):
+            temp_df = df_theme[df_theme["similarity_rank"].isna()]
+            temp_df["similarity"] = cosine_similarity(
+                np.array(temp_df["vector"].to_list()), ref_vector
+            )
+            ref_vector = np.array(
+                temp_df.nlargest(2, "similarity")
+                .nsmallest(1, "similarity")
+                .reset_index(drop=True)
+                .at[0, "vector"]
+            ).reshape(1, -1)
+
+            df_theme.at[temp_df["similarity"].idxmax(), "similarity_rank"] = i
+
+        df_collection[theme] = df_theme.sort_values(
+            by=["similarity_rank"], ascending=True
+        )
+
+        # # Sort by fB interactions
+        # df_collection[theme] = df_theme_grouped.get_group(theme).sort_values(
+        #     by=["facebook_interactions"], ascending=False
+        # )
+    return df_collection
 
 
 if __name__ == "__main__":
