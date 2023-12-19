@@ -32,6 +32,10 @@ def fetch_latest_taxonomy() -> pd.DataFrame:
     taxonomy_df = (
         pd.read_csv(gsheet_taxonomy_url + "/export?format=csv")[["Theme", "Index"]][:-1]
         .dropna(axis=0, how="all")
+        .assign(
+            Theme=lambda row: row["Theme"].str.casefold(),
+            Index=lambda row: row["Index"].str.casefold(),
+        )
         .ffill()
         .drop_duplicates()
         .sort_values(["Theme", "Index"])
@@ -135,7 +139,9 @@ class FileHandler:
                     "domain" VARCHAR,
                     "facebook_interactions" BIGINT,  
                     "source" VARCHAR,
-                    "label" VARCHAR,
+                    "themes" VARCHAR[],
+                    "indexes" VARCHAR[],
+                    "subindex" VARCHAR,
                     PRIMARY KEY ("published", "link", "facebook_page_name")
                 );
                 """
@@ -166,7 +172,7 @@ class FileHandler:
                 },
                 # parse_dates=["Published"],
             )
-            .assign(source=source)
+            .assign(source=source, Domain=lambda s: s["Domain"].fillna("facebook.com"))
             .rename(lambda col_name: col_name.lower().replace(" ", "_"), axis="columns")
             .rename(columns={"link_url": "link"})
         )
@@ -194,7 +200,7 @@ class FileHandler:
                     "facebook_page_name",
                     "domain",
                     "facebook_interactions",
-                    "label",
+                    "subindex",
                     "source",
                 ],
                 dtype={
@@ -205,7 +211,7 @@ class FileHandler:
                     "facebook_page_name": "string",
                     "domain": "string",
                     "facebook_interactions": "int",
-                    "label": "string",
+                    "subindex": "string",
                     "source": "string",
                 },
             )
@@ -243,7 +249,7 @@ class FileHandler:
             con.sql(
                 f"""
                 INSERT INTO {self.DAILY_NEWS_TABLE}
-                SELECT published, headline, summary, link, facebook_page_name, domain, facebook_interactions, source, NULL
+                SELECT published, headline, summary, link, facebook_page_name, domain, facebook_interactions, source, list_value(), list_value(), NULL
                 FROM insert_table
                 ON CONFLICT (published, link, facebook_page_name)
                 DO UPDATE
@@ -267,7 +273,7 @@ class FileHandler:
             con.sql(
                 f"""
                 INSERT INTO {self.DAILY_NEWS_TABLE} 
-                SELECT published, headline, summary, link, facebook_page_name, domain, facebook_interactions, source, label 
+                SELECT published, headline, summary, link, facebook_page_name, domain, facebook_interactions, source, themes, indexes, subindex 
                 FROM processed_table
                 ON CONFLICT (published, link, facebook_page_name)
                 DO UPDATE
@@ -276,7 +282,9 @@ class FileHandler:
                     domain = domain,
                     facebook_interactions = facebook_interactions,
                     source = source,
-                    label = label
+                    themes = themes,
+                    indexes = indexes,
+                    subindex = subindex
                 """
             )
 
@@ -292,14 +300,32 @@ class FileHandler:
             full_df = con.sql(query).to_df()
         return full_df
 
-    def update_labels(self, df):
+    def update_subindex(self, df):
         with duckdb.connect(self.db_path) as con:
             con.sql(
                 f"""
                 UPDATE {self.DAILY_NEWS_TABLE} 
-                SET label = df_filtered.label 
-                FROM (SELECT * FROM df WHERE label IS NOT NULL) as df_filtered
+                SET subindex = df_filtered.subindex,
+                FROM (SELECT * FROM df WHERE subindex NOT NULL) as df_filtered
                 WHERE {self.DAILY_NEWS_TABLE}.link = df_filtered.link;
+                """
+            )
+
+    def update_themes(self, df):
+        with duckdb.connect(self.db_path) as con:
+            # con.register("df", df)
+            con.sql(
+                f"""
+                DELETE FROM {self.DAILY_NEWS_TABLE}
+                WHERE {self.DAILY_NEWS_TABLE}.link IN (SELECT df.link FROM df)
+                """
+            )
+
+            con.sql(
+                f"""
+                INSERT INTO {self.DAILY_NEWS_TABLE}
+                SELECT published, headline, summary, link, facebook_page_name, domain, facebook_interactions, source, themes, indexes, subindex
+                FROM df
                 """
             )
 
@@ -324,19 +350,19 @@ class FileHandler:
                 f"{self.DAILY_NEWS_TABLE} "
             ).fetchone()
 
-            label_list = [
-                label[0]
-                for label in con.sql(
-                    f"SELECT DISTINCT label FROM {self.DAILY_NEWS_TABLE} "
-                    "WHERE label IS NOT NULL"
-                ).fetchall()
-            ]
+            # theme_list = [
+            #     theme[0]
+            #     for theme in con.sql(
+            #         f"SELECT DISTINCT theme FROM {self.DAILY_NEWS_TABLE} "
+            #         "WHERE theme IS NOT NULL"
+            #     ).fetchall()
+            # ]
         return {
             "max_fb_interactions": max_fb_interactions,
             "domain_list": domain_list,
             "min_date": min_date,
             "max_date": max_date,
-            "labels": label_list,
+            # "themes": theme_list,
         }
 
     def query(self, query):
@@ -345,21 +371,26 @@ class FileHandler:
         return results_df
 
     def filtered_query(
-        self, columns, domain_filter, min_engagement, date_range, label_filter
+        self,
+        columns,
+        domain_filter,
+        min_engagement,
+        date_range,
     ):
         query = (
             f"SELECT {','.join(columns)} "
             f"FROM {self.DAILY_NEWS_TABLE} "
-            f"WHERE domain NOT IN {tuple(domain_filter) if domain_filter else ('NULL',)} "
+            f"WHERE domain NOT IN {tuple(domain_filter) if domain_filter else (' ',)} "
             f"AND facebook_interactions >= {min_engagement} "
             f"AND published BETWEEN '{date_range[0]}' AND '{date_range[1]}' "
-            + (
-                ""
-                if label_filter is None
-                else "AND label is NOT NULL "
-                if label_filter == "All, excluding unlabelled"
-                else f"AND label='{label_filter}' "
-            )
+            "AND headline is not NULL "
+            # + (
+            #     ""
+            #     if label_filter is None
+            #     else "AND theme is NOT NULL "
+            #     if label_filter == "All, excluding unthemed"
+            #     else f"AND theme='{label_filter}' "
+            # )
             + f"ORDER BY facebook_interactions DESC "
             # f"{f'LIMIT {limit}' if limit else ''} "
         )
