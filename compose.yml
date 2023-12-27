@@ -1,27 +1,22 @@
-x-shared:
-  &shared
+x-shared: &shared
   image: yukaichong/news-matching:latest
   volumes:
-    - './data:/usr/src/app/data'
-    - './trained_models:/usr/src/app/trained_models'
-    - './cached_models:/usr/src/app/cached_models'
+    - "./data:/usr/src/app/data"
+    - "./trained_models:/usr/src/app/trained_models"
+    - "./cached_models:/usr/src/app/cached_models"
   environment:
     - USER_ID=1000
     - GROUP_ID=1000
     - TZ=Asia/Singapore
+    - GSHEET_TAXONOMY_ID=<GSHEET_TAXONOMY_ID>
+    - GCS_BUCKET=<GCS_BUCKET>
+    - 'GOOGLE_APPLICATION_CREDENTIALS_JSON=<GOOGLE_APPLICATION_CREDENTIALS>'
 
 services:
   streamlit:
     <<: *shared
     ports:
-      - '8501:8501'
-    restart: unless-stopped
-
-  scheduler:
-    <<: *shared
-    depends_on:
-      - streamlit
-    command: python scripts/scheduling.py
+      - "8501:8501"
     restart: unless-stopped
 
   watchtower:
