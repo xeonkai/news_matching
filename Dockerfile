@@ -1,7 +1,7 @@
 ###############
 # BUILD IMAGE #
 ###############
-FROM python:3.9.17-slim-bullseye AS build
+FROM python:3.11-slim-bookworm AS build
 
 # virtualenv
 ENV VIRTUAL_ENV=/opt/venv
@@ -9,14 +9,14 @@ RUN python3 -m venv $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
 # add and install requirements
-RUN pip install --upgrade pip
+RUN pip install --no-cache-dir --upgrade pip
 COPY ./requirements.txt .
-RUN pip install -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 #################
 # RUNTIME IMAGE #
 #################
-FROM python:3.9.17-slim-bullseye AS runtime
+FROM python:3.11-slim-bookworm AS runtime
 
 # setup user and group ids
 ARG USER_ID=1000
