@@ -75,3 +75,5 @@ trained_models
 !all_tagged_articles_new.csv
 !default_model
 !taxonomy_consolidated.xlsx
+
+compose.yml
