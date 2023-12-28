@@ -24,9 +24,6 @@ fs = gcsfs.GCSFileSystem(
 )
 
 DATA_DIR = Path("data")
-RAW_DATA_DIR = DATA_DIR / "raw"
-WEEKLY_DATA_DIR = DATA_DIR / "weekly"
-
 
 def fetch_latest_taxonomy() -> pd.DataFrame:
     taxonomy_df = (
@@ -117,11 +114,14 @@ def embed_df(df: pd.DataFrame, model: SentenceTransformer, column: str) -> pd.Da
 
 
 class FileHandler:
-    DAILY_NEWS_TABLE = "daily_news"
+    # Table to display latest metrics & data for users to view
+    NEWS_DATA = "news_data"
+    # Table to track user labelling for news articles
+    NEWS_LABELS = "news_labels"
 
     def __init__(self, data_dir):
         self.data_dir = Path(data_dir)
-        self.raw_data_dir = self.data_dir / "raw"
+        self.raw_data_dir = self.data_dir / "raw_upload"
         self.db_path = str(self.data_dir / "news.db")
 
         self.raw_data_dir.mkdir(parents=True, exist_ok=True)
@@ -130,25 +130,34 @@ class FileHandler:
             con.execute(
                 f"""
                 CREATE TABLE IF NOT EXISTS
-                {self.DAILY_NEWS_TABLE}(
+                {self.NEWS_DATA} (
                     "published" TIMESTAMP,
                     "headline" VARCHAR,
                     "summary" VARCHAR,
                     "link" VARCHAR,
+                    "facebook_link" VARCHAR PRIMARY KEY,
                     "facebook_page_name" VARCHAR,
                     "domain" VARCHAR,
-                    "facebook_interactions" BIGINT,  
-                    "source" VARCHAR,
+                    "facebook_interactions" BIGINT,
+                    "source" VARCHAR
+                );
+                """
+            )
+            con.execute(
+                f"""
+                CREATE TABLE IF NOT EXISTS
+                {self.NEWS_LABELS} (
+                    "link" VARCHAR,
+                    "facebook_link" VARCHAR PRIMARY KEY,
                     "themes" VARCHAR[],
                     "indexes" VARCHAR[],
-                    "subindex" VARCHAR,
-                    PRIMARY KEY ("published", "link", "facebook_page_name")
+                    "subindex" VARCHAR
                 );
                 """
             )
 
     @staticmethod
-    def preprocess_daily_scan(file, source: str = "") -> pd.DataFrame:
+    def preprocess_daily_scan(file) -> pd.DataFrame:
         df = (
             pd.read_csv(
                 file,
@@ -156,6 +165,7 @@ class FileHandler:
                     "Published",
                     "Headline",
                     "Summary",
+                    "Link",
                     "Link URL",
                     "Facebook Page Name",
                     "Domain",
@@ -165,27 +175,26 @@ class FileHandler:
                     "Published": "string",
                     "Headline": "string",
                     "Summary": "string",
+                    "Link": "string",
                     "Link URL": "string",
                     "Facebook Page Name": "string",
                     "Domain": "string",
                     "Facebook Interactions": "int",
                 },
-                # parse_dates=["Published"],
             )
-            .assign(source=source, Domain=lambda s: s["Domain"].fillna("facebook.com"))
+            .assign(
+                Domain=lambda s: s["Domain"].fillna("facebook.com"),
+                Published=lambda s: pd.to_datetime(
+                    s["Published"], utc=True
+                ).dt.tz_convert("Asia/Singapore"),
+            )
+            # Sanitize column names to prevent database parse issues
             .rename(lambda col_name: col_name.lower().replace(" ", "_"), axis="columns")
-            .rename(columns={"link_url": "link"})
+            .rename(columns={"link": "facebook_link", "link_url": "link"})
+            .dropna(subset=["link"])
         )
 
-        df["published"] = pd.to_datetime(df["published"])
-        df["published"] = df["published"] + datetime.timedelta(hours=7)
-        df = df.dropna(subset=["link"])
-        data_name = file.name
-        date_string = data_name.partition("posts-")[2].partition(".csv")[0]
-        format = "%m_%d_%y-%H_%M"
-        latest_date_file = datetime.datetime.strptime(date_string, format).date()
-
-        return df, latest_date_file
+        return df
 
     @staticmethod
     def preprocess_labelled_articles(file, source: str = "") -> pd.DataFrame:
@@ -223,108 +232,85 @@ class FileHandler:
         filepath.write_bytes(file.getbuffer())
         return filepath
 
-    def write_db(self, file) -> None:
-        processed_table, latest_date_file = self.preprocess_daily_scan(
-            file, source=file.name
-        )
+    def write_daily_scan(self, file) -> None:
+        processed_table = self.preprocess_daily_scan(file).assign(source=file.name)
 
-        query = f"SELECT max(published) max_published " f"FROM {self.DAILY_NEWS_TABLE} "
         with duckdb.connect(self.db_path) as con:
-            results_filtered = con.sql(query).to_df()
-
-        latest_date_db = results_filtered["max_published"].dt.date[0]
-        if pd.isnull(latest_date_db):
-            insert_table = processed_table
-        else:
-            insert_table = processed_table.loc[
-                processed_table["published"].dt.date.between(
-                    latest_date_db, latest_date_file, inclusive=False
-                )
-            ]
-        #
-        with duckdb.connect(self.db_path) as con:
-            #
-            con.sql(f"DELETE FROM {self.DAILY_NEWS_TABLE} WHERE source = '{file.name}'")
-            # Append to table, replace if existing link found
+            con.register("processed_table", processed_table)
             con.sql(
                 f"""
-                INSERT INTO {self.DAILY_NEWS_TABLE}
-                SELECT published, headline, summary, link, facebook_page_name, domain, facebook_interactions, source, list_value(), list_value(), NULL
-                FROM insert_table
-                ON CONFLICT (published, link, facebook_page_name)
-                DO UPDATE
-                    SET headline = headline,
-                    summary = summary,
-                    domain = domain,
-                    facebook_interactions = facebook_interactions,
-                    source = source
-                """
-            )
-
-    def write_labelled_articles_db(self, file) -> None:
-        processed_table = self.preprocess_labelled_articles(file)
-        min_date = min(processed_table["published"])
-        max_date = max(processed_table["published"])
-        with duckdb.connect(self.db_path) as con:
-            con.sql(
-                f"DELETE FROM {self.DAILY_NEWS_TABLE} WHERE published >= '{min_date}' AND published <= '{max_date}'"
-            )
-            # Append to table, replace if existing link found
-            con.sql(
-                f"""
-                INSERT INTO {self.DAILY_NEWS_TABLE} 
-                SELECT published, headline, summary, link, facebook_page_name, domain, facebook_interactions, source, themes, indexes, subindex 
+                INSERT INTO {self.NEWS_DATA}
+                SELECT published, 
+                    headline, 
+                    summary, 
+                    link, 
+                    facebook_link, 
+                    facebook_page_name, 
+                    domain, 
+                    facebook_interactions, 
+                    source 
                 FROM processed_table
-                ON CONFLICT (published, link, facebook_page_name)
+                ON CONFLICT
                 DO UPDATE
-                    SET headline = headline,
-                    summary = summary,
-                    domain = domain,
-                    facebook_interactions = facebook_interactions,
-                    source = source,
-                    themes = themes,
-                    indexes = indexes,
-                    subindex = subindex
+                    SET published = EXCLUDED.published,
+                        headline = EXCLUDED.headline,
+                        summary = EXCLUDED.summary,
+                        facebook_page_name = EXCLUDED.facebook_page_name,
+                        domain = EXCLUDED.domain,
+                        facebook_interactions = EXCLUDED.facebook_interactions,
+                        link = EXCLUDED.link,
+                        source = EXCLUDED.source,
+                            WHERE EXCLUDED.facebook_interactions > facebook_interactions
                 """
             )
 
-    def labelled_query(self, columns):
-        query = f"SELECT {','.join(columns)} " f"FROM {self.DAILY_NEWS_TABLE} "
-        with duckdb.connect(self.db_path) as con:
-            results_filtered = con.sql(query).to_df()
-        return results_filtered
+    def write_labelled_articles(self, file) -> None:
+        processed_table = pd.read_csv(
+            file,
+            usecols=["link", "facebook_link", "themes", "indexes", "subindex"],
+        ).dropna(
+            subset=["subindex"]
+        ).assign(
+            themes = lambda r: r["themes"].str.split(","),
+            indexes = lambda r: r["indexes"].str.split(","),
+        )
+        self.update_labels(processed_table)
 
-    def full_query(self):
-        query = f"SELECT *" f"FROM {self.DAILY_NEWS_TABLE} "
+    def query(self, query):
         with duckdb.connect(self.db_path) as con:
-            full_df = con.sql(query).to_df()
-        return full_df
+            results_df = con.sql(query).to_df()
+        return results_df
+    
+    def full_query(self):
+        query = f"SELECT *" f"FROM {self.NEWS_DATA} "
+        return self.query(query)
 
     def update_subindex(self, df):
         with duckdb.connect(self.db_path) as con:
+            con.register("df", df)
             con.sql(
                 f"""
-                UPDATE {self.DAILY_NEWS_TABLE} 
+                UPDATE {self.NEWS_LABELS} 
                 SET subindex = df.subindex,
                 FROM df
-                WHERE {self.DAILY_NEWS_TABLE}.link = df.link;
+                WHERE {self.NEWS_LABELS}.facebook_link = df.facebook_link;
                 """
             )
 
-    def update_themes(self, df):
+    def update_labels(self, df):
         with duckdb.connect(self.db_path) as con:
-            # con.register("df", df)
+            con.register("df", df)
             con.sql(
                 f"""
-                DELETE FROM {self.DAILY_NEWS_TABLE}
-                WHERE {self.DAILY_NEWS_TABLE}.link IN (SELECT df.link FROM df)
+                DELETE FROM {self.NEWS_LABELS}
+                WHERE {self.NEWS_LABELS}.facebook_link IN (SELECT df.facebook_link FROM df)
                 """
             )
 
             con.sql(
                 f"""
-                INSERT INTO {self.DAILY_NEWS_TABLE}
-                SELECT published, headline, summary, link, facebook_page_name, domain, facebook_interactions, source, themes, indexes, subindex
+                INSERT INTO {self.NEWS_LABELS}
+                SELECT link, facebook_link, themes, indexes, subindex
                 FROM df
                 """
             )
@@ -332,22 +318,21 @@ class FileHandler:
     def get_filter_bounds(self):
         with duckdb.connect(self.db_path) as con:
             max_fb_interactions = con.sql(
-                f"SELECT MAX(facebook_interactions) FROM {self.DAILY_NEWS_TABLE}"
+                f"SELECT MAX(facebook_interactions) FROM {self.NEWS_DATA}"
             ).fetchone()[0]
 
             domain_list = [
                 domain
                 for domain, count in con.sql(
                     "SELECT domain, COUNT(*) AS count FROM "
-                    f"{self.DAILY_NEWS_TABLE} "
+                    f"{self.NEWS_DATA} "
                     "GROUP BY domain "
                     "ORDER BY count DESC"
                 ).fetchall()
             ]
 
             min_date, max_date = con.sql(
-                f"SELECT MIN(published), MAX(published) FROM "
-                f"{self.DAILY_NEWS_TABLE} "
+                f"SELECT MIN(published), MAX(published) FROM " f"{self.NEWS_DATA} "
             ).fetchone()
 
             # theme_list = [
@@ -365,34 +350,23 @@ class FileHandler:
             # "themes": theme_list,
         }
 
-    def query(self, query):
-        with duckdb.connect(self.db_path) as con:
-            results_df = con.sql(query).to_df()
-        return results_df
-
     def filtered_query(
         self,
-        columns,
         domain_filter,
         min_engagement,
         date_range,
     ):
         query = (
-            f"SELECT {','.join(columns)} "
-            f"FROM {self.DAILY_NEWS_TABLE} "
-            f"WHERE domain NOT IN {tuple(domain_filter) if domain_filter else (' ',)} "
-            f"AND facebook_interactions >= {min_engagement} "
-            f"AND published BETWEEN '{date_range[0]}' AND '{date_range[1]}' "
-            "AND headline is not NULL "
-            # + (
-            #     ""
-            #     if label_filter is None
-            #     else "AND theme is NOT NULL "
-            #     if label_filter == "All, excluding unthemed"
-            #     else f"AND theme='{label_filter}' "
-            # )
-            + f"ORDER BY facebook_interactions DESC "
-            # f"{f'LIMIT {limit}' if limit else ''} "
+            f"""
+            SELECT * FROM {self.NEWS_DATA}
+            LEFT JOIN {self.NEWS_LABELS} 
+                ON {self.NEWS_DATA}.facebook_link = {self.NEWS_LABELS}.facebook_link
+            WHERE domain NOT IN {tuple(domain_filter) if domain_filter else (' ',)}
+            AND facebook_interactions >= {min_engagement} 
+            AND published BETWEEN '{date_range[0]}' AND '{date_range[1]}' 
+            AND headline is not NULL 
+            ORDER BY facebook_interactions DESC
+            """
         )
         with duckdb.connect(self.db_path) as con:
             results_filtered = con.sql(query).to_df()
@@ -419,14 +393,8 @@ class FileHandler:
         for filename in filenames:
             (self.raw_data_dir / filename).unlink(missing_ok=True)
             with duckdb.connect(self.db_path) as con:
-                con.sql(
-                    f"DELETE FROM {self.DAILY_NEWS_TABLE} WHERE source = '{filename}'"
-                )
+                con.sql(f"DELETE FROM {self.NEWS_DATA} WHERE source = '{filename}'")
         return [self.raw_data_dir / filename for filename in filenames]
-
-    def download_csv_files(self):
-        """Convert folder to zip, return zip file"""
-        raise NotImplementedError
 
     def __repr__(self):
         return f"FileHandler({repr(self.data_dir)})"
