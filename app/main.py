@@ -9,14 +9,10 @@ show_pages(
         Page("app/Home.py", "Upload Data", "🖥️"),
         Page("app/pages/1__Data_Selection_&_Article_Indexing.py", "Data Selection & Article Indexing", "🔎"),
 
-        # Section(name="UPLOAD DATA TO CENTRAL TOOL", icon="📰"),
-        # Page("app/pages/3__Upload_Data_to_Central_Tool.py", "Upload Data", "🖥️"),
-
         # Section(name="ANALYTICS", icon="📰"),
         # Page("app/pages/4__Traction_Analytics.py", "Traction Analytics Interface Demo", "🖥️"),
 
         # Section(name="REFERENCE", icon="📰"),
-        # Page("app/pages/5__Taxonomy_Explorer.py", "Taxonomy Explorer", "🔮"),
         # Page("app/pages/6__Model_Performance.py", "Model Performance", "🔎"),
     ]
 )

@@ -22,7 +22,7 @@ classification_model = st.cache_resource(core.load_classification_model)()
 file_handler = st.cache_resource(core.FileHandler)(core.DATA_DIR)
 
 @st.cache_data
-def filter_featurize(domain_filter, min_engagement, date_range):
+def filter_process_data(domain_filter, min_engagement, date_range):
 
     results_filtered_df = file_handler.filtered_query(
         domain_filter, min_engagement, date_range
@@ -148,7 +148,7 @@ def data_selection():
     # filters dataset according to filters set in sidebar
     try:
         # Classify & embed for subsequent steps
-        processed_table = filter_featurize(
+        processed_table = filter_process_data(
             domain_filter, min_engagement, datetime_bounds
         )
         
@@ -247,7 +247,7 @@ def data_selection():
             file_handler.update_subindex(view_df)
             for subindex, group_df in out_groups.items():
                 file_handler.update_labels(group_df)
-            filter_featurize.clear()
+            filter_process_data.clear()
             st.rerun()
 
     except ValueError as ve:

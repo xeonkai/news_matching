@@ -9,8 +9,6 @@ import gcsfs
 import numpy as np
 import pandas as pd
 from dotenv import load_dotenv
-from sentence_transformers import SentenceTransformer
-from setfit import SetFitModel
 
 load_dotenv()
 
@@ -49,7 +47,8 @@ def fetch_latest_taxonomy() -> pd.DataFrame:
     return taxonomy_df
 
 
-def load_embedding_model() -> SentenceTransformer:
+def load_embedding_model():
+    from sentence_transformers import SentenceTransformer
     model = SentenceTransformer(
         "sentence-transformers/multi-qa-MiniLM-L6-cos-v1",
         cache_folder="cached_models",
@@ -74,7 +73,8 @@ def remove_old_models(models_to_keep=12):
         shutil.rmtree(old_model_path)
 
 
-def load_classification_model(model_path=None) -> SetFitModel:
+def load_classification_model(model_path=None):
+    from setfit import SetFitModel
     latest_model_path = get_latest_model_path()
     remove_old_models()
     if model_path is None:
@@ -84,7 +84,7 @@ def load_classification_model(model_path=None) -> SetFitModel:
     return model
 
 
-def label_df(df: pd.DataFrame, model: SetFitModel, column: str) -> pd.DataFrame:
+def label_df(df: pd.DataFrame, model, column: str) -> pd.DataFrame:
     y_score = model.predict_proba(df[column])
 
     label_order = np.argsort(y_score, axis=1, kind="stable").numpy()[:, ::-1]
@@ -108,7 +108,7 @@ def label_df(df: pd.DataFrame, model: SetFitModel, column: str) -> pd.DataFrame:
     return labelled_df
 
 
-def embed_df(df: pd.DataFrame, model: SentenceTransformer, column: str) -> pd.DataFrame:
+def embed_df(df: pd.DataFrame, model, column: str) -> pd.DataFrame:
     embedded_df = df.assign(vector=model.encode(df[column]).tolist())
     return embedded_df
 
@@ -237,6 +237,9 @@ class FileHandler:
 
         with duckdb.connect(self.db_path) as con:
             con.register("processed_table", processed_table)
+            # If duplicate filename, replace all rows
+            con.sql(f"DELETE FROM {self.NEWS_DATA} WHERE source = '{file.name}'")
+            # If different filename, but different data, update only relevant rows
             con.sql(
                 f"""
                 INSERT INTO {self.NEWS_DATA}
@@ -269,7 +272,8 @@ class FileHandler:
             file,
             usecols=["link", "facebook_link", "themes", "indexes", "subindex"],
         ).dropna(
-            subset=["subindex"]
+            subset=["subindex", "indexes", "indexes"],
+            how="all"
         ).assign(
             themes = lambda r: r["themes"].str.split(","),
             indexes = lambda r: r["indexes"].str.split(","),

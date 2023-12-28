@@ -13,8 +13,9 @@ def run():
     st.markdown(
         """
         - Upload a CSV file of the WEEKLY NEWS FILE downloaded from the content aggregator. \n
-        - Please ensure that the name of the uploaded file follows the format below:\n
-            `test_-_for_indexing-facebook_posts-<MM_DD_YY-HH_MM>.csv`. \n
+        - Please ensure that the name of the uploaded file follows the format below: \n
+            `<filename>-<MM_DD_YY-HH_MM>.csv`. \n
+        - If you have done the article indexing on your internet laptop, additionally on this page please upload INDEXED DATA FILE\n
         """
     )
     st.markdown("""---""")
@@ -27,8 +28,13 @@ def run():
     io_mode = st.selectbox("Action type", ("Upload Weekly News Scan", "Upload Indexed Data", "Delete"))
 
     if io_mode == "Upload Weekly News Scan":
+        st.markdown(
+            """
+            - Upload a csv file of the news scan to add them to the database.
+            """
+        )
         uploaded_files = st.file_uploader(
-            "Upload new data here:", type=["csv"], accept_multiple_files=True
+            "Upload new weekly news scan here:", type=["csv"], accept_multiple_files=True
         )
         if uploaded_files:
             dup_filenames = [
@@ -86,6 +92,11 @@ def run():
                     st.success(f"{num_uploaded_files} files uploaded successfully!")
     
     elif io_mode == "Upload Indexed Data":
+        st.markdown(
+            """
+            - Upload a csv file of the indexed articles to update the database.
+            """
+        )
         uploaded_index_files = st.file_uploader(
             "Upload indexed data here:", type=["csv"], accept_multiple_files=True
         )
