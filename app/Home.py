@@ -7,6 +7,7 @@ add_page_title(layout="wide")
 # st.set_page_config(page_title="Topic Discovery Tool", page_icon="📰", layout="wide")
 # st.title("🖥️ Topic Discovery Tool")
 
+
 def run():
     st.markdown("""---""")
     st.subheader("Welcome!")
@@ -25,7 +26,9 @@ def run():
     files_table = st.empty()
 
     # TODO: Maybe add download mode
-    io_mode = st.selectbox("Action type", ("Upload Weekly News Scan", "Upload Indexed Data", "Delete"))
+    io_mode = st.selectbox(
+        "Action type", ("Upload Weekly News Scan", "Upload Indexed Data", "Delete")
+    )
 
     if io_mode == "Upload Weekly News Scan":
         st.markdown(
@@ -34,7 +37,9 @@ def run():
             """
         )
         uploaded_files = st.file_uploader(
-            "Upload new weekly news scan here:", type=["csv"], accept_multiple_files=True
+            "Upload new weekly news scan here:",
+            type=["csv"],
+            accept_multiple_files=True,
         )
         if uploaded_files:
             dup_filenames = [
@@ -90,7 +95,7 @@ def run():
 
                 if num_uploaded_files == len(new_files):
                     st.success(f"{num_uploaded_files} files uploaded successfully!")
-    
+
     elif io_mode == "Upload Indexed Data":
         st.markdown(
             """
