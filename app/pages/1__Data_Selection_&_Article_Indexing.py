@@ -20,10 +20,12 @@ add_page_title(layout="wide")
 embedding_model = st.cache_resource(core.load_embedding_model)()
 classification_model = st.cache_resource(core.load_classification_model)()
 file_handler = st.cache_resource(core.FileHandler)(core.DATA_DIR)
+taxonomy_themes_series = st.cache_data(core.fetch_latest_themes, ttl=180)()
+taxonomy_indexes_series = st.cache_data(core.fetch_latest_index, ttl=180)()
+
 
 @st.cache_data
 def filter_process_data(domain_filter, min_engagement, date_range):
-
     results_filtered_df = file_handler.filtered_query(
         domain_filter, min_engagement, date_range
     )
@@ -72,7 +74,6 @@ def filter_process_data(domain_filter, min_engagement, date_range):
 
 
 def data_selection():
-
     # st.title("🔎 Data Selection")
     st.markdown("""---""")
     st.markdown(
@@ -89,10 +90,7 @@ def data_selection():
         )
         return
 
-    taxonomy_df = st.cache_data(core.fetch_latest_taxonomy, ttl=300)()
     filter_bounds = st.cache_data(file_handler.get_filter_bounds, ttl=15)()
-
-
 
     # Filter inputs by user
     with st.sidebar:
@@ -151,7 +149,7 @@ def data_selection():
         processed_table = filter_process_data(
             domain_filter, min_engagement, datetime_bounds
         )
-        
+
         # Metrics placeholder
         col_nrows, col_fb_interactions, col_taxonomy, _ = st.columns([1, 1, 1, 2])
         # Update metrics on filtered data
@@ -164,10 +162,15 @@ def data_selection():
             )
         with col_taxonomy:
             st.markdown(f"[Link to Taxonomy :scroll:]({core.gsheet_taxonomy_url})")
-        st.caption('<div style="text-align: right;">Download data by hovering here </div>', unsafe_allow_html=True)
+        st.caption(
+            '<div style="text-align: right;">Download data by hovering here </div>',
+            unsafe_allow_html=True,
+        )
         column_config = {
             "link": st.column_config.LinkColumn("link", width="small"),
-            "facebook_link": st.column_config.LinkColumn("facebook_link", width="medium"),
+            "facebook_link": st.column_config.LinkColumn(
+                "facebook_link", width="medium"
+            ),
             "themes": st.column_config.ListColumn("themes", width="small"),
             "indexes": st.column_config.ListColumn("indexes", width="small"),
         }
@@ -207,19 +210,29 @@ def data_selection():
                 continue
             df_col, theme_col, index_col = st.columns([2, 1, 1])
             with theme_col:
-                existing_themes = list(set(g_df["themes"].explode().dropna()))
+                existing_themes = (
+                    g_df["themes"]
+                    .explode()
+                    .drop_duplicates()
+                    .dropna()[lambda s: s.isin(taxonomy_themes_series)]
+                )
                 # literal_eval
                 theme = st.multiselect(
                     f'Themes for "{subindex}"',
-                    taxonomy_df["Theme"].drop_duplicates().sort_values(),
+                    taxonomy_themes_series,
                     default=existing_themes,
                 )
                 # g["themes"] = theme
             with index_col:
-                existing_indexes = list(set(g_df["indexes"].explode().dropna()))
+                existing_indexes = (
+                    g_df["indexes"]
+                    .explode()
+                    .drop_duplicates()
+                    .dropna()[lambda s: s.isin(taxonomy_indexes_series)]
+                )
                 index = st.multiselect(
                     f'Indexes for "{subindex}"',
-                    taxonomy_df["Index"].drop_duplicates().sort_values(),
+                    taxonomy_indexes_series,
                     default=existing_indexes,
                 )
             with df_col:

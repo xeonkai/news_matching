@@ -23,34 +23,50 @@ fs = gcsfs.GCSFileSystem(
 
 DATA_DIR = Path("data")
 
-def fetch_latest_taxonomy() -> pd.DataFrame:
-    taxonomy_df = (
-        pd.read_csv(gsheet_taxonomy_url + "/export?format=csv")[["Theme", "Index"]][:-1]
-        .dropna(axis=0, how="all")
-        .assign(
-            Theme=lambda row: row["Theme"].str.casefold(),
-            Index=lambda row: row["Index"].str.casefold(),
-        )
-        .ffill()
-        .drop_duplicates()
-        .sort_values(["Theme", "Index"])
-        .reset_index(drop=True)
-    )
+MODEL_ID = "sentence-transformers/multi-qa-MiniLM-L6-cos-v1"
 
+
+def fetch_latest_themes():
+    themes_df = (
+        pd.read_csv(f"{gsheet_taxonomy_url}/export?format=csv&gid=92379333")["Theme"]
+        .dropna()
+        .str.casefold()
+        .drop_duplicates()
+        .sort_values()
+    )
     # Cache taxonomy versions
-    taxonomy_folder = DATA_DIR / "taxonomy"
+    taxonomy_folder = DATA_DIR / "taxonomy" / datetime.date.today().isoformat()
     taxonomy_folder.mkdir(parents=True, exist_ok=True)
-    taxonomy_df.to_csv(
-        f"{taxonomy_folder / datetime.date.today().isoformat()}.csv",
+    themes_df.to_csv(
+        f"{taxonomy_folder / 'themes'}.csv",
         index=False,
     )
-    return taxonomy_df
+    return themes_df
+
+
+def fetch_latest_index():
+    index_df = (
+        pd.read_csv(f"{gsheet_taxonomy_url}/export?format=csv&gid=755202117")["Index"]
+        .dropna()
+        .str.casefold()
+        .drop_duplicates()
+        .sort_values()
+    )
+    # Cache taxonomy versions
+    taxonomy_folder = DATA_DIR / "taxonomy" / datetime.date.today().isoformat()
+    taxonomy_folder.mkdir(parents=True, exist_ok=True)
+    index_df.to_csv(
+        f"{taxonomy_folder / 'indexes'}.csv",
+        index=False,
+    )
+    return index_df
 
 
 def load_embedding_model():
     from sentence_transformers import SentenceTransformer
+
     model = SentenceTransformer(
-        "sentence-transformers/multi-qa-MiniLM-L6-cos-v1",
+        MODEL_ID,
         cache_folder="cached_models",
     )
     return model
@@ -75,6 +91,7 @@ def remove_old_models(models_to_keep=12):
 
 def load_classification_model(model_path=None):
     from setfit import SetFitModel
+
     latest_model_path = get_latest_model_path()
     remove_old_models()
     if model_path is None:
@@ -268,15 +285,16 @@ class FileHandler:
             )
 
     def write_labelled_articles(self, file) -> None:
-        processed_table = pd.read_csv(
-            file,
-            usecols=["link", "facebook_link", "themes", "indexes", "subindex"],
-        ).dropna(
-            subset=["subindex", "indexes", "indexes"],
-            how="all"
-        ).assign(
-            themes = lambda r: r["themes"].str.split(","),
-            indexes = lambda r: r["indexes"].str.split(","),
+        processed_table = (
+            pd.read_csv(
+                file,
+                usecols=["link", "facebook_link", "themes", "indexes", "subindex"],
+            )
+            .dropna(subset=["subindex", "indexes", "indexes"], how="all")
+            .assign(
+                themes=lambda r: r["themes"].str.split(","),
+                indexes=lambda r: r["indexes"].str.split(","),
+            )
         )
         self.update_labels(processed_table)
 
@@ -284,7 +302,7 @@ class FileHandler:
         with duckdb.connect(self.db_path) as con:
             results_df = con.sql(query).to_df()
         return results_df
-    
+
     def full_query(self):
         query = f"SELECT *" f"FROM {self.NEWS_DATA} "
         return self.query(query)
@@ -360,8 +378,7 @@ class FileHandler:
         min_engagement,
         date_range,
     ):
-        query = (
-            f"""
+        query = f"""
             SELECT * FROM {self.NEWS_DATA}
             LEFT JOIN {self.NEWS_LABELS} 
                 ON {self.NEWS_DATA}.facebook_link = {self.NEWS_LABELS}.facebook_link
@@ -371,7 +388,6 @@ class FileHandler:
             AND headline is not NULL 
             ORDER BY facebook_interactions DESC
             """
-        )
         with duckdb.connect(self.db_path) as con:
             results_filtered = con.sql(query).to_df()
         return results_filtered

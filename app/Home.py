@@ -101,8 +101,8 @@ def run():
             "Upload indexed data here:", type=["csv"], accept_multiple_files=True
         )
         if uploaded_index_files:
-            save_btn = st.button("Save")
-            if save_btn:
+            save_index_btn = st.button("Save")
+            if save_index_btn:
                 # save file name for future output name
                 num_uploaded_files = 0
                 progress_text = "Index file upload {num_uploaded_files} / {num_new_files} in progress. Please wait."
@@ -147,6 +147,7 @@ def run():
         st.warning("There is no data. Please upload a csv file before continuing.")
 
     st.markdown("""---""")
+    st.cache_data.clear()
 
 
 if __name__ == "__main__":
