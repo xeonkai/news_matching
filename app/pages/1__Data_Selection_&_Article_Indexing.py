@@ -41,9 +41,12 @@ def filter_process_data(domain_filter, min_engagement, date_range):
         column="headline",
     )
 
+    # Streamlit editable df requires list type to be not na
     processed_table["themes"] = processed_table["themes"].fillna("").apply(list)
     processed_table["indexes"] = processed_table["indexes"].fillna("").apply(list)
 
+    # Inefficient recursive similarity, seeded by top fb interactions
+    # Doesn't matter cause only computed on first load / save
     processed_table["similarity_rank"] = pd.Series(dtype="int")
     ref_vector = np.array(
         processed_table.nlargest(1, "facebook_interactions")
@@ -84,7 +87,6 @@ def data_selection():
     st.markdown("""---""")
 
     if file_handler.list_csv_files_df().empty:
-        # TODO: Raise error, decouple streamlit
         st.error(
             "There is no data. Please return to the Home page and upload a csv file."
         )
@@ -137,12 +139,6 @@ def data_selection():
             default=[],
         )
 
-        # theme_filter = selectbox(
-        #     label="Labelled articles to include",
-        #     options=filter_bounds["theme"],
-        #     no_selection_label="All, including unlabelled",
-        # )
-
     # filters dataset according to filters set in sidebar
     try:
         # Classify & embed for subsequent steps
@@ -162,10 +158,12 @@ def data_selection():
             )
         with col_taxonomy:
             st.markdown(f"[Link to Taxonomy :scroll:]({core.gsheet_taxonomy_url})")
+        
         st.caption(
             '<div style="text-align: right;">Download data by hovering here </div>',
             unsafe_allow_html=True,
         )
+
         column_config = {
             "link": st.column_config.LinkColumn("link", width="small"),
             "facebook_link": st.column_config.LinkColumn(
@@ -203,7 +201,7 @@ def data_selection():
         )
 
         subindex_groups = view_df.groupby("subindex")
-        # st.write(subindex_groups)
+
         out_groups = {}
         for subindex, g_df in subindex_groups:
             if len(subindex) == 0:
@@ -216,13 +214,11 @@ def data_selection():
                     .drop_duplicates()
                     .dropna()[lambda s: s.isin(taxonomy_themes_series)]
                 )
-                # literal_eval
                 theme = st.multiselect(
                     f'Themes for "{subindex}"',
                     taxonomy_themes_series,
                     default=existing_themes,
                 )
-                # g["themes"] = theme
             with index_col:
                 existing_indexes = (
                     g_df["indexes"]
@@ -235,6 +231,7 @@ def data_selection():
                     taxonomy_indexes_series,
                     default=existing_indexes,
                 )
+            # Reverse order to reflect changes in df
             with df_col:
                 g_df["themes"] = g_df.apply(lambda _: theme, axis=1)
                 g_df["indexes"] = g_df.apply(lambda _: index, axis=1)
