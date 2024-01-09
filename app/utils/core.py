@@ -391,6 +391,22 @@ class FileHandler:
         with duckdb.connect(self.db_path) as con:
             results_filtered = con.sql(query).to_df()
         return results_filtered
+    
+    def labelled_query(
+        self,
+    ):
+        query = f"""
+            SELECT * FROM {self.NEWS_DATA}
+            LEFT JOIN {self.NEWS_LABELS} 
+                ON {self.NEWS_DATA}.facebook_link = {self.NEWS_LABELS}.facebook_link
+            WHERE ((themes IS NOT NULL) AND (len(themes) > 0))
+            OR ((indexes IS NOT NULL) AND (len(indexes) > 0))
+            OR subindex IS NOT NULL
+            ORDER BY published ASC
+            """
+        with duckdb.connect(self.db_path) as con:
+            results_labelled = con.sql(query).to_df()
+        return results_labelled
 
     def list_csv_filenames(self):
         return [file.name for file in self.raw_data_dir.iterdir()]

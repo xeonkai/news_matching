@@ -1,148 +1,52 @@
 import streamlit as st
-from streamlit_extras.dataframe_explorer import dataframe_explorer
 import pandas as pd
-import ast
-from plotly_calplot import calplot
-import plotly.graph_objects as go
-from st_aggrid import AgGrid, GridUpdateMode, ColumnsAutoSizeMode, JsCode
-from st_aggrid.grid_options_builder import GridOptionsBuilder
 import altair as alt
 import random
 from utils import core
 from st_pages import add_page_title
 
+from pygwalker.api.streamlit import StreamlitRenderer, init_streamlit_comm
+
 add_page_title(layout="wide")
+# Establish communication between pygwalker and streamlit
+init_streamlit_comm()
+ 
+# Get an instance of pygwalker's renderer. You should cache this instance to effectively prevent the growth of in-process memory.
+@st.cache_resource
+def get_theme_renderer() -> "StreamlitRenderer":
+    file_handler = core.FileHandler(core.DATA_DIR)
+    df = file_handler.labelled_query().drop(columns=['indexes', 'link_2', 'facebook_link_2']).explode("themes")
+    return StreamlitRenderer(df, spec="./theme_gw_config.json", debug=False)
 
-# st.set_page_config(
-#     page_title="Traction Analytics Interface Demo", page_icon="📰", layout="wide"
-# )
+@st.cache_resource
+def get_index_renderer() -> "StreamlitRenderer":
+    file_handler = core.FileHandler(core.DATA_DIR)
+    df = file_handler.labelled_query().drop(columns=['themes', 'link_2', 'facebook_link_2']).explode("indexes")
+    return StreamlitRenderer(df, spec="./index_gw_config.json", debug=False)
 
-# st.title("🖥️ Traction Analytics Interface Demo")
+st.title("🖥️ Theme and Index Analysis")
+
 st.markdown("""---""")
-st.subheader("Welcome!")
-
 st.markdown(
     """
-    This is a demo of the Traction Analytics Interface.
+    In this page, you can view the time series data analysis of the themes and index.
     """
 )
+st.markdown("""---""")
 
-st.write("")
-daily_file_handler = core.FileHandler(core.DATA_DIR)
-weekly_file_handler = core.WeeklyFileHandler(core.DATA_DIR)
-daily_df = daily_file_handler.full_query()
-weekly_df = weekly_file_handler.full_query()
+theme_tab, index_tab = st.tabs(
+    ["Theme Analysis", "Index Analysis"]
+)
+with theme_tab:
+    theme_renderer = get_theme_renderer() 
+    # Render your data exploration interface. Developers can use it to build charts by drag and drop.
+    theme_renderer.render_explore()
 
-def upload_data():
-    # Upload file
-    daily_cols = ['published', 'headline', 'summary', 'link', 'facebook_page_name', 'domain', 'label']
-    merge_cols = ['published', 'link', 'facebook_page_name']
-    final_cols = ['published', 'headline', 'summary', 'link', 'facebook_page_name',
-                  'domain', 'facebook_interactions', 'date_time_extracted', 'source', 'label']
-    traction_df = weekly_df.merge(daily_df[daily_cols],
-                                 on=merge_cols,
-                                 how='left')[final_cols].rename(columns={'label': 'suggested_labels'})
-    traction_df = traction_df.dropna(subset=['suggested_labels'])
+with index_tab:
+    index_renderer = get_index_renderer() 
+    # Render your data exploration interface. Developers can use it to build charts by drag and drop.
+    index_renderer.render_explore()
 
-    st.session_state["traction_data"] = traction_df
-
-    st.write("")
-
-    st.markdown("""---""")
-
-
-def analyze_uploaded_data():
-    st.title("🖥️ Theme and Index Analysis")
-    st.markdown("""---""")
-    st.markdown(
-        """
-        In this page, you can view the time series data analysis of the themes and index.
-        """
-    )
-    st.markdown("""---""")
-
-    if "traction_data" in st.session_state:
-        uploaded_data = st.session_state["traction_data"]
-        uploaded_data = process_data(uploaded_data)
-        with st.expander("View Raw Data"):
-            col1, col2 = st.columns([1, 1])
-            with col1:
-                st.metric(label="Number of Rows", value=uploaded_data.shape[0])
-            st.dataframe(dataframe_explorer(uploaded_data), use_container_width=True)
-
-        max_date = uploaded_data["date"].max()
-        min_date = uploaded_data["date"].min()
-        max_interactions = uploaded_data["facebook_interactions"].max()
-        min_interactions = uploaded_data["facebook_interactions"].min()
-
-        with st.sidebar:
-            with st.form("min_interactions"):
-                st.subheader("Filters")
-                st.write("Input filters for data analysis.")
-
-                min_interactions = st.slider(
-                    "Minimum Number of Facebook Interactions per article",
-                    min_value=0,
-                    max_value=10000,
-                    value=500,
-                )
-                date_range = st.date_input(
-                    "Date range of articles",
-                    value=(
-                        min_date,
-                        max_date,
-                    ),
-                    min_value=min_date,
-                    max_value=max_date,
-                )
-
-                aggregate_by = st.selectbox(
-                    "Aggregate by",
-                    options=["day", "week", "month"],
-                    index=0,
-                )
-
-                selected_themes = st.multiselect(
-                    "Select Themes to Exclude",
-                    options=sorted(uploaded_data["theme"].unique().tolist()),
-                    # default=["general"],
-                )
-
-                selected_index = st.multiselect(
-                    "Select Index to Exclude",
-                    options=sorted(uploaded_data["index"].unique().tolist()),
-                    # default=["others"],
-                )
-
-                submit_button = st.form_submit_button(label="Submit")
-
-        uploaded_data_filtered = uploaded_data.loc[
-            lambda df: (df["facebook_interactions"] >= min_interactions)
-            & (df["date"].between(date_range[0], date_range[1]))
-            & (~df["theme"].isin(selected_themes))
-            & (~df["index"].isin(selected_index))
-        ]
-
-        period_mapping = {"day": "D", "week": "W", "month": "M"}
-
-        uploaded_data_filtered["date_time_extracted"] = (
-            pd.to_datetime(uploaded_data_filtered["date_time_extracted"])
-            .dt.to_period(period_mapping[aggregate_by])
-            .dt.start_time
-        )
-
-        tab1, tab2, tab3 = st.tabs(
-            ["Summary Analysis", "Theme Analysis", "Index Analysis"]
-        )
-
-        with tab1:
-            run_summary_tab(uploaded_data_filtered)
-
-        with tab2:
-            run_theme_tab(uploaded_data_filtered)
-
-        with tab3:
-            run_index_tab(uploaded_data_filtered)
 
 
 def run_summary_tab(df):
@@ -193,7 +97,11 @@ def run_summary_tab(df):
                     scheme="greens"
                 ),  # , bins=alt.BinParams(step=700), nice=True),
             ),
-            tooltip=["date_time_extracted", "theme_index", "mean(facebook_interactions)"],
+            tooltip=[
+                "date_time_extracted",
+                "theme_index",
+                "mean(facebook_interactions)",
+            ],
         )
         .properties(width=1600)
     ).configure_axis(
@@ -900,7 +808,9 @@ def run_index_tab(uploaded_data_filtered):
             st.altair_chart(index_mean_chart, use_container_width=True)
         with col2:
             df_mean = (
-                theme_data.groupby(["index", "date_time_extracted"])["facebook_interactions"]
+                theme_data.groupby(["index", "date_time_extracted"])[
+                    "facebook_interactions"
+                ]
                 .mean()
                 .sort_values(ascending=False)
                 .reset_index()
@@ -928,7 +838,10 @@ def run_index_tab(uploaded_data_filtered):
                 "###### Percent Change in Mean of Facebook Interactions by Index"
             )
             df_mean_agg = aggregate_pct_change(
-                theme_data, ["index", "date_time_extracted"], "facebook_interactions", "mean"
+                theme_data,
+                ["index", "date_time_extracted"],
+                "facebook_interactions",
+                "mean",
             )
             index_pct_change_chart = plot_index_timeseries(
                 df_mean_agg,
@@ -969,7 +882,9 @@ def run_index_tab(uploaded_data_filtered):
             st.altair_chart(index_sum_chart, use_container_width=True)
         with col2:
             df_sum = (
-                theme_data.groupby(["index", "date_time_extracted"])["facebook_interactions"]
+                theme_data.groupby(["index", "date_time_extracted"])[
+                    "facebook_interactions"
+                ]
                 .sum()
                 .sort_values(ascending=False)
                 .reset_index()
@@ -997,7 +912,10 @@ def run_index_tab(uploaded_data_filtered):
                 "###### Percent Change in Sum of Facebook Interactions by Index"
             )
             df_sum_agg = aggregate_pct_change(
-                theme_data, ["index", "date_time_extracted"], "facebook_interactions", "sum"
+                theme_data,
+                ["index", "date_time_extracted"],
+                "facebook_interactions",
+                "sum",
             )
             index_pct_change_chart = plot_index_timeseries(
                 df_sum_agg,
@@ -1021,58 +939,7 @@ def run_index_tab(uploaded_data_filtered):
                     ),
                 )
 
-
-def process_data(df):
-    # df["suggested_labels"] = df["suggested_labels"].apply(
-    #     lambda x: ast.literal_eval(x) if isinstance(x, str) else x
-    # )
-    # df["theme"] = df["suggested_labels"].str.split(">")[0]
-    # df["index"] = df["suggested_labels"].apply(lambda x: x[0].split(">")[1].strip())
-    df[['theme', 'index']] = df['suggested_labels'].str.split('>', n=1, expand=True)
-    df["date"] = df["published"].apply(lambda x: pd.to_datetime(x).date())
-    df["time"] = df["published"].apply(lambda x: pd.to_datetime(x).time())
-    df["date_time_extracted"] = df["date_time_extracted"].apply(
-        lambda x: pd.to_datetime(x).date()
-    )
-    # df["date_time_extracted"] = pd.to_datetime(df["date_time_extracted"])
-
-    # Sorting by headline
-    df = df.sort_values(
-        by=["headline", "published", "date_time_extracted"], ascending=[False, True, True]
-    ).reset_index(drop=True)
-
-    # calculating difference between consecutive rows for each article
-    df["facebook_interactions_abs_change"] = (
-        df.groupby("link")["facebook_interactions"].diff().fillna(0)
-    )
-
-    # calculating percentage change between consecutive rows for each article
-    df["facebook_interactions_pct_change"] = (
-        df.groupby("link")["facebook_interactions"].pct_change().fillna(0)
-    )
-
-    # filtering to only include the relavent columns
-    df = df[
-        [
-            "published",
-            "date",
-            "time",
-            "date_time_extracted",
-            "headline",
-            "summary",
-            "link",
-            "domain",
-            "facebook_interactions",
-            "facebook_interactions_abs_change",
-            "facebook_interactions_pct_change",
-            "theme",
-            "index",
-        ]
-    ]
-
-    return df
-
-
 if __name__ == "__main__":
-    upload_data()
-    analyze_uploaded_data()
+    # upload_data()
+    # analyze_uploaded_data()
+    pass
