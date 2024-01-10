@@ -62,6 +62,8 @@ with st.sidebar:
         default=[],
     )
 
+    top_n = st.number_input("No. Themes/Indexes to Show", min_value=1, value=20, step=1)
+
     df = file_handler.filtered_query(domain_filter, min_engagement, datetime_bounds)
     df["themes"] = df["themes"].fillna("").apply(list)
     df["indexes"] = df["indexes"].fillna("").apply(list)
@@ -92,9 +94,9 @@ df.loc[lambda df: df["priority_groups"].notna(), "group"] = df.loc[
     lambda df: df["priority_groups"].notna(), "priority_groups"
 ]
 
-
 theme_metric_col, index_metric_col = st.columns([1, 1])
 with theme_metric_col:
+    st.subheader("Top 20 themes")
     st.write(
         df.explode("themes")
         .groupby("themes")
@@ -105,9 +107,11 @@ with theme_metric_col:
             count=pd.NamedAgg(column="facebook_interactions", aggfunc="count"),
         )
         .sort_values("facebook_interactions", ascending=False)
+        .iloc[:top_n]
     )
 
 with index_metric_col:
+    st.subheader("Top 20 indexes")
     st.write(
         df.explode("indexes")
         .groupby("indexes")
@@ -118,9 +122,10 @@ with index_metric_col:
             count=pd.NamedAgg(column="facebook_interactions", aggfunc="count"),
         )
         .sort_values("facebook_interactions", ascending=False)
-        .iloc[:20]
+        .iloc[:top_n]
     )
 
+st.subheader("DOM summmary table")
 st.dataframe(
     df.dropna(subset=["subindex"])
     .assign(
