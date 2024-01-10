@@ -1,6 +1,6 @@
 from st_pages import Page, Section, add_page_title, show_pages
 
-"## Please click on Topic Discovery Tool in the sidebar to continue."
+"## Please click on relevant tabs in the sidebar to continue."
 
 show_pages(
     [
@@ -13,8 +13,8 @@ show_pages(
             "🔎",
         ),
         Page("app/pages/2__Summary_Metrics.py", "Summary Metrics", "🖥️"),
-        Section(name="ANALYTICS", icon="📰"),
-        Page("app/pages/4__Traction_Analytics.py", "Traction Analytics Interface Demo", "🖥️"),
+        # Section(name="ANALYTICS", icon="📰"),
+        # Page("app/pages/4__Traction_Analytics.py", "Traction Analytics Interface Demo", "🖥️"),
         # Section(name="REFERENCE", icon="📰"),
         # Page("app/pages/6__Model_Performance.py", "Model Performance", "🔎"),
     ]
