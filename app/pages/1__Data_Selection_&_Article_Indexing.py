@@ -20,8 +20,8 @@ add_page_title(layout="wide")
 embedding_model = st.cache_resource(core.load_embedding_model)()
 classification_model = st.cache_resource(core.load_classification_model)()
 file_handler = st.cache_resource(core.FileHandler)(core.DATA_DIR)
-taxonomy_themes_series = st.cache_data(core.fetch_latest_themes, ttl=180)()
-taxonomy_indexes_series = st.cache_data(core.fetch_latest_index, ttl=180)()
+taxonomy_themes_series = st.cache_data(core.fetch_latest_themes, ttl=60 * 5)()
+taxonomy_indexes_series = st.cache_data(core.fetch_latest_index, ttl=60 * 5)()
 
 
 @st.cache_data
@@ -199,6 +199,9 @@ def data_selection():
             ],
             height=600,
         )
+        _, col_save = st.columns([5, 1])
+        with col_save:
+            save_indexing_btn = st.button("Save Indexing & Refresh")
 
         subindex_groups = view_df.groupby("subindex")
 
@@ -249,15 +252,16 @@ def data_selection():
                 )
                 out_groups[subindex] = g_df
 
-        _, col_save = st.columns([5, 1])
-        with col_save:
-            save_indexing_btn = st.button("Save Indexing")
+        _, col_save_extra = st.columns([5, 1])
+        with col_save_extra:
+            extra_save_indexing_btn = st.button("Save Indexing & Refresh", key="extra_save")
 
-        if save_indexing_btn:
+        if save_indexing_btn or extra_save_indexing_btn:
             file_handler.update_subindex(view_df)
             for subindex, group_df in out_groups.items():
                 file_handler.update_labels(group_df)
-            filter_process_data.clear()
+            # filter_process_data.clear()
+            st.cache_data.clear()
             st.rerun()
 
     except ValueError as ve:
