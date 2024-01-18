@@ -7,6 +7,8 @@ scikit-learn>=1.3.0,<1.4.0 # For consistent model pickling
 streamlit
 pandas
 numpy
+httpx
+beautifulsoup4
 duckdb
 google-cloud-storage
 gcsfs
