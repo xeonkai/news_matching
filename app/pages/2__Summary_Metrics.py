@@ -139,7 +139,8 @@ st.dataframe(
             column="facebook_interactions", aggfunc="sum"
         ),
         count=pd.NamedAgg(column="facebook_interactions", aggfunc="count"),
-        headlines=pd.NamedAgg(column="headline", aggfunc=set),
+        headlines=pd.NamedAgg(column="headline", aggfunc=list),
+        links=pd.NamedAgg(column="link", aggfunc=list),
     )
     .sort_values(["facebook_interactions", "group"], ascending=False)
 )
