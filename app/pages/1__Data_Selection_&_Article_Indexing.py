@@ -1,3 +1,4 @@
+import asyncio
 import datetime
 import os
 
@@ -5,8 +6,8 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 from dotenv import load_dotenv
-from st_pages import add_page_title
 from sklearn.metrics.pairwise import cosine_similarity
+from st_pages import add_page_title
 from utils import core
 
 pd.options.mode.chained_assignment = None
@@ -18,27 +19,27 @@ gsheet_taxonomy_url = "https://docs.google.com/spreadsheets/d/" + GSHEET_TAXONOM
 add_page_title(layout="wide")
 
 embedding_model = st.cache_resource(core.load_embedding_model)()
-classification_model = st.cache_resource(core.load_classification_model)()
 file_handler = st.cache_resource(core.FileHandler)(core.DATA_DIR)
 taxonomy_themes_series = st.cache_data(core.fetch_latest_themes, ttl=60 * 5)()
 taxonomy_indexes_series = st.cache_data(core.fetch_latest_index, ttl=60 * 5)()
 
 
 @st.cache_data
-def filter_process_data(domain_filter, min_engagement, date_range):
+def filter_process_data(
+    domain_filter, min_engagement, date_range, load_thumbnails=False
+):
     results_filtered_df = file_handler.filtered_query(
         domain_filter, min_engagement, date_range
     )
 
     # Classify & embed for subsequent steps
-    processed_table = results_filtered_df.pipe(
-        core.label_df,
-        model=classification_model,
-        column="headline",
-    ).pipe(
-        core.embed_df,
-        model=embedding_model,
-        column="headline",
+    processed_table = (
+        results_filtered_df
+        .pipe(
+            core.embed_df,
+            model=embedding_model,
+            column="headline",
+        )
     )
 
     # Streamlit editable df requires list type to be not na
@@ -72,7 +73,11 @@ def filter_process_data(domain_filter, min_engagement, date_range):
         .reset_index(drop=True)
         .drop(columns=["similarity_rank"])
     )
-
+    if load_thumbnails:
+        image_urls = asyncio.run(
+            core.async_get_thumbnail_links((processed_table["link"].to_list()))
+        )
+        processed_table["thumbnail"] = image_urls
     return processed_table
 
 
@@ -139,11 +144,13 @@ def data_selection():
             default=[],
         )
 
+        load_thumbnails = st.toggle("Load Thumbnails")
+
     # filters dataset according to filters set in sidebar
     try:
         # Classify & embed for subsequent steps
         processed_table = filter_process_data(
-            domain_filter, min_engagement, datetime_bounds
+            domain_filter, min_engagement, datetime_bounds, load_thumbnails
         )
 
         # Metrics placeholder
@@ -158,7 +165,7 @@ def data_selection():
             )
         with col_taxonomy:
             st.markdown(f"[Link to Taxonomy :scroll:]({core.gsheet_taxonomy_url})")
-        
+
         st.caption(
             '<div style="text-align: right;">Download data by hovering here </div>',
             unsafe_allow_html=True,
@@ -169,6 +176,8 @@ def data_selection():
             "facebook_link": st.column_config.LinkColumn(
                 "facebook_link", width="medium"
             ),
+            "summary": st.column_config.TextColumn("summary", width="small"),
+            "thumbnail": st.column_config.ImageColumn("thumbnail"),
             "themes": st.column_config.ListColumn("themes", width="small"),
             "indexes": st.column_config.ListColumn("indexes", width="small"),
         }
@@ -179,6 +188,8 @@ def data_selection():
             column_order=[
                 "published",
                 "headline",
+                "summary",
+                "thumbnail",
                 "subindex",
                 "facebook_interactions",
                 "link",
@@ -254,7 +265,9 @@ def data_selection():
 
         _, col_save_extra = st.columns([5, 1])
         with col_save_extra:
-            extra_save_indexing_btn = st.button("Save Indexing & Refresh", key="extra_save")
+            extra_save_indexing_btn = st.button(
+                "Save Indexing & Refresh", key="extra_save"
+            )
 
         if save_indexing_btn or extra_save_indexing_btn:
             file_handler.update_subindex(view_df)

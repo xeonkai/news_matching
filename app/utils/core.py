@@ -1,3 +1,4 @@
+import asyncio
 import datetime
 import json
 import os
@@ -6,8 +7,10 @@ from pathlib import Path
 
 import duckdb
 import gcsfs
+import httpx
 import numpy as np
 import pandas as pd
+from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -128,6 +131,25 @@ def label_df(df: pd.DataFrame, model, column: str) -> pd.DataFrame:
 def embed_df(df: pd.DataFrame, model, column: str) -> pd.DataFrame:
     embedded_df = df.assign(vector=model.encode(df[column]).tolist())
     return embedded_df
+
+
+async def async_get_thumbnail_links(urls):
+    headers = {
+        "User-Agent": "",
+    }
+    async with httpx.AsyncClient(headers=headers) as client:
+        tasks = [client.get(url) for url in urls]
+        results = await asyncio.gather(*tasks)
+    image_urls = []
+    for response in results:
+        try:
+            # print(response.status_code)
+            soup = BeautifulSoup(response.text, features="html.parser")
+            image_url = soup.find("meta", attrs={"property": "og:image"})
+            image_urls.append(image_url["content"])
+        except Exception as e:
+            image_urls.append(None)
+    return image_urls
 
 
 class FileHandler:
@@ -391,7 +413,7 @@ class FileHandler:
         with duckdb.connect(self.db_path) as con:
             results_filtered = con.sql(query).to_df()
         return results_filtered
-    
+
     def labelled_query(
         self,
     ):
