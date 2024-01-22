@@ -14,7 +14,7 @@ show_pages(
         ),
         Page("app/pages/2__Summary_Metrics.py", "Summary Metrics", "🖥️"),
         # Section(name="ANALYTICS", icon="📰"),
-        # Page("app/pages/4__Traction_Analytics.py", "Traction Analytics Interface Demo", "🖥️"),
+        Page("app/pages/4__Traction_Analytics.py", "Traction Analytics", "🖥️"),
         # Section(name="REFERENCE", icon="📰"),
         # Page("app/pages/6__Model_Performance.py", "Model Performance", "🔎"),
     ]

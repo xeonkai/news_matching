@@ -1,28 +1,16 @@
-import streamlit as st
-import pandas as pd
-import altair as alt
+import datetime
 import random
-from utils import core
-from st_pages import add_page_title
 
-from pygwalker.api.streamlit import StreamlitRenderer, init_streamlit_comm
+import altair as alt
+import numpy as np
+import pandas as pd
+import streamlit as st
+from st_pages import add_page_title
+from utils import core
+
+st.warning("Work in Progress")
 
 add_page_title(layout="wide")
-# Establish communication between pygwalker and streamlit
-init_streamlit_comm()
- 
-# Get an instance of pygwalker's renderer. You should cache this instance to effectively prevent the growth of in-process memory.
-@st.cache_resource
-def get_theme_renderer() -> "StreamlitRenderer":
-    file_handler = core.FileHandler(core.DATA_DIR)
-    df = file_handler.labelled_query().drop(columns=['indexes', 'link_2', 'facebook_link_2']).explode("themes")
-    return StreamlitRenderer(df, spec="./theme_gw_config.json", debug=False)
-
-@st.cache_resource
-def get_index_renderer() -> "StreamlitRenderer":
-    file_handler = core.FileHandler(core.DATA_DIR)
-    df = file_handler.labelled_query().drop(columns=['themes', 'link_2', 'facebook_link_2']).explode("indexes")
-    return StreamlitRenderer(df, spec="./index_gw_config.json", debug=False)
 
 st.title("🖥️ Theme and Index Analysis")
 
@@ -34,26 +22,79 @@ st.markdown(
 )
 st.markdown("""---""")
 
-theme_tab, index_tab = st.tabs(
-    ["Theme Analysis", "Index Analysis"]
-)
-with theme_tab:
-    theme_renderer = get_theme_renderer() 
-    # Render your data exploration interface. Developers can use it to build charts by drag and drop.
-    theme_renderer.render_explore()
+file_handler = core.FileHandler(core.DATA_DIR)
+filter_bounds = st.cache_data(file_handler.get_filter_bounds, ttl=15)()
 
-with index_tab:
-    index_renderer = get_index_renderer() 
-    # Render your data exploration interface. Developers can use it to build charts by drag and drop.
-    index_renderer.render_explore()
+with st.sidebar:
+    st.markdown("# Filters")
 
+    # numerical entry filter for minimum facebook engagement
+    min_engagement = int(
+        st.number_input(
+            label="Minimum no. of Facebook Interactions:",
+            min_value=0,
+            max_value=filter_bounds["max_fb_interactions"],
+            value=100,
+        )
+    )
+    # filter for date range of articles
+    date_range = st.date_input(
+        "Date range of articles",
+        value=(
+            filter_bounds["max_date"] - datetime.timedelta(days=1),
+            filter_bounds["max_date"],
+        ),
+        min_value=filter_bounds["min_date"],
+        max_value=filter_bounds["max_date"],
+    )
+    col_start_time, col_end_time = st.columns([1, 1])
+    with col_start_time:
+        start_time = st.time_input(
+            "Start time on first selected day", value=datetime.time(0, 0)
+        )
+    with col_end_time:
+        end_time = st.time_input(
+            "End time on last selected day", value=datetime.time(23, 59)
+        )
+
+    # combine date and time
+    start_date = datetime.datetime.combine(date_range[0], start_time)
+    end_date = datetime.datetime.combine(date_range[1], end_time)
+    datetime_bounds = (start_date, end_date)
+
+    # selection-based filter for article domains to be removed
+    domain_filter = st.multiselect(
+        label="Article domains to exclude",
+        options=filter_bounds["domain_list"],
+        default=[],
+    )
+
+
+with st.expander("View Raw Data"):
+    col1, col2 = st.columns([1, 1])
+    with col1:
+        df = file_handler.labelled_query()
+        st.metric(label="Number of Rows", value=df.shape[0])
+    st.dataframe(
+        df,
+        column_order=[
+            "published",
+            "headline",
+            "summary",
+            "subindex",
+            "facebook_interactions",
+            "link",
+            "facebook_link",
+            "domain",
+            "themes",
+            "indexes",
+        ],
+    )
 
 
 def run_summary_tab(df):
-    st.write()
-
-    n_themes = df["theme"].nunique()
-    n_indexes = df["index"].nunique()
+    n_themes = df["themes"].explode().nunique()
+    n_indexes = df["indexes"].explode().nunique()
     n_articles = df.shape[0]
     sum_interactions = df["facebook_interactions"].sum()
     mean_interactions = round(df["facebook_interactions"].mean(), 2)
@@ -78,18 +119,45 @@ def run_summary_tab(df):
 
     st.markdown("""---""")
 
-    df["theme_index"] = df["theme"] + " > " + df["index"]
+    theme_df = (
+        df[["published", "facebook_interactions", "subindex", "themes"]]
+        .explode("themes")
+        .dropna(subset="themes")
+    )
+    index_df = (
+        df[["published", "facebook_interactions", "subindex", "indexes"]]
+        .explode("indexes")
+        .dropna(subset="indexes")
+    )
 
-    chart = (
-        alt.Chart(df)
+    theme_heatmap_chart = (
+        alt.Chart(theme_df)
         .mark_rect()
         .encode(
             x=alt.X(
-                "monthdate(date_time_extracted):T",
-                title="Date Extracted",
-                axis=alt.Axis(labelAngle=-45),
+                "monthdate(published):T",
+                title="Date Published",
+                axis=alt.Axis(labelAngle=-60),
             ),
-            y=alt.Y("theme_index", title="Theme + Index"),
+            y=alt.Y("themes", title="Theme"),
+            color=alt.Color(
+                "mean(facebook_interactions)",
+                title="Mean Facebook Interactions",
+                scale=alt.Scale(scheme="greens"),
+            ),
+            tooltip=["published", "themes", "mean(facebook_interactions)"],
+        )
+    )
+    index_heatmap_chart = (
+        alt.Chart(index_df)
+        .mark_rect()
+        .encode(
+            x=alt.X(
+                "monthdate(published):T",
+                title="Date Published",
+                axis=alt.Axis(labelAngle=-60),
+            ),
+            y=alt.Y("indexes", title="Index"),
             color=alt.Color(
                 "mean(facebook_interactions)",
                 title="Mean Facebook Interactions",
@@ -97,18 +165,118 @@ def run_summary_tab(df):
                     scheme="greens"
                 ),  # , bins=alt.BinParams(step=700), nice=True),
             ),
-            tooltip=[
-                "date_time_extracted",
-                "theme_index",
-                "mean(facebook_interactions)",
-            ],
+            tooltip=["published", "indexes", "mean(facebook_interactions)"],
         )
-        .properties(width=1600)
-    ).configure_axis(
-        labelLimit=500,
+    )
+    st.altair_chart(theme_heatmap_chart, use_container_width=True)
+    st.altair_chart(index_heatmap_chart, use_container_width=True)
+
+
+def run_theme_tab(df):
+    theme_df = (
+        df[["published", "facebook_interactions", "subindex", "themes"]]
+        .explode("themes")
+        .dropna(subset="themes")
     )
 
-    st.altair_chart(chart, use_container_width=True)
+
+    tab1, tab2, tab3, tab4, tab5 = st.tabs(
+        ["Calendar", "Heatmap", "Count Analysis", "Mean Analysis", "Sum Analysis"]
+    )
+    with tab1:
+        # https://deepnote.com/@andrii-hazin/Altair-Calendar-View-1440f435-f1a1-4a6d-8962-a4b776be03af
+        date = pd.date_range(start="2021-01-01", end="2021-12-31")
+        value = np.random.normal(10, 5, size=365)
+        df = pd.DataFrame(list(zip(date, value)), columns=["date", "value"])
+        df["week"] = df["date"].dt.strftime("%W")
+        df["weekday"] = df["date"].dt.day_name()
+
+        chart = (
+            alt.Chart(df)
+            .mark_rect()
+            .encode(
+                x=alt.X(field="week", type="ordinal", title=None),
+                y=alt.Y(
+                    field="weekday",
+                    type="ordinal",
+                    sort=alt.Sort(
+                        [
+                            "Monday",
+                            "Tuesday",
+                            "Wednesday",
+                            "Thursday",
+                            "Friday",
+                            "Saturday",
+                            "Sunday",
+                        ]
+                    ),
+                    axis=alt.Axis(labelExpr = "slice(datum.label,0,3)"),
+                ),
+                color=alt.Color(
+                    field="value",
+                    type="quantitative",
+                    scale=alt.Scale(scheme="redblue", domainMid=0),
+                ),
+                # tooltip=alt.Tooltip(field='value', type='quantitative'),
+                column=alt.Column(
+                    field="date", type="temporal", timeUnit="month", title=None
+                ),
+            )
+            .resolve_scale(x="independent")
+            .configure_legend(orient='top', gradientLength=600 * 1.2, gradientThickness=10)
+            .properties(
+                width=600 / 12,
+
+            )
+            # .configure_legend(orient="top")
+            .configure_axis(labelAngle=0)
+        )
+        st.altair_chart(chart)
+
+    with tab3:
+        unique_themes = sorted(theme_df["themes"].unique().tolist())
+        labels = [theme + " " for theme in unique_themes]
+
+        selection = alt.selection_point(fields=["theme"], bind="legend")
+
+        chart = (
+            (
+                alt.Chart(theme_df)
+                .mark_line(point=True)
+                .encode(
+                    x=alt.X(
+                        "monthdate(published):T",
+                        title="Published",
+                        axis=alt.Axis(labelAngle=-45),
+                    ),
+                    y=alt.Y("count(themes)", title="Number of Articles"),
+                    color=alt.Color("themes", title="Theme").scale(
+                        domain=unique_themes, scheme="category20"
+                    ),
+                    tooltip=["published", "themes", "count()"],
+                )
+                .properties(width=800, height=600)
+            )
+            .add_params(selection)
+            .transform_filter(selection)
+        )
+        st.altair_chart(chart)
+
+
+def run_index_tab(df):
+    pass
+
+
+tab1, tab2, tab3 = st.tabs(["Summary Analysis", "Theme Analysis", "Index Analysis"])
+
+with tab1:
+    run_summary_tab(df)
+
+with tab2:
+    run_theme_tab(df)
+
+with tab3:
+    run_index_tab(df)
 
 
 def show_theme_metrics(df):
@@ -938,6 +1106,7 @@ def run_index_tab(uploaded_data_filtered):
                         df_sum_agg, theme_data, "pct_change", threshold
                     ),
                 )
+
 
 if __name__ == "__main__":
     # upload_data()
