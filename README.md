@@ -4,18 +4,15 @@
 ```bash
 .
 ├── app/
-│   ├── functions/
 │   ├── utils/
 │   └── pages/
 ├── scripts/
 ├── data/
 │   ├── metrics/
-│   ├── raw/
+│   ├── raw_upload/
 │   ├── taxonomy/
 │   └── train/
 ├── .gitignore
-├── default_model/
-├── all_tagged_articles.csv
 ├── README.md
 └── requirements.txt
 ```
@@ -54,7 +51,6 @@ streamlit run app/main.py
 1. Add the core libaries to the requirements-base.txt
 ```
 streamlit
-pandas<2 # st-aggrid requirement
 numpy
 scikit-learn
 ...
@@ -72,10 +68,13 @@ rm -rf venv
 python -m venv venv
 # Activate environment
 source venv/bin/activate
+# Optionally update pip
+python -m pip install -U pip
 # Install package with auto-resolver
-pip install -r requirements-base.txt
+python -m pip install -r requirements-base.txt
 # Export locked versions for team use
-pip freeze > requirements.txt
+echo "--extra-index-url https://download.pytorch.org/whl/cpu" > requirements.txt
+pip freeze >> requirements.txt
 # Make sure app is working
 ...
 ```

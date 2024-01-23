@@ -1,19 +1,22 @@
-streamlit
-pandas<2 # st-aggrid bug
-numpy
-scikit-learn>=1.2.2,<1.3.0 # For consistent model pickling
-setfit
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch
+torchvision
 sentence-transformers
-duckdb
-pyarrow>=12.0.0,<13.0.0 # For consistent dataframe representation
+setfit
+scikit-learn>=1.3.0,<1.4.0 # For consistent model pickling
 streamlit
-streamlit-aggrid==0.3.3 # st-aggrid bug
+pandas
+numpy
+httpx
+beautifulsoup4
+duckdb
+google-cloud-storage
+gcsfs
+pyarrow>=14.0.0,<15.0.0 # For consistent dataframe representation
 streamlit-extras
 st-pages
 openpyxl
-rocketry
-pydantic<2 # rocketry bug
-plotly_calplot
+python-dotenv
 xlsxwriter
 # Dev optional
 watchdog
