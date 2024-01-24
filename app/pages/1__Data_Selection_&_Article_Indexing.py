@@ -26,7 +26,7 @@ taxonomy_indexes_series = st.cache_data(core.fetch_latest_index, ttl=60 * 5)()
 
 @st.cache_data
 def filter_process_data(
-    domain_filter, min_engagement, date_range, load_thumbnails=False
+    domain_filter, min_engagement, date_range, load_thumbnails=False, seeded_sort_word=""
 ):
     results_filtered_df = file_handler.filtered_query(
         domain_filter, min_engagement, date_range
@@ -49,11 +49,14 @@ def filter_process_data(
     # Inefficient recursive similarity, seeded by top fb interactions
     # Doesn't matter cause only computed on first load / save
     processed_table["similarity_rank"] = pd.Series(dtype="int")
-    ref_vector = np.array(
-        processed_table.nlargest(1, "facebook_interactions")
-        .reset_index(drop=True)
-        .at[0, "vector"]
-    ).reshape(1, -1)
+    if len(seeded_sort_word) == 0:
+        ref_vector = np.array(
+            processed_table.nlargest(1, "facebook_interactions")
+            .reset_index(drop=True)
+            .at[0, "vector"]
+        ).reshape(1, -1)
+    else:
+        ref_vector = embedding_model.encode([seeded_sort_word]).reshape(1, -1)
     for i in range(len(processed_table)):
         temp_df = processed_table[processed_table["similarity_rank"].isna()]
         temp_df["similarity"] = cosine_similarity(
@@ -143,6 +146,8 @@ def data_selection():
             options=filter_bounds["domain_list"],
             default=[],
         )
+        
+        seeded_sort_word = st.text_input("Sort by custom text (If empty, uses headline with most interactions)")
 
         load_thumbnails = st.toggle("Load Thumbnails")
 
@@ -150,7 +155,7 @@ def data_selection():
     try:
         # Classify & embed for subsequent steps
         processed_table = filter_process_data(
-            domain_filter, min_engagement, datetime_bounds, load_thumbnails
+            domain_filter, min_engagement, datetime_bounds, load_thumbnails, seeded_sort_word
         )
 
         # Metrics placeholder
@@ -216,6 +221,9 @@ def data_selection():
 
         subindex_groups = view_df.groupby("subindex")
 
+        _, help_col = st.columns([1, 1])
+        with help_col:
+            st.caption('If text is too long, hover over option to view full text')
         out_groups = {}
         for subindex, g_df in subindex_groups:
             if len(subindex) == 0:
