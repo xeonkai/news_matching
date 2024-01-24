@@ -131,7 +131,19 @@ def run_summary_tab(df):
     )
 
     theme_heatmap_chart = (
-        alt.Chart(theme_df)
+        alt.Chart(
+            # groupby month
+            theme_df
+            .groupby(["themes", pd.Grouper(key="published", freq="D")])
+            .agg(
+                facebook_interactions=pd.NamedAgg(
+                    column="facebook_interactions", aggfunc="mean"
+                ),
+                count=pd.NamedAgg(column="facebook_interactions", aggfunc="count"),
+                subindexes=pd.NamedAgg(column="subindex", aggfunc=set),
+            )
+            .reset_index()
+        )
         .mark_rect()
         .encode(
             x=alt.X(
@@ -141,15 +153,26 @@ def run_summary_tab(df):
             ),
             y=alt.Y("themes", title="Theme"),
             color=alt.Color(
-                "mean(facebook_interactions)",
+                "facebook_interactions",
                 title="Mean Facebook Interactions",
                 scale=alt.Scale(scheme="greens"),
             ),
-            tooltip=["published", "themes", "mean(facebook_interactions)"],
+            tooltip=["published", "themes", "facebook_interactions"],
         )
     )
     index_heatmap_chart = (
-        alt.Chart(index_df)
+        alt.Chart(
+            index_df
+            .groupby(["indexes", pd.Grouper(key="published", freq="D")])
+            .agg(
+                facebook_interactions=pd.NamedAgg(
+                    column="facebook_interactions", aggfunc="mean"
+                ),
+                count=pd.NamedAgg(column="facebook_interactions", aggfunc="count"),
+                subindexes=pd.NamedAgg(column="subindex", aggfunc=set),
+            )
+            .reset_index()
+        )
         .mark_rect()
         .encode(
             x=alt.X(
@@ -159,13 +182,13 @@ def run_summary_tab(df):
             ),
             y=alt.Y("indexes", title="Index"),
             color=alt.Color(
-                "mean(facebook_interactions)",
+                "facebook_interactions",
                 title="Mean Facebook Interactions",
                 scale=alt.Scale(
                     scheme="greens"
                 ),  # , bins=alt.BinParams(step=700), nice=True),
             ),
-            tooltip=["published", "indexes", "mean(facebook_interactions)"],
+            tooltip=["published", "indexes", "facebook_interactions"],
         )
     )
     st.altair_chart(theme_heatmap_chart, use_container_width=True)
