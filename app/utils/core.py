@@ -302,7 +302,7 @@ class FileHandler:
                         facebook_interactions = EXCLUDED.facebook_interactions,
                         link = EXCLUDED.link,
                         source = EXCLUDED.source,
-                            WHERE EXCLUDED.facebook_interactions > facebook_interactions
+                            WHERE EXCLUDED.facebook_interactions >= facebook_interactions
                 """
             )
 
