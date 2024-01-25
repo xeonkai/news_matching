@@ -88,9 +88,9 @@ def get_first_priority(row):
             return p
 
 
-df["group"] = df["subindex"]
+df["main_topic"] = df["subindex"]
 df["priority_groups"] = df["themes_indexes"].apply(get_first_priority)
-df.loc[lambda df: df["priority_groups"].notna(), "group"] = df.loc[
+df.loc[lambda df: df["priority_groups"].notna(), "main_topic"] = df.loc[
     lambda df: df["priority_groups"].notna(), "priority_groups"
 ]
 
@@ -132,7 +132,7 @@ st.dataframe(
         subindex_counts=lambda r: r["subindex"].apply(lambda v: [v])
         + r["facebook_interactions"].apply(lambda v: [str(v)])
     )
-    .groupby("group")
+    .groupby("main_topic")
     .agg(
         subindex_counts=pd.NamedAgg(column="subindex_counts", aggfunc=mini_groupby),
         facebook_interactions=pd.NamedAgg(
@@ -142,13 +142,13 @@ st.dataframe(
         headlines=pd.NamedAgg(column="headline", aggfunc=list),
         links=pd.NamedAgg(column="link", aggfunc=list),
     )
-    .sort_values(["facebook_interactions", "group"], ascending=False)
+    .sort_values(["facebook_interactions", "main_topic"], ascending=False)
 )
 
-with st.expander("View raw data"):
+with st.expander("View raw data", expanded=True):
     st.dataframe(
         df.dropna(subset=["subindex"])
-        .sort_values(["group", "facebook_interactions"], ascending=[True, False])
+        .sort_values(["main_topic", "facebook_interactions"], ascending=[True, False])
         .reset_index(drop=True),
         column_config={
             "link": st.column_config.LinkColumn("link", width="small"),
@@ -165,6 +165,7 @@ with st.expander("View raw data"):
         },
         column_order=[
             "published",
+            "main_topic",
             "headline",
             "link",
             "facebook_link",
@@ -173,6 +174,5 @@ with st.expander("View raw data"):
             "themes",
             "indexes",
             "subindex",
-            "group",
         ],
     )
