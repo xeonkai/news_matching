@@ -7,9 +7,9 @@ from st_pages import add_page_title
 add_page_title(layout="wide")
 
 
-def mini_groupby(l):
+def mini_groupby(val_list):
     d = {}
-    for subindex, interactions in l:
+    for subindex, interactions in val_list:
         d[subindex] = d.get(subindex, 0) + int(interactions)
 
     return [f"{k} ({v} interactions)" for k, v in d.items()]
@@ -125,7 +125,7 @@ with index_metric_col:
         .iloc[:top_n]
     )
 
-st.subheader("DOM summmary table")
+st.subheader("DOM summary table")
 st.dataframe(
     df.dropna(subset=["subindex"])
     .assign(
@@ -152,7 +152,9 @@ with st.expander("View raw data", expanded=True):
         .reset_index(drop=True),
         column_config={
             "link": st.column_config.LinkColumn("link", width="small"),
-            "facebook_link": st.column_config.LinkColumn("facebook_link", width="small"),
+            "facebook_link": st.column_config.LinkColumn(
+                "facebook_link", width="small"
+            ),
             "facebook_page_name": st.column_config.TextColumn(
                 "facebook_page_name", width="small"
             ),
