@@ -29,6 +29,7 @@ DATA_DIR = Path("data")
 MODEL_ID = "sentence-transformers/multi-qa-MiniLM-L6-cos-v1"
 
 
+# TODO: Read local if not available
 def fetch_latest_themes():
     themes_df = (
         pd.read_csv(f"{gsheet_taxonomy_url}/export?format=csv&gid=92379333")["Theme"]
@@ -75,16 +76,42 @@ def load_embedding_model():
     return model
 
 
-def get_latest_model_path():
-    latest_model_uri = "gs://" + sorted(fs.ls(f"gs://{GCS_BUCKET}/trained_models"))[-1]
-    latest_model_path = latest_model_uri.lstrip(f"gs://{GCS_BUCKET}/")
+# TODO: Use latest local model if fetch fails, check if local model available.
+def get_latest_model_path(theme_or_index):
+    try:
+        available_cloud_models = sorted(
+            fs.ls(f"gs://{GCS_BUCKET}/trained_models/{theme_or_index}")
+        )
+        print(available_cloud_models)
+        latest_model_uri = "gs://" + available_cloud_models[-1]
+        latest_model_path = latest_model_uri.lstrip(f"gs://{GCS_BUCKET}/")
+    except Exception as e:
+        print(e)
+        latest_model_path = None
 
-    if latest_model_path not in [
-        str(model_path) for model_path in Path("trained_models").glob("20*")
-    ]:
-        fs.get(latest_model_uri, latest_model_path, recursive=True)
+    try:
+        model_folder = Path("trained_models", theme_or_index)
+        model_folder.mkdir(parents=True, exist_ok=True)
+        available_local_models = sorted(model_folder.glob("20*"))
+        latest_local_model_path = available_local_models[-1]
+    except Exception as e:
+        print(e)
+        latest_local_model_path = None
+    print("hello")
+    print(latest_local_model_path)
+    print(latest_model_path)
 
-    return latest_model_path
+    if (latest_local_model_path is None) and (latest_model_path is None):
+        return None
+    elif (latest_local_model_path is not None) and (latest_model_path is None):
+        # Use latest local model if cloud model unreachable
+        return latest_local_model_path
+    else:
+        # if cloud model available, check if is latest, return latest model
+        if str(latest_local_model_path) != str(latest_model_path):
+            print(f"Saving model {latest_model_path}")
+            fs.get(latest_model_uri, latest_model_path, recursive=True)
+        return latest_model_path
 
 
 def remove_old_models(models_to_keep=12):
@@ -92,39 +119,61 @@ def remove_old_models(models_to_keep=12):
         shutil.rmtree(old_model_path)
 
 
-def load_classification_model(model_path=None):
+def load_theme_classification_model(model_path=None):
     from setfit import SetFitModel
 
-    latest_model_path = get_latest_model_path()
+    latest_model_path = get_latest_model_path("theme")
     remove_old_models()
     if model_path is None:
         model_path = latest_model_path
+    try:
+        model = SetFitModel.from_pretrained(model_path)
+        return model
+    except Exception as e:
+        print(e)
 
-    model = SetFitModel.from_pretrained(model_path)
-    return model
+
+def load_index_classification_model(model_path=None):
+    from setfit import SetFitModel
+
+    latest_model_path = get_latest_model_path("index")
+    remove_old_models()
+    if model_path is None:
+        model_path = latest_model_path
+    try:
+        model = SetFitModel.from_pretrained(model_path)
+        return model
+    except Exception as e:
+        print(e)
 
 
-def label_df(df: pd.DataFrame, model, column: str) -> pd.DataFrame:
-    y_score = model.predict_proba(df[column])
+def label_df(df: pd.DataFrame, model, column_feature: str, column_name) -> pd.DataFrame:
+    predicted_array = model.predict(df[column_feature]).numpy().astype(bool)
+    labels = np.array(model.labels)
+    predicted_labels = []
+    for mask in predicted_array:
+        predicted_labels.append(labels[mask].tolist())
+    labelled_df = df.assign(**{column_name: predicted_labels})
+    # y_score = model.predict_proba(df[column])
 
-    label_order = np.argsort(y_score, axis=1, kind="stable").numpy()[:, ::-1]
-    label_scores_df = pd.DataFrame(y_score, columns=model.model_head.classes_)
+    # label_order = np.argsort(y_score, axis=1, kind="stable").numpy()[:, ::-1]
+    # label_scores_df = pd.DataFrame(y_score, columns=model.model_head.classes_)
 
-    sorted_label_list = []
-    sorted_scores_list = []
-    for idx, row in label_scores_df.iterrows():
-        sorted_label = row.iloc[label_order[idx]]
-        sorted_label_list.append(sorted_label.index.to_list())
-        sorted_scores_list.append(sorted_label.to_list())
+    # sorted_label_list = []
+    # sorted_scores_list = []
+    # for idx, row in label_scores_df.iterrows():
+    #     sorted_label = row.iloc[label_order[idx]]
+    #     sorted_label_list.append(sorted_label.index.to_list())
+    #     sorted_scores_list.append(sorted_label.to_list())
 
-    labelled_df = df.assign(
-        predicted_indexes=sorted_label_list, prediction_prob=sorted_scores_list
-    )
+    # labelled_df = df.assign(
+    #     predicted_indexes=sorted_label_list, prediction_prob=sorted_scores_list
+    # )
 
-    labelled_df = df.assign(
-        suggested_labels=sorted_label_list,
-        suggested_labels_score=sorted_scores_list,
-    )
+    # labelled_df = df.assign(
+    #     suggested_labels=sorted_label_list,
+    #     suggested_labels_score=sorted_scores_list,
+    # )
     return labelled_df
 
 
@@ -137,7 +186,7 @@ async def async_get_thumbnail_links(urls):
     headers = {
         "User-Agent": "",
     }
-    async with httpx.AsyncClient(headers=headers) as client:
+    async with httpx.AsyncClient(headers=headers, timeout=10.0) as client:
         tasks = [client.get(url) for url in urls]
         results = await asyncio.gather(*tasks)
     image_urls = []
@@ -147,7 +196,7 @@ async def async_get_thumbnail_links(urls):
             soup = BeautifulSoup(response.text, features="html.parser")
             image_url = soup.find("meta", attrs={"property": "og:image"})
             image_urls.append(image_url["content"])
-        except Exception as e:
+        except Exception:
             image_urls.append(None)
     return image_urls
 
@@ -462,136 +511,3 @@ class FileHandler:
 
     def __len__(self):
         return len(list(self.raw_data_dir.iterdir()))
-
-
-class WeeklyFileHandler:
-    WEEKLY_NEWS_TABLE = "weekly_news"
-
-    def __init__(self, data_dir):
-        self.data_dir = Path(data_dir)
-        self.weekly_data_dir = self.data_dir / "weekly"
-        self.db_path = str(self.data_dir / "weekly_news.db")
-
-        self.weekly_data_dir.mkdir(parents=True, exist_ok=True)
-
-        with duckdb.connect(self.db_path) as con:
-            con.execute(
-                f"""
-                CREATE TABLE IF NOT EXISTS
-                {self.WEEKLY_NEWS_TABLE}(
-                    "published" TIMESTAMP(6),
-                    "link" VARCHAR,  
-                    "facebook_page_name" VARCHAR,
-                    "facebook_interactions" BIGINT,
-                    "date_time_extracted" TIMESTAMP(6),
-                    PRIMARY KEY ("published", "link", "facebook_page_name", "date_time_extracted"),
-                    "source" VARCHAR,
-                );
-                """
-            )
-
-    @staticmethod
-    def preprocess_weekly_scan(file) -> pd.DataFrame:
-        data_name = file.name
-        weekly_data = pd.read_csv(file)
-        columns = [
-            "Published",
-            "Link URL",
-            "Facebook Page Name",
-            "Facebook Interactions",
-        ]
-        weekly_data = weekly_data[columns].rename(
-            columns={
-                "Published": "published",
-                "Link URL": "link",
-                "Facebook Page Name": "facebook_page_name",
-                "Facebook Interactions": "facebook_interactions",
-            }
-        )
-        weekly_data["published"] = pd.to_datetime(weekly_data["published"])
-        weekly_data["published"] = weekly_data["published"] + datetime.timedelta(
-            hours=7
-        )
-        date_string = data_name.partition("posts-")[2].partition(".csv")[0]
-        format = "%m_%d_%y-%H_%M"
-        formatted_date = datetime.datetime.strptime(date_string, format)
-        weekly_data["date_time_extracted"] = formatted_date
-        weekly_data = weekly_data.dropna()
-        weekly_data["source"] = data_name
-
-        return weekly_data
-
-    def write_db(self, file) -> None:
-        processed_table = self.preprocess_weekly_scan(file)
-
-        with duckdb.connect(self.db_path) as con:
-            #
-            con.sql(
-                f"DELETE FROM {self.WEEKLY_NEWS_TABLE} WHERE source = '{file.name}'"
-            )
-            # Append to table, replace if existing link found
-            con.sql(
-                f"""
-                INSERT INTO {self.WEEKLY_NEWS_TABLE}
-                SELECT published, link, facebook_page_name, facebook_interactions, date_time_extracted, source
-                FROM processed_table
-                ON CONFLICT (published, link, facebook_page_name, date_time_extracted)
-                DO UPDATE
-                    SET facebook_interactions = facebook_interactions,
-                    source = source
-                """
-            )
-
-    # def write_may_june_db(self):
-    #     may_june_data = pd.read_excel("data/weekly/may_june_data_filtered.xlsx")
-    #
-    #     # for i in range(0, may_june_data.shape[0]):
-    #     #     row = may_june_data.iloc[[i]]
-    #
-    #     with duckdb.connect(self.db_path) as con:
-    #         #
-    #         con.sql(
-    #             f"""
-    #             INSERT INTO {self.WEEKLY_NEWS_TABLE}
-    #             SELECT published, link, facebook_page_name, facebook_interactions, date_time_extracted, source
-    #             FROM may_june_data
-    #             ON CONFLICT (published, link, facebook_page_name, date_time_extracted)
-    #             DO UPDATE
-    #                 SET facebook_interactions = facebook_interactions,
-    #                 source = source
-    #             """
-    #         )
-
-    def full_query(self):
-        query = f"SELECT *" f"FROM {self.WEEKLY_NEWS_TABLE} "
-        with duckdb.connect(self.db_path) as con:
-            full_df = con.sql(query).to_df()
-        return full_df
-
-    def list_csv_filenames(self):
-        return [file.name for file in self.weekly_data_dir.iterdir()]
-
-    def list_csv_files_df(self):
-        raw_files_info = [
-            {
-                "filename": file.name,
-                "modified": datetime.datetime.fromtimestamp(file.stat().st_mtime),
-                # "filesize": f"{file.stat().st_size / 1000 / 1000:.2f} MB",
-            }
-            for file in self.weekly_data_dir.iterdir()
-        ]
-        return pd.DataFrame(raw_files_info)
-
-    def write_csv(self, file):
-        filepath = self.weekly_data_dir / file.name
-        filepath.write_bytes(file.getbuffer())
-        return filepath
-
-    def remove_files(self, filenames):
-        for filename in filenames:
-            (self.weekly_data_dir / filename).unlink(missing_ok=True)
-            with duckdb.connect(self.db_path) as con:
-                con.sql(
-                    f"DELETE FROM {self.WEEKLY_NEWS_TABLE} WHERE source = '{filename}'"
-                )
-        return [self.weekly_data_dir / filename for filename in filenames]

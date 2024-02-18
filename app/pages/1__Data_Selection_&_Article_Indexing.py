@@ -19,6 +19,8 @@ gsheet_taxonomy_url = "https://docs.google.com/spreadsheets/d/" + GSHEET_TAXONOM
 add_page_title(layout="wide")
 
 embedding_model = st.cache_resource(core.load_embedding_model)()
+theme_classification_model = st.cache_resource(core.load_theme_classification_model)()
+index_classification_model = st.cache_resource(core.load_index_classification_model)()
 file_handler = st.cache_resource(core.FileHandler)(core.DATA_DIR)
 taxonomy_themes_series = st.cache_data(core.fetch_latest_themes, ttl=60 * 5)()
 taxonomy_indexes_series = st.cache_data(core.fetch_latest_index, ttl=60 * 5)()
@@ -26,22 +28,41 @@ taxonomy_indexes_series = st.cache_data(core.fetch_latest_index, ttl=60 * 5)()
 
 @st.cache_data
 def filter_process_data(
-    domain_filter, min_engagement, date_range, load_thumbnails=False, seeded_sort_word=""
+    domain_filter,
+    min_engagement,
+    date_range,
+    load_thumbnails=False,
+    seeded_sort_word="",
 ):
     results_filtered_df = file_handler.filtered_query(
         domain_filter, min_engagement, date_range
     )
 
     # Classify & embed for subsequent steps
-    processed_table = (
-        results_filtered_df
-        .pipe(
-            core.embed_df,
-            model=embedding_model,
-            column="headline",
-        )
+    processed_table = results_filtered_df.pipe(
+        core.embed_df,
+        model=embedding_model,
+        column="headline",
     )
+    try:
+        processed_table = processed_table.pipe(
+            core.label_df,
+            model=theme_classification_model,
+            column_feature="headline",
+            column_name="suggested_themes",
+        )
+    except Exception as e:
+        print(e)
 
+    try:
+        processed_table = processed_table.pipe(
+            core.label_df,
+            model=index_classification_model,
+            column_feature="headline",
+            column_name="suggested_indexes",
+        )
+    except Exception as e:
+        print(e)
     # Streamlit editable df requires list type to be not na
     processed_table["themes"] = processed_table["themes"].fillna("").apply(list)
     processed_table["indexes"] = processed_table["indexes"].fillna("").apply(list)
@@ -77,10 +98,13 @@ def filter_process_data(
         .drop(columns=["similarity_rank"])
     )
     if load_thumbnails:
-        image_urls = asyncio.run(
-            core.async_get_thumbnail_links((processed_table["link"].to_list()))
-        )
-        processed_table["thumbnail"] = image_urls
+        try:
+            image_urls = asyncio.run(
+                core.async_get_thumbnail_links((processed_table["link"].to_list()))
+            )
+            processed_table["thumbnail"] = image_urls
+        except Exception as e:
+            print(e)
     return processed_table
 
 
@@ -124,6 +148,7 @@ def data_selection():
             ),
             min_value=filter_bounds["min_date"],
             max_value=filter_bounds["max_date"],
+            help="Make sure to select both start and end dates",
         )
         col_start_time, col_end_time = st.columns([1, 1])
         with col_start_time:
@@ -146,16 +171,23 @@ def data_selection():
             options=filter_bounds["domain_list"],
             default=[],
         )
-        
-        seeded_sort_word = st.text_input("Sort by custom text (If empty, uses headline with most interactions)")
 
-        load_thumbnails = st.toggle("Load Thumbnails")
+        seeded_sort_word = st.text_input(
+            "Start with headlines related to:",
+            help="If empty, starts with article with most interactions",
+        )
+
+        load_thumbnails = st.toggle("Load Thumbnails", value=False)
 
     # filters dataset according to filters set in sidebar
     try:
         # Classify & embed for subsequent steps
         processed_table = filter_process_data(
-            domain_filter, min_engagement, datetime_bounds, load_thumbnails, seeded_sort_word
+            domain_filter,
+            min_engagement,
+            datetime_bounds,
+            load_thumbnails,
+            seeded_sort_word,
         )
 
         # Metrics placeholder
@@ -181,10 +213,13 @@ def data_selection():
             "facebook_link": st.column_config.LinkColumn(
                 "facebook_link", width="medium"
             ),
-            "summary": st.column_config.TextColumn("summary", width="small"),
+            "summary": st.column_config.TextColumn("fb_caption", width="small"),
             "thumbnail": st.column_config.ImageColumn("thumbnail"),
             "themes": st.column_config.ListColumn("themes", width="small"),
             "indexes": st.column_config.ListColumn("indexes", width="small"),
+            "suggested_themes": st.column_config.ListColumn(
+                "suggested_themes", width="small"
+            ),
         }
 
         view_df = st.data_editor(
@@ -201,6 +236,7 @@ def data_selection():
                 "facebook_link",
                 "domain",
                 "themes",
+                "suggested_themes",
                 "indexes",
             ],
             disabled=[
@@ -220,16 +256,33 @@ def data_selection():
             save_indexing_btn = st.button("Save Indexing & Refresh")
 
         subindex_groups = view_df.groupby("subindex")
+        # TODO: View available themes - theme_classification_model.labels
 
-        _, help_col = st.columns([1, 1])
+        _, help_col = st.columns([5, 1])
         with help_col:
-            st.caption('If text is too long, hover over option to view full text')
+            st.caption(
+                "Tips: Hover over ? to view suggestions. If text is too long, hover over option to view full text"
+            )
+
         out_groups = {}
         for subindex, g_df in subindex_groups:
             if len(subindex) == 0:
                 continue
             df_col, theme_col, index_col = st.columns([2, 1, 1])
             with theme_col:
+                sugg_themes = []
+                try:
+                    sugg_themes = (
+                        g_df["suggested_themes"]
+                        .explode()
+                        .dropna()
+                        .drop_duplicates()
+                        .sort_values()
+                        .to_list()
+                    )
+                except Exception as e:
+                    print(e)
+
                 existing_themes = (
                     g_df["themes"]
                     .explode()
@@ -240,8 +293,21 @@ def data_selection():
                     f'Themes for "{subindex}"',
                     taxonomy_themes_series,
                     default=existing_themes,
+                    help=", ".join(sugg_themes),
                 )
             with index_col:
+                sugg_indexes = []
+                try:
+                    sugg_indexes = (
+                        g_df["suggested_indexes"]
+                        .explode()
+                        .dropna()
+                        .drop_duplicates()
+                        .sort_values()
+                        .to_list()
+                    )
+                except Exception as e:
+                    print(e)
                 existing_indexes = (
                     g_df["indexes"]
                     .explode()
@@ -252,6 +318,7 @@ def data_selection():
                     f'Indexes for "{subindex}"',
                     taxonomy_indexes_series,
                     default=existing_indexes,
+                    help=", ".join(sugg_indexes),
                 )
             # Reverse order to reflect changes in df
             with df_col:
