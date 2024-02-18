@@ -3,7 +3,7 @@ torch
 torchvision
 sentence-transformers
 setfit
-scikit-learn>=1.3.0,<1.4.0 # For consistent model pickling
+scikit-learn>=1.4.0,<1.5.0 # For consistent model pickling
 streamlit
 pandas
 numpy
@@ -20,4 +20,4 @@ python-dotenv
 xlsxwriter
 # Dev optional
 watchdog
-black
+ruff
