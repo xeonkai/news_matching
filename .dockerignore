@@ -67,6 +67,9 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 
+# ruff
+.ruff_cache
+
 # cached huggingface models
 cached_models
 trained_models
