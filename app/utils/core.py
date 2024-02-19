@@ -355,12 +355,9 @@ class FileHandler:
                 """
             )
 
-    def write_labelled_articles(self, file) -> None:
+    def write_labelled_articles(self, df):
         processed_table = (
-            pd.read_csv(
-                file,
-                usecols=["link", "facebook_link", "themes", "indexes", "subindex"],
-            )
+            df
             .dropna(subset=["subindex", "indexes", "indexes"], how="all")
             .assign(
                 themes=lambda r: r["themes"].str.split(","),
@@ -368,6 +365,7 @@ class FileHandler:
             )
         )
         self.update_labels(processed_table)
+        return processed_table
 
     def query(self, query):
         with duckdb.connect(self.db_path) as con:

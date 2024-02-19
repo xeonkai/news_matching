@@ -1,6 +1,7 @@
 import streamlit as st
 from utils import core
 from st_pages import add_page_title
+import pandas as pd
 
 add_page_title(layout="wide")
 
@@ -63,7 +64,7 @@ def run():
             if save_btn:
                 # save file name for future output name
                 num_uploaded_files = 0
-                progress_text = "File upload {num_uploaded_files} / {num_new_files} in progress. Please wait."
+                progress_text = "Uploaded {num_uploaded_files} / {num_new_files} raw news data."
                 progress_bar = st.progress(
                     0,
                     text=progress_text.format(
@@ -103,14 +104,14 @@ def run():
             """
         )
         uploaded_index_files = st.file_uploader(
-            "Upload indexed data here:", type=["csv"], accept_multiple_files=True
+            "Upload indexed data here:", type=["csv", "xlsx"], accept_multiple_files=True
         )
         if uploaded_index_files:
             save_index_btn = st.button("Save")
             if save_index_btn:
                 # save file name for future output name
                 num_uploaded_files = 0
-                progress_text = "Index file upload {num_uploaded_files} / {num_new_files} in progress. Please wait."
+                progress_text = "Uploaded {num_uploaded_files} / {num_new_files} index files."
                 progress_bar = st.progress(
                     0,
                     text=progress_text.format(
@@ -121,7 +122,17 @@ def run():
                 for indexed_file in uploaded_index_files:
                     try:
                         # Processed file first for schema validation
-                        file_handler.write_labelled_articles(indexed_file)
+                        if indexed_file.type == "text/csv":
+                            indexed_df = pd.read_csv(
+                                indexed_file,
+                                usecols=["link", "facebook_link", "themes", "indexes", "subindex"],
+                            )
+                        elif indexed_file.type == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
+                            indexed_df = pd.read_excel(
+                                indexed_file,
+                                usecols=["link", "facebook_link", "themes", "indexes", "subindex"],
+                            )
+                        labelled_df = file_handler.write_labelled_articles(indexed_df)
 
                         num_uploaded_files += 1
                         progress_bar.progress(
@@ -131,11 +142,14 @@ def run():
                                 num_new_files=len(uploaded_index_files),
                             ),
                         )
+                        st.write(labelled_df)
                     except Exception as err:
                         st.warning(
                             f"Failed to write{indexed_file.name}, check if file is valid"
                         )
                         st.error(err)
+                if num_uploaded_files == len(uploaded_index_files):
+                    st.success(f"{num_uploaded_files} files uploaded successfully!")
     elif io_mode == "Delete":
         files_to_delete = st.multiselect(
             "Files to Delete", file_handler.list_csv_filenames()
