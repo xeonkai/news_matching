@@ -100,7 +100,10 @@ def run():
     elif io_mode == "Upload Indexed Data":
         st.markdown(
             """
-            - Upload a csv file of the indexed articles to update the database.
+            - Upload a csv or excel file of the indexed articles to update the database.
+            - Make sure the corresponding raw data from is uploaded first using "Upload Weekly News Scan".
+            - Make sure that the columns - link, facebook_link, themes, indexes, subindex are in the table
+            - If using an excel file, the first sheet will be used.
             """
         )
         uploaded_index_files = st.file_uploader(
