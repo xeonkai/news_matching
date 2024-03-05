@@ -140,6 +140,7 @@ st.dataframe(
         ),
         count=pd.NamedAgg(column="facebook_interactions", aggfunc="count"),
         headlines=pd.NamedAgg(column="headline", aggfunc=list),
+        fb_captions=pd.NamedAgg(column="summary", aggfunc=list),
         links=pd.NamedAgg(column="link", aggfunc=list),
     )
     .sort_values(["facebook_interactions", "main_topic"], ascending=False)
@@ -151,6 +152,7 @@ with st.expander("View raw data", expanded=True):
         .sort_values(["main_topic", "facebook_interactions"], ascending=[True, False])
         .reset_index(drop=True),
         column_config={
+            "summary": st.column_config.TextColumn("fb_caption", width="small"),
             "link": st.column_config.LinkColumn("link", width="small"),
             "facebook_link": st.column_config.LinkColumn(
                 "facebook_link", width="small"
@@ -169,6 +171,7 @@ with st.expander("View raw data", expanded=True):
             "published",
             "main_topic",
             "headline",
+            "summary",
             "link",
             "facebook_link",
             "facebook_page_name",

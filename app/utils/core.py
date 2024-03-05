@@ -249,17 +249,20 @@ class FileHandler:
         df = (
             pd.read_csv(
                 file,
-                usecols=[
-                    "Published",
-                    "Headline",
-                    "Summary",
-                    "Link",
-                    "Link URL",
-                    "Facebook Page Name",
-                    "Domain",
-                    "Facebook Interactions",
-                ],
-                dtype={
+            )
+            .rename(columns={"Total Interactions": "Facebook Interactions"})
+            [[
+                "Published",
+                "Headline",
+                "Summary",
+                "Link",
+                "Link URL",
+                "Facebook Page Name",
+                "Domain",
+                "Facebook Interactions",
+            ]]
+            .astype(
+                {
                     "Published": "string",
                     "Headline": "string",
                     "Summary": "string",

@@ -11,7 +11,7 @@ add_page_title(layout="wide")
 
 def run():
     st.markdown("""---""")
-    st.subheader("Welcome! (Updated 18/02/2024)")
+    st.subheader("Welcome! (Updated 05/03/2024)")
     st.markdown(
         """
         - Upload a CSV file of the WEEKLY NEWS FILE downloaded from the content aggregator. \n

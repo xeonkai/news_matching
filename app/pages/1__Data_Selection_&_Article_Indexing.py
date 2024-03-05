@@ -236,8 +236,9 @@ def data_selection():
                 "facebook_link",
                 "domain",
                 "themes",
-                "suggested_themes",
                 "indexes",
+                "suggested_themes",
+                "suggested_indexes",
             ],
             disabled=[
                 "published",
